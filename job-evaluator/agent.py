@@ -10,7 +10,9 @@ Run:
 
 import json
 import anthropic
+from dotenv import load_dotenv
 
+load_dotenv()
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
 
@@ -80,11 +82,11 @@ def evaluate_job(company, role_title, job_description,
     print("  [step 7] evaluate_job → inner Claude call (API call #2)")
     eval_response = client.messages.create(
         model=MODEL,
-        max_tokens=500,
+        max_tokens=2000,
         system=RUBRIC,
         messages=[{"role": "user", "content": job_summary}],
     )
-    raw = eval_response.content[0].text
+    raw = next(b for b in eval_response.content if b.type == "text").text
     print(f"  [step 7] raw string back: {raw[:80]}...")
 
     # TODO(you): this only trims whitespace. If Claude wraps the JSON in
@@ -114,7 +116,7 @@ def run_agent(job_text):
               f"sending {len(messages)} message(s)")
         response = client.messages.create(
             model=MODEL,
-            max_tokens=1000,
+            max_tokens=2000,
             system="You help Justin triage job postings. Use the tools provided.",
             tools=tools,
             messages=messages,
@@ -132,7 +134,7 @@ def run_agent(job_text):
         if response.stop_reason == "end_turn":
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
-            return response.content[0].text
+            return next(b for b in response.content if "text").text
 
         # STEP 5 — save Claude's FULL turn, tool_use block included.
         messages.append({"role": "assistant", "content": response.content})
