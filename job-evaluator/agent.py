@@ -12,7 +12,7 @@ import json
 import anthropic
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
 
@@ -175,7 +175,6 @@ def run_agent(job_text):
 if __name__ == "__main__":
     job = """Airtable — AI Agent Architect
 Location: Remote (US)
-Compensation: $200,000–$240,000 base
 Design and ship agentic workflows on Airtable's platform. Partner with
 enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
