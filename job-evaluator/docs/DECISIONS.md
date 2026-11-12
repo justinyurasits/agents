@@ -181,3 +181,21 @@ included because it says what kind of failure it was (`JSONDecodeError` vs
 Claude shouldn't see (a key, a visitor's input), in which case send a generic
 message and log the detail locally. Or retries running away, which a loop
 cap (out of scope for #8) would handle.
+
+## D19 — Unknown tool: raise inside the dispatch, list the real tools
+
+**Status:** **Proposed** (issue #11)
+**Date:** 2026-11-12
+**Options:** add an `else` that raises · switch to a name → function dict ·
+check the name before the `try`
+**Decision:** an `else` branch that raises
+`ValueError("Unknown tool '<name>'. Available tools: <names>.")`. It's inside
+the `try` from #8 (D18), so it becomes an `is_error` tool_result with no new
+error-handling code.
+**Reasoning:** smallest change that fixes both cases in #11. `result` can
+never be left unset or stale, because every branch either sets it or raises.
+Listing the available tools tells Claude what it *can* call, so it can recover
+on the next turn. The names come from the `tools` list, so adding a tool
+updates the message automatically.
+**What would change it:** more tools, at which point a name → function dict
+replaces the `if / elif` chain and the `else` becomes a dict lookup miss.

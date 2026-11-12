@@ -170,6 +170,10 @@ def run_agent(job_text):
                 result = evaluate_job(**tool_block.input)
             elif tool_block.name == "flag_for_review":
                 result = flag_for_review(**tool_block.input)
+            else:
+                known = ", ".join(t["name"] for t in tools)
+                raise ValueError(f"Unknown tool {tool_block.name!r}. "
+                                 f"Available tools: {known}.")
             tool_result = {"content": json.dumps(result)}
         except Exception as e:
             error = f"{type(e).__name__}: {e}"
