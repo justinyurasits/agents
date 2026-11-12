@@ -148,7 +148,7 @@ before multiplying it by seven.
 
 ## D17 — Tests use the standard library's unittest, not pytest
 
-**Status:** **Proposed** (issue #5)
+**Status:** **Approved** (issue #5, PR #9)
 **Date:** 2026-11-12
 **Options:** `pytest` · `unittest` (standard library)
 **Decision:** `unittest`. Run from `job-evaluator/` with
@@ -164,7 +164,7 @@ unittest-style tests unchanged, so switching later costs little.
 
 ## D18 — Tool exceptions go back to Claude as is_error tool_results
 
-**Status:** **Proposed** (issue #8)
+**Status:** **Approved** (issue #8, PR #12)
 **Date:** 2026-11-12
 **Options:** let the exception crash the run · catch it and stop the run with
 an error message · catch it and send it to Claude as an `is_error` tool_result
@@ -184,7 +184,7 @@ cap (out of scope for #8) would handle.
 
 ## D19 — Unknown tool: raise inside the dispatch, list the real tools
 
-**Status:** **Proposed** (issue #11)
+**Status:** **Approved** (issue #11, PR #13)
 **Date:** 2026-11-12
 **Options:** add an `else` that raises · switch to a name → function dict ·
 check the name before the `try`
@@ -202,7 +202,7 @@ replaces the `if / elif` chain and the `else` becomes a dict lookup miss.
 
 ## D20 — Several tool_use blocks: run in order, inline, one result message
 
-**Status:** **Proposed** (issue #7)
+**Status:** **Approved** (issue #7, PR #14)
 **Date:** 2026-11-12
 **Options:** run tools in parallel · run them in order · move dispatch into a
 `run_tool()` helper · keep it inline in `run_agent`
