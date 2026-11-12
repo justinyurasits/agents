@@ -7,6 +7,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Strip markdown code fences (```` ```json ````) from the rating reply before parsing it, so `evaluate_job` no longer crashes when Claude fences its JSON (#2).
 - Find response text by block type, not position (handles thinking blocks).
 - Raise max_tokens to 2000 on both calls.
+- Fix the final-answer check in `run_agent` to pick the text block by type, so a thinking block before the answer no longer crashes the agent (#4).
 
 ## 0.1.0 — 2026-11-11
 

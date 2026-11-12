@@ -150,7 +150,7 @@ def run_agent(job_text):
         if response.stop_reason == "end_turn":
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
-            return next(b for b in response.content if "text").text
+            return next(b for b in response.content if b.type == "text").text
 
         # STEP 5 — save Claude's FULL turn, tool_use block included.
         messages.append({"role": "assistant", "content": response.content})
