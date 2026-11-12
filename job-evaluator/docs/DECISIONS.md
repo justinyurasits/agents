@@ -94,3 +94,54 @@ GitHub repo; built-in status and expander components fit a step-by-step trace.
 to look deliberate. The agent stays in Python; FastAPI streams step events to a page
 that renders each one live with an explanation, the real line of code, and the data.
 **What would change it:** hosting cost or complexity outweighs the polish.
+
+## D12 — Recorded scenarios only; static page on GitHub Pages
+
+**Date:** 2026-11-12
+**Supersedes:** D9 (profile form), D10 (capped live key), D11 (FastAPI)
+**Decision:** v1 runs only prepared scenarios. Each is run for real locally,
+its step events saved, and played back by a static page hosted on GitHub Pages.
+**Reasoning:** the brief says no visitor input and must never fail in a live
+demo. Recorded real runs give zero cost, no failure risk, and pacing control.
+**What would change it:** a strong reason to let visitors run live — then
+add a FastAPI live mode post-v1.
+
+## D13 — Seven scenarios, error handling forced with labeled switches
+
+**Date:** 2026-11-12
+**Decision:** clean run, missing info, multi-tool, tool fails and recovers,
+two tools in one reply, hard screen in code, runaway loop stopped. Failures
+are triggered by a visible "simulated failure" switch, never hidden.
+**Reasoning:** each M2/M3 fix becomes something a visitor can watch, and
+links back to the issue that built it.
+**What would change it:** the page feels like a test suite → cut to five.
+
+## D14 — research_company uses stored company data
+
+**Date:** 2026-11-12
+**Decision:** company facts are pulled once and stored in the repo; the tool
+reads from that file. Labeled on the page as stored data.
+**Reasoning:** recorded runs must be repeatable; no live web dependency.
+**What would change it:** a live mode post-v1 could use real search.
+
+## D15 — Run view: Execution Explorer, linear map
+
+**Date:** 2026-11-12
+**Options:** A Instrument · B Lanes · C Ledger · D1 Explorer linear · D2 Explorer triangle
+**Decision:** D1. Claude | Python | Tools across the top; data shown on every
+arrow; a tool's own Claude call drawn as a separate path underneath; compact
+four questions; timeline; inspector with State change / Code / Payload /
+Claude's response.
+**Reasoning:** keeps the architecture visible the whole run, and makes the
+boundary crossings the thing you watch. Three boxes read cleaner than the
+triangle or a fourth box.
+**What would change it:** first-time viewers can't explain who decides and
+who executes after one run.
+
+## D16 — Build scenario 4 end to end before the other six
+
+**Date:** 2026-11-12
+**Decision:** one vertical slice first (record → trace → page) on the
+tool-failure scenario, then add the rest.
+**Reasoning:** proves the trace format and the page on the hardest case
+before multiplying it by seven.
