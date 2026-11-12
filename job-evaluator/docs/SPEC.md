@@ -41,6 +41,13 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 
 Claude can ask for more than one tool in a single reply. `run_agent` runs every `tool_use` block in order, one after another, and sends back **one** user message holding one `tool_result` per request, each with the matching `tool_use_id`. The API rejects the next call if any request is left without a result. Errors are handled per tool (see below), so one failing tool still leaves a result for every request.
 
+## Replies cut off by the token limit
+
+Both API calls use `MAX_TOKENS = 2000` (top of `agent.py`). If Claude hits that limit, the reply stops mid-way and comes back with `stop_reason: "max_tokens"`.
+
+- **Main loop:** the run stops and `run_agent` returns `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` Nothing in the cut-off reply is acted on, not even a tool request, because its input may be incomplete.
+- **Inside `evaluate_job`:** a cut-off grader reply raises `RuntimeError: The grader's reply was cut off (hit the max_tokens limit of 2000).` It's checked before parsing, so it's reported as cut off, not as invalid JSON. Like any tool error, it goes back to Claude as an `is_error` tool_result.
+
 ## Tool errors
 
 If a tool raises an exception, the loop does not crash. The error goes back to Claude as the `tool_result`, with `is_error: true` and content `"<ExceptionType>: <message>"` (e.g. `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` when `evaluate_job` gets invalid JSON back). Claude then decides what to do: retry, use the other tool, or explain the failure in its final answer. A successful tool's `tool_result` has no `is_error` field.
@@ -63,4 +70,4 @@ If Claude asks for a tool name that doesn't exist, that's a tool error too: the 
 
 ## Known gaps
 
-Tracked as issues: `max_tokens` not handled.
+None tracked right now.
