@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
+MAX_PASSES = 10    # outer API calls per run; stops a runaway loop (and its cost)
 
 # ---------------------------------------------------------------------------
 # TOOL DEFINITIONS — the only thing Claude ever sees about your tools.
@@ -124,10 +125,10 @@ def run_agent(job_text):
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
     print(f"[step 1] messages has {len(messages)} item")
 
-    api_calls = 0
-    while True:
+    # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
+    # own Claude call happens inside a tool, so it doesn't count.
+    for api_calls in range(1, MAX_PASSES + 1):
         # STEP 2 / STEP 9 — send system + tools + the WHOLE messages list.
-        api_calls += 1
         print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
               f"sending {len(messages)} message(s)")
         response = client.messages.create(
@@ -195,7 +196,11 @@ def run_agent(job_text):
             for r in tool_results)
         print(f"[step 8] appended {len(tool_results)} tool_result(s) "
               f"(ids: {ids}) → messages has {len(messages)}")
-        # ...back to the top of while True (step 9).
+        # ...back to the top of the loop (step 9).
+
+    # Used up every pass without end_turn: stop instead of looping forever.
+    print(f"\n[cap] {MAX_PASSES} outer calls without end_turn → stopping.")
+    return f"Stopped after {MAX_PASSES} passes without finishing."
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - When a tool raises, send the error back to Claude as a `tool_result` with `is_error: true` instead of crashing; the run still finishes (#8).
 - An unknown tool name now returns a clear `is_error` result naming the tool and listing the real ones, instead of a confusing `UnboundLocalError` or the previous tool's stale result (#11).
 - Run every tool Claude asks for in one reply, not just the first, and send all the results back in one message (#7).
+- Cap the agent loop at `MAX_PASSES = 10` outer API calls; if Claude never finishes, return "Stopped after 10 passes without finishing." instead of looping forever (#15).
 
 ## 0.1.0 — 2026-11-11
 
