@@ -35,6 +35,10 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 | `evaluate_job` | Posting has enough info to rate: company, role, location/remote, compensation | company, role_title, job_description (required); location, remote, compensation | `{rating, reasons}` |
 | `flag_for_review` | Key info (compensation, remote) is missing or ambiguous | company, role_title, missing_info | `{status: "flagged", ...}` |
 
+## Several tools in one reply
+
+Claude can ask for more than one tool in a single reply. `run_agent` runs every `tool_use` block in order, one after another, and sends back **one** user message holding one `tool_result` per request, each with the matching `tool_use_id`. The API rejects the next call if any request is left without a result. Errors are handled per tool (see below), so one failing tool still leaves a result for every request.
+
 ## Tool errors
 
 If a tool raises an exception, the loop does not crash. The error goes back to Claude as the `tool_result`, with `is_error: true` and content `"<ExceptionType>: <message>"` (e.g. `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` when `evaluate_job` gets invalid JSON back). Claude then decides what to do: retry, use the other tool, or explain the failure in its final answer. A successful tool's `tool_result` has no `is_error` field.
@@ -57,4 +61,4 @@ If Claude asks for a tool name that doesn't exist, that's a tool error too: the 
 
 ## Known gaps
 
-Tracked as issues: multiple tool_use blocks, `max_tokens` not handled, no cap on loop iterations (a tool that keeps failing could be retried indefinitely).
+Tracked as issues: `max_tokens` not handled, no cap on loop iterations (a tool that keeps failing could be retried indefinitely).

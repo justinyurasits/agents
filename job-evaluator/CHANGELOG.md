@@ -11,6 +11,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Add `tests/` with fence-parsing tests for `strip_json_fences` and `evaluate_job`; no API calls, no key needed (#5).
 - When a tool raises, send the error back to Claude as a `tool_result` with `is_error: true` instead of crashing; the run still finishes (#8).
 - An unknown tool name now returns a clear `is_error` result naming the tool and listing the real ones, instead of a confusing `UnboundLocalError` or the previous tool's stale result (#11).
+- Run every tool Claude asks for in one reply, not just the first, and send all the results back in one message (#7).
 
 ## 0.1.0 — 2026-11-11
 
