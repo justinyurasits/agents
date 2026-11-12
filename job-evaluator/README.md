@@ -35,6 +35,16 @@ python agent.py
 
 The script prints a `[step N]` line at each point in the loop so you can follow a run in the terminal.
 
+## Test it
+
+```bash
+cd job-evaluator
+source .venv/bin/activate
+python -m unittest discover -s tests -v
+```
+
+The tests use a fake Claude client, so they make no API calls and need no `.env` or API key. Run them before every PR.
+
 ## Status
 
 v0.1 — runs end to end on one test posting. Known gaps are open issues on the board.
