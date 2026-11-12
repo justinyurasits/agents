@@ -194,7 +194,7 @@ the `try` from #8 (D18), so it becomes an `is_error` tool_result with no new
 error-handling code.
 **Reasoning:** smallest change that fixes both cases in #11. `result` can
 never be left unset or stale, because every branch either sets it or raises.
-Listing the available tools tells Claude what it *can* call, so it can recover
+Listing the available tools tells Claude what it _can_ call, so it can recover
 on the next turn. The names come from the `tools` list, so adding a tool
 updates the message automatically.
 **What would change it:** more tools, at which point a name → function dict
@@ -217,3 +217,15 @@ others from getting a result, which the API requires.
 **What would change it:** slow tools (several inner Claude calls per turn)
 making runs noticeably slow → run them in parallel. The dispatch growing
 past a screenful → move it into a helper.
+
+## D21 — Scenario set: 5 normal runs + 4 "break the agent" runs
+
+**Date:** 2026-11-12
+**Supersedes:** D13
+**Decision:** normal runs (clean, missing info, multi-tool, two tools at once,
+hard screen) and break-the-agent runs (tool fails, unknown tool, runaway loop,
+reply cut off). Faults are injected and labeled. The page explains each
+guard as it exists in the app and why it's there; no before/after comparison.
+**Reasoning:** error handling is the most convincing part of the demo, and
+each break scenario maps to a guard already built (#8, #11, loop cap, max_tokens).
+**What would change it:** time pressure → cut normal runs 4 and 5 first.
