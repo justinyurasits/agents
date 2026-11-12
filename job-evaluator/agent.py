@@ -189,9 +189,10 @@ def run_agent(job_text):
 # TEST CASE
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    job = """Airtable — AI Agent Architect
+    job = """Northwind Labs — AI Agent Architect
 Location: Remote (US)
-Design and ship agentic workflows on Airtable's platform. Partner with
+Compensation: $200,000–$240,000 base
+Design and ship agentic workflows on Northwind's platform. Partner with
 enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
