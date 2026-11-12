@@ -56,3 +56,6 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   updating STEPS.md.
 - Before opening a PR, run the agent end to end and include a short
   summary of the output in the PR.
+- Before opening a PR, run the tests from the agent's folder
+  (`python -m unittest discover -s tests -v`) and include the result
+  in the PR.

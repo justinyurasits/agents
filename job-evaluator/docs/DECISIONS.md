@@ -145,3 +145,19 @@ who executes after one run.
 tool-failure scenario, then add the rest.
 **Reasoning:** proves the trace format and the page on the hardest case
 before multiplying it by seven.
+
+## D17 — Tests use the standard library's unittest, not pytest
+
+**Status:** **Proposed** (issue #5)
+**Date:** 2026-11-12
+**Options:** `pytest` · `unittest` (standard library)
+**Decision:** `unittest`. Run from `job-evaluator/` with
+`python -m unittest discover -s tests -v`.
+**Reasoning:** no new dependency, so nothing to add to requirements.txt and
+no approval needed. For a handful of tests the two are about equal; `subTest`
+covers the "same check, several inputs" case that pytest's parametrize would.
+Tests swap `agent.client` for a fake and skip the `.env` load, so they make no
+API calls and run without a key.
+**What would change it:** enough tests that pytest's fixtures, parametrize,
+or clearer failure output start saving real time. pytest also runs
+unittest-style tests unchanged, so switching later costs little.
