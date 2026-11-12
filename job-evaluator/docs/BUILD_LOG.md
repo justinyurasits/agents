@@ -54,3 +54,4 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - First successful run; check `git status` shows no `.env`.
 - Set up the project board and write issues #1–8 with acceptance criteria.
 - Take issue #1 through the full branch → PR → merge loop.
+- I deleted the compensation from the job and the code was running without that all day.
