@@ -9,6 +9,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Raise max_tokens to 2000 on both calls.
 - Fix the final-answer check in `run_agent` to pick the text block by type, so a thinking block before the answer no longer crashes the agent (#4).
 - Add `tests/` with fence-parsing tests for `strip_json_fences` and `evaluate_job`; no API calls, no key needed (#5).
+- When a tool raises, send the error back to Claude as a `tool_result` with `is_error: true` instead of crashing; the run still finishes (#8).
 
 ## 0.1.0 — 2026-11-11
 
