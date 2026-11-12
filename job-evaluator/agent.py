@@ -163,12 +163,18 @@ def run_agent(job_text):
         tool_block = next(b for b in response.content if b.type == "tool_use")
         print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
 
-        # TODO(you): no error handling. If a tool raises, the script crashes
-        # instead of returning the error to Claude as a tool_result.
-        if tool_block.name == "evaluate_job":
-            result = evaluate_job(**tool_block.input)
-        elif tool_block.name == "flag_for_review":
-            result = flag_for_review(**tool_block.input)
+        # If the tool raises, don't crash: send the error back to Claude as
+        # the tool_result, marked is_error, and let Claude decide what to do.
+        try:
+            if tool_block.name == "evaluate_job":
+                result = evaluate_job(**tool_block.input)
+            elif tool_block.name == "flag_for_review":
+                result = flag_for_review(**tool_block.input)
+            tool_result = {"content": json.dumps(result)}
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+            print(f"[step 6] {tool_block.name} raised → {error}")
+            tool_result = {"content": error, "is_error": True}
 
         # STEP 8 — return the result as a user-role tool_result,
         # carrying the SAME id Claude generated in step 4.
@@ -177,10 +183,11 @@ def run_agent(job_text):
             "content": [{
                 "type": "tool_result",
                 "tool_use_id": tool_block.id,
-                "content": json.dumps(result),
+                **tool_result,
             }],
         })
-        print(f"[step 8] appended tool_result (id={tool_block.id}) "
+        print(f"[step 8] appended tool_result (id={tool_block.id}"
+              f"{', is_error' if tool_result.get('is_error') else ''}) "
               f"→ messages has {len(messages)}")
         # ...back to the top of while True (step 9).
 

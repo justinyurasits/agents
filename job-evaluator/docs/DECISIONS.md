@@ -161,3 +161,23 @@ API calls and run without a key.
 **What would change it:** enough tests that pytest's fixtures, parametrize,
 or clearer failure output start saving real time. pytest also runs
 unittest-style tests unchanged, so switching later costs little.
+
+## D18 — Tool exceptions go back to Claude as is_error tool_results
+
+**Status:** **Proposed** (issue #8)
+**Date:** 2026-11-12
+**Options:** let the exception crash the run · catch it and stop the run with
+an error message · catch it and send it to Claude as an `is_error` tool_result
+**Decision:** send it to Claude. `run_agent` wraps the tool call in
+`try / except Exception`; on failure the tool_result content is
+`"<ExceptionType>: <message>"` with `is_error: true`.
+**Reasoning:** what to do after a failure (retry, switch tools, tell the user)
+is a judgment call, so it belongs to Claude. Python's job is to report the
+failure faithfully. `except Exception` catches every tool failure but still
+lets Ctrl-C (`KeyboardInterrupt`) stop the script. The exception type is
+included because it says what kind of failure it was (`JSONDecodeError` vs
+`TypeError` for bad arguments) at almost no cost.
+**What would change it:** a tool whose error messages could contain something
+Claude shouldn't see (a key, a visitor's input), in which case send a generic
+message and log the detail locally. Or retries running away, which a loop
+cap (out of scope for #8) would handle.
