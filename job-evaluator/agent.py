@@ -3,9 +3,9 @@ Job Evaluator Agent — end-to-end, one pass.
 Step numbers in comments match the step-by-step diagram (1–11).
 
 Run:
-    pip install anthropic
-    export ANTHROPIC_API_KEY=...
-    python job_agent.py
+    pip install -r requirements.txt
+    cp .env.example .env    # then put your Anthropic API key in .env
+    python agent.py
 """
 
 import json

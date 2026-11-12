@@ -7,8 +7,7 @@ never seen an agent), and the code it points to.
 
 ### 1. The agent starts
 
-A job posting and a candidate profile are handed to the agent, which
-starts the loop.
+A job posting is handed to the agent, which starts the loop.
 Code: agent.py · `final = run_agent(job)` (line 230)
 
 ### 2. The conversation is set up
