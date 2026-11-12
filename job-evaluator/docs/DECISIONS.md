@@ -229,3 +229,21 @@ guard as it exists in the app and why it's there; no before/after comparison.
 **Reasoning:** error handling is the most convincing part of the demo, and
 each break scenario maps to a guard already built (#8, #11, loop cap, max_tokens).
 **What would change it:** time pressure → cut normal runs 4 and 5 first.
+
+## D22 — A cut-off reply is never acted on
+
+**Status:** **Proposed** (issue #18)
+**Date:** 2026-11-12
+**Options:** dispatch any complete-looking tool requests in a cut-off reply ·
+stop and act on nothing
+**Decision:** stop. In the main loop, a `max_tokens` reply ends the run with
+"Claude's reply was cut off (hit the max_tokens limit of 2000)." In
+`evaluate_job`, a `max_tokens` grader reply raises a "cut off" error *before*
+parsing, so it reaches Claude as an `is_error` tool_result (D18).
+**Reasoning:** a reply that hit the limit is unfinished by definition, and
+there's no reliable way to tell whether a tool request in it was finished.
+Running a tool on half-written input is worse than stopping. Checking
+`stop_reason` before parsing names the real cause; parsing first would report
+"invalid JSON" and hide it.
+**What would change it:** cut-offs happening in normal use. Then raise
+`MAX_TOKENS` or retry with a bigger limit (out of scope for #18).

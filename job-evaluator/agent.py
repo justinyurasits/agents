@@ -17,6 +17,7 @@ load_dotenv(override=True)
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
 MAX_PASSES = 10    # outer API calls per run; stops a runaway loop (and its cost)
+MAX_TOKENS = 2000  # longest reply Claude may write, for both API calls
 
 # ---------------------------------------------------------------------------
 # TOOL DEFINITIONS — the only thing Claude ever sees about your tools.
@@ -99,10 +100,15 @@ def evaluate_job(company, role_title, job_description,
     print("  [step 7] evaluate_job → inner Claude call (API call #2)")
     eval_response = client.messages.create(
         model=MODEL,
-        max_tokens=2000,
+        max_tokens=MAX_TOKENS,
         system=RUBRIC,
         messages=[{"role": "user", "content": job_summary}],
     )
+    # A reply that hit the token limit is unfinished. Say so plainly, rather
+    # than letting json.loads report a confusing "invalid JSON".
+    if eval_response.stop_reason == "max_tokens":
+        raise RuntimeError(f"The grader's reply was cut off (hit the "
+                           f"max_tokens limit of {MAX_TOKENS}).")
     raw = next(b for b in eval_response.content if b.type == "text").text
     print(f"  [step 7] raw string back: {raw[:80]}...")
 
@@ -133,7 +139,7 @@ def run_agent(job_text):
               f"sending {len(messages)} message(s)")
         response = client.messages.create(
             model=MODEL,
-            max_tokens=2000,
+            max_tokens=MAX_TOKENS,
             system="You help Justin triage job postings. Use the tools provided.",
             tools=tools,
             messages=messages,
@@ -152,6 +158,13 @@ def run_agent(job_text):
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
             return next(b for b in response.content if b.type == "text").text
+
+        # Claude ran out of room mid-reply. Anything in it (even a tool
+        # request) may be incomplete, so stop rather than act on it.
+        if response.stop_reason == "max_tokens":
+            print(f"\n[stop] max_tokens → reply cut off at {MAX_TOKENS} tokens.")
+            return (f"Claude's reply was cut off (hit the max_tokens limit "
+                    f"of {MAX_TOKENS}).")
 
         # STEP 5 — save Claude's FULL turn, tool_use block included.
         messages.append({"role": "assistant", "content": response.content})
