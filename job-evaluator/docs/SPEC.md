@@ -51,4 +51,4 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 
 ## Known gaps
 
-Tracked as issues: markdown-fence parsing, multiple tool_use blocks, tool errors crash the loop, `max_tokens` not handled.
+Tracked as issues: multiple tool_use blocks, tool errors crash the loop, `max_tokens` not handled.
