@@ -157,42 +157,44 @@ def run_agent(job_text):
         print(f"[step 5] appended assistant turn → messages has {len(messages)}")
 
         # STEP 6 — dispatch: match the name string to a real function.
-        # TODO(you): next() takes only the FIRST tool_use block. If Claude
-        # requests two tools at once, the second gets no tool_result and the
-        # next API call is rejected. Handle every tool_use block.
-        tool_block = next(b for b in response.content if b.type == "tool_use")
-        print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
+        # Claude can ask for several tools in one turn. Every tool_use block
+        # needs its own tool_result, or the next API call is rejected, so
+        # run them all (one after another) and collect the results.
+        tool_results = []
+        for tool_block in (b for b in response.content if b.type == "tool_use"):
+            print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
 
-        # If the tool raises, don't crash: send the error back to Claude as
-        # the tool_result, marked is_error, and let Claude decide what to do.
-        try:
-            if tool_block.name == "evaluate_job":
-                result = evaluate_job(**tool_block.input)
-            elif tool_block.name == "flag_for_review":
-                result = flag_for_review(**tool_block.input)
-            else:
-                known = ", ".join(t["name"] for t in tools)
-                raise ValueError(f"Unknown tool {tool_block.name!r}. "
-                                 f"Available tools: {known}.")
-            tool_result = {"content": json.dumps(result)}
-        except Exception as e:
-            error = f"{type(e).__name__}: {e}"
-            print(f"[step 6] {tool_block.name} raised → {error}")
-            tool_result = {"content": error, "is_error": True}
+            # If the tool raises, don't crash: send the error back to Claude
+            # as the tool_result, marked is_error, and let Claude decide.
+            try:
+                if tool_block.name == "evaluate_job":
+                    result = evaluate_job(**tool_block.input)
+                elif tool_block.name == "flag_for_review":
+                    result = flag_for_review(**tool_block.input)
+                else:
+                    known = ", ".join(t["name"] for t in tools)
+                    raise ValueError(f"Unknown tool {tool_block.name!r}. "
+                                     f"Available tools: {known}.")
+                outcome = {"content": json.dumps(result)}
+            except Exception as e:
+                error = f"{type(e).__name__}: {e}"
+                print(f"[step 6] {tool_block.name} raised → {error}")
+                outcome = {"content": error, "is_error": True}
 
-        # STEP 8 — return the result as a user-role tool_result,
-        # carrying the SAME id Claude generated in step 4.
-        messages.append({
-            "role": "user",
-            "content": [{
+            # Each result carries the SAME id Claude gave its request.
+            tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_block.id,
-                **tool_result,
-            }],
-        })
-        print(f"[step 8] appended tool_result (id={tool_block.id}"
-              f"{', is_error' if tool_result.get('is_error') else ''}) "
-              f"→ messages has {len(messages)}")
+                **outcome,
+            })
+
+        # STEP 8 — return ALL the results in ONE user-role message.
+        messages.append({"role": "user", "content": tool_results})
+        ids = ", ".join(
+            r["tool_use_id"] + (" is_error" if r.get("is_error") else "")
+            for r in tool_results)
+        print(f"[step 8] appended {len(tool_results)} tool_result(s) "
+              f"(ids: {ids}) → messages has {len(messages)}")
         # ...back to the top of while True (step 9).
 
 

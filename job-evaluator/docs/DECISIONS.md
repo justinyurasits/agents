@@ -199,3 +199,21 @@ on the next turn. The names come from the `tools` list, so adding a tool
 updates the message automatically.
 **What would change it:** more tools, at which point a name → function dict
 replaces the `if / elif` chain and the `else` becomes a dict lookup miss.
+
+## D20 — Several tool_use blocks: run in order, inline, one result message
+
+**Status:** **Proposed** (issue #7)
+**Date:** 2026-11-12
+**Options:** run tools in parallel · run them in order · move dispatch into a
+`run_tool()` helper · keep it inline in `run_agent`
+**Decision:** a `for` loop in `run_agent` over every `tool_use` block, run in
+order. Each block gets its own `try / except` (D18), and all results go back
+in one user message, each with its `tool_use_id`.
+**Reasoning:** in order is simpler to read and to trace, and the issue says
+it's enough. Parallel only pays off when tools are slow and independent.
+Keeping it inline means the step page still points at one block of code in
+the loop. Per-block error handling means one failing tool can't stop the
+others from getting a result, which the API requires.
+**What would change it:** slow tools (several inner Claude calls per turn)
+making runs noticeably slow → run them in parallel. The dispatch growing
+past a screenful → move it into a helper.
