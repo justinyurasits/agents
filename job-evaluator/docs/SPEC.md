@@ -19,6 +19,8 @@ Given one job posting, return a rating (STRONG / WORTH REVIEWING / IGNORE) with 
 
 API calls per typical run: 3 (2 outer, 1 inner).
 
+**Loop cap:** at most `MAX_PASSES = 10` outer calls per run (top of `agent.py`). `evaluate_job`'s inner call doesn't count. If Claude hasn't said `end_turn` after 10 passes, `run_agent` stops and returns `"Stopped after 10 passes without finishing."` instead of looping (and spending) forever.
+
 ## What the model sees (context spec)
 
 | Call | System prompt | Tools | Messages |
@@ -61,4 +63,4 @@ If Claude asks for a tool name that doesn't exist, that's a tool error too: the 
 
 ## Known gaps
 
-Tracked as issues: `max_tokens` not handled, no cap on loop iterations (a tool that keeps failing could be retried indefinitely).
+Tracked as issues: `max_tokens` not handled.
