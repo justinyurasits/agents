@@ -84,3 +84,13 @@ is saved or logged.
 **Reasoning:** pure Python on top of the existing agent; free hosting from the
 GitHub repo; built-in status and expander components fit a step-by-step trace.
 **What would change it:** a UI need Streamlit can't meet.
+
+## D11 — FastAPI server + custom web page
+
+**Date:** 2026-11-12
+**Options:** Streamlit · Gradio on Hugging Face Spaces · FastAPI + custom HTML/JS page
+**Decision:** FastAPI + custom page.
+**Reasoning:** the audience is people judging my work, so the step-by-step view has
+to look deliberate. The agent stays in Python; FastAPI streams step events to a page
+that renders each one live with an explanation, the real line of code, and the data.
+**What would change it:** hosting cost or complexity outweighs the polish.
