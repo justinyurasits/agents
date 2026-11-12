@@ -9,6 +9,7 @@ Run:
 """
 
 import json
+import re
 import anthropic
 from dotenv import load_dotenv
 
@@ -69,6 +70,21 @@ WORTH REVIEWING: meets two of the three.
 IGNORE: meets one or none.
 Respond with JSON only: {"rating": "...", "reasons": ["...", "..."]}"""
 
+# A reply wrapped in a markdown code fence: ``` or ```json, then the JSON,
+# then a closing ```. The (.*?) group captures just the JSON in between.
+_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
+
+
+def strip_json_fences(text):
+    """Return text with any surrounding ```json ... ``` fence removed.
+
+    Plain JSON with no fence comes back unchanged (just trimmed).
+    Pure string cleanup, no API call, so it can be tested on its own.
+    """
+    text = text.strip()
+    match = _FENCE.match(text)
+    return match.group(1) if match else text
+
 
 def evaluate_job(company, role_title, job_description,
                  location="Unknown", remote="Unknown", compensation="Unknown"):
@@ -89,9 +105,9 @@ def evaluate_job(company, role_title, job_description,
     raw = next(b for b in eval_response.content if b.type == "text").text
     print(f"  [step 7] raw string back: {raw[:80]}...")
 
-    # TODO(you): this only trims whitespace. If Claude wraps the JSON in
-    # ```json fences, json.loads fails. Fix it.
-    return json.loads(raw.strip())
+    # Claude sometimes wraps the JSON in ```json fences; json.loads can't
+    # read those, so strip them first.
+    return json.loads(strip_json_fences(raw))
 
 
 def flag_for_review(company, role_title, missing_info):

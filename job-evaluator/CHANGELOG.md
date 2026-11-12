@@ -4,6 +4,8 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 
 ## Unreleased
 
+- Strip markdown code fences (```` ```json ````) from the rating reply before parsing it, so `evaluate_job` no longer crashes when Claude fences its JSON (#2).
+
 ## 0.1.0 — 2026-11-11
 
 - First version: agent loop with `evaluate_job` and `flag_for_review` tools, step-by-step trace printed to the terminal.
