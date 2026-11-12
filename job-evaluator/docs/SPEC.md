@@ -39,6 +39,8 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 
 If a tool raises an exception, the loop does not crash. The error goes back to Claude as the `tool_result`, with `is_error: true` and content `"<ExceptionType>: <message>"` (e.g. `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` when `evaluate_job` gets invalid JSON back). Claude then decides what to do: retry, use the other tool, or explain the failure in its final answer. A successful tool's `tool_result` has no `is_error` field.
 
+If Claude asks for a tool name that doesn't exist, that's a tool error too: the `tool_result` is `is_error: true` with `ValueError: Unknown tool '<name>'. Available tools: evaluate_job, flag_for_review.` The list comes from the `tools` definitions, so it stays in sync.
+
 ## Rules: prompt vs code
 
 | Rule | Where it lives now | Where it should live |

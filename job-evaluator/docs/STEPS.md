@@ -9,7 +9,7 @@ never seen an agent), and the code it points to.
 
 A job posting and a candidate profile are handed to the agent, which
 starts the loop.
-Code: agent.py · `final = run_agent(job)` (line 206)
+Code: agent.py · `final = run_agent(job)` (line 210)
 
 ### 2. The conversation is set up
 
@@ -50,7 +50,7 @@ Code: agent.py · `messages.append({"role": "assistant", ...})` (line 156)
 
 Python finds the tool request in Claude's reply and runs the matching
 function with the details Claude filled in.
-Code: agent.py · `tool_block = next(...)` and the dispatch (lines 163–177)
+Code: agent.py · `tool_block = next(...)` and the dispatch (lines 163–181)
 
 #### 7a. Inside evaluate_job: a second Claude grades the job
 
@@ -64,7 +64,7 @@ Code: agent.py · `eval_response = client.messages.create(...)` (line 99)
 Python adds the tool's result to the conversation, tagged with the same ID
 as Claude's request so Claude knows which question it answers. Then the
 loop goes back to step 3.
-Code: agent.py · `messages.append({"type": "tool_result", ...})` (lines 181–188)
+Code: agent.py · `messages.append({"type": "tool_result", ...})` (lines 185–192)
 
 ## FINISH (once)
 
