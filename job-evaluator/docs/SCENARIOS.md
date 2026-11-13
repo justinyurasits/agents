@@ -250,7 +250,7 @@ Remote within the US. Base salary $210,000–$245,000 plus equity.
 
 ### 8. Runaway loop stopped
 
-**What the visitor sees:** The tool fails on every attempt (injected). Claude retries; the loop cap, lowered to 2 passes for this demo (injected), stops the run.
+**What the visitor sees:** The tool fails on every attempt (injected). Claude retries; the loop cap, lowered to 2 passes for this demo (injected), stops the run. In real runs the cap is 10, and Claude usually stops retrying a failing tool on its own before reaching it.
 
 **Injected fault:** `runaway_loop`
 
