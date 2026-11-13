@@ -33,7 +33,7 @@ cp .env.example .env               # then add your Anthropic API key
 python agent.py
 ```
 
-The script prints a `[step N]` line at each point in the loop so you can follow a run in the terminal.
+The script prints a `[step N]` line at each point in the loop so you can follow a run in the terminal, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
 
 ## Test it
 

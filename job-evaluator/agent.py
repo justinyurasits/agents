@@ -13,9 +13,12 @@ import re
 import anthropic
 from dotenv import load_dotenv
 
+import tracing
+
 load_dotenv(override=True)
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
+SYSTEM_PROMPT = "You help Justin triage job postings. Use the tools provided."
 MAX_PASSES = 10    # outer API calls per run; stops a runaway loop (and its cost)
 MAX_TOKENS = 2000  # longest reply Claude may write, for both API calls
 
@@ -97,16 +100,22 @@ def evaluate_job(company, role_title, job_description,
 
     # A separate, one-off Claude call. No tools, no loop.
     # The outer `messages` list is not touched.
+    rec = tracing.active()            # the run's recorder, if any
+    grader_messages = [{"role": "user", "content": job_summary}]
     print("  [step 7] evaluate_job → inner Claude call (API call #2)")
+    rec.inner_api_request(RUBRIC, grader_messages)
     # STEP: inner_grader
     eval_response = client.messages.create(
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=RUBRIC,
-        messages=[{"role": "user", "content": job_summary}],
+        messages=grader_messages,
     )
+    rec.inner_api_response(eval_response)
     # A reply that hit the token limit is unfinished. Say so plainly, rather
     # than letting json.loads report a confusing "invalid JSON".
+    rec.grader_checked(eval_response.stop_reason)
+    # STEP: grader_cut_off
     if eval_response.stop_reason == "max_tokens":
         raise RuntimeError(f"The grader's reply was cut off (hit the "
                            f"max_tokens limit of {MAX_TOKENS}).")
@@ -127,29 +136,40 @@ def flag_for_review(company, role_title, missing_info):
 # ---------------------------------------------------------------------------
 # THE AGENT LOOP
 # ---------------------------------------------------------------------------
-def run_agent(job_text):
+def run_agent(job_text, recorder=None):
+    # `rec` writes one trace event per step (tracing.py). With no recorder,
+    # NullRecorder does nothing, so the agent behaves exactly the same.
+    rec = recorder or tracing.NullRecorder()
+    tracing.activate(rec)   # so evaluate_job's own Claude call is recorded too
+    rec.start(job_text, model=MODEL, max_tokens=MAX_TOKENS, max_passes=MAX_PASSES,
+              system=SYSTEM_PROMPT, tools=tools)
+
     # The starting conversation: one user message.
     # STEP: conversation_setup
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
+    rec.messages_changed("conversation_setup", [], messages)
     print(f"[step 1] messages has {len(messages)} item")
 
     # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
     # own Claude call happens inside a tool, so it doesn't count.
     for api_calls in range(1, MAX_PASSES + 1):
+        rec.pass_started(api_calls)        # records the pass-count check
         # Send system + tools + the WHOLE messages list.
         print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
               f"sending {len(messages)} message(s)")
+        rec.api_request(messages)
         # STEP: send_to_claude
         response = client.messages.create(
             model=MODEL,
             max_tokens=MAX_TOKENS,
-            system="You help Justin triage job postings. Use the tools provided.",
+            system=SYSTEM_PROMPT,
             tools=tools,
             messages=messages,
         )
 
         # Claude decides on Anthropic's servers (step claude_decides, no
-        # code here). This prints what came back.
+        # code here). Record and print what came back.
+        rec.api_response(response)
         print(f"[step 4/10] stop_reason = {response.stop_reason}")
         for block in response.content:
             if block.type == "text":
@@ -159,24 +179,31 @@ def run_agent(job_text):
 
         # Read why Claude stopped. end_turn: Claude chose to stop, so exit the
         # loop. (On that last pass this check is also step claude_done.)
+        rec.reply_checked(response.stop_reason)
         # STEP: check_reply
         if response.stop_reason == "end_turn":
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
             # STEP: answer_returned
-            return next(b for b in response.content if b.type == "text").text
+            answer = next(b for b in response.content if b.type == "text").text
+            rec.end("end_turn", answer)
+            return answer
 
         # Claude ran out of room mid-reply. Anything in it (even a tool
         # request) may be incomplete, so stop rather than act on it.
         # STEP: reply_cut_off
         if response.stop_reason == "max_tokens":
             print(f"\n[stop] max_tokens → reply cut off at {MAX_TOKENS} tokens.")
-            return (f"Claude's reply was cut off (hit the max_tokens limit "
-                    f"of {MAX_TOKENS}).")
+            answer = (f"Claude's reply was cut off (hit the max_tokens limit "
+                      f"of {MAX_TOKENS}).")
+            rec.end("max_tokens", answer)
+            return answer
 
         # Save Claude's FULL turn, tool_use block included.
+        before = list(messages)
         # STEP: save_turn
         messages.append({"role": "assistant", "content": response.content})
+        rec.messages_changed("save_turn", before, messages)
         print(f"[step 5] appended assistant turn → messages has {len(messages)}")
 
         # Dispatch: match the name string to a real function.
@@ -187,6 +214,7 @@ def run_agent(job_text):
         # STEP: run_tools
         for tool_block in (b for b in response.content if b.type == "tool_use"):
             print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
+            rec.tool_checked(tool_block)       # does it exist? then the call
 
             # If the tool raises, don't crash: send the error back to Claude
             # as the tool_result, marked is_error, and let Claude decide.
@@ -206,6 +234,7 @@ def run_agent(job_text):
                 error = f"{type(e).__name__}: {e}"
                 print(f"[step 6] {tool_block.name} raised → {error}")
                 outcome = {"content": error, "is_error": True}
+            rec.tool_finished(tool_block, outcome)   # did it succeed? then the result
 
             # Each result carries the SAME id Claude gave its request.
             tool_results.append({
@@ -215,8 +244,10 @@ def run_agent(job_text):
             })
 
         # Return ALL the results in ONE user-role message.
+        before = list(messages)
         # STEP: results_back
         messages.append({"role": "user", "content": tool_results})
+        rec.messages_changed("results_back", before, messages)
         ids = ", ".join(
             r["tool_use_id"] + (" is_error" if r.get("is_error") else "")
             for r in tool_results)
@@ -227,7 +258,9 @@ def run_agent(job_text):
     # Used up every pass without end_turn: stop instead of looping forever.
     print(f"\n[cap] {MAX_PASSES} outer calls without end_turn → stopping.")
     # STEP: pass_cap
-    return f"Stopped after {MAX_PASSES} passes without finishing."
+    answer = f"Stopped after {MAX_PASSES} passes without finishing."
+    rec.end("pass_cap", answer)
+    return answer
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +274,9 @@ Design and ship agentic workflows on Northwind's platform. Partner with
 enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
+    # Record this run as a trace (scenario names come with #17).
+    recorder = tracing.Recorder(scenario="clean")
     # STEP: agent_starts
-    final = run_agent(job)
+    final = run_agent(job, recorder=recorder)
     print("\nFINAL ANSWER:\n" + final)
+    print(f"\nTrace written to {recorder.write()}")

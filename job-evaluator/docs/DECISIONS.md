@@ -269,3 +269,50 @@ on a broken marker means a wrong reference shows up as a test failure, not
 on the page.
 **What would change it:** a step that needs to point at part of a statement,
 or at code spread over several places. Then add an explicit end marker.
+
+## D24 — Trace format: one flat event per step, every key always present
+
+**Status:** **Proposed** (issue #28)
+**Date:** 2026-11-13
+**Options:** nested events (a pass containing its steps) · flat list of events
+· only the keys that apply on each event · every key on every event
+**Decision:** a flat, ordered list of events. Each event has every key
+(`id, seq, pass, step_id, actor, crossing, payload, messages_before,
+messages_after, code, parent, tokens, guard, injected`), `null` where one
+doesn't apply. Grouping (by pass, or under a tool call) comes from `pass` and
+`parent`. Run-level facts (model, limits, full tool definitions, git commit)
+are stored once at the top. SDK blocks are stored via `model_dump()`; thinking
+keeps its text and drops `signature`. Data is serialized when the event is
+recorded. `run_agent` takes an optional recorder; `NullRecorder` makes
+recording a no-op.
+**Reasoning:** a flat list is what the page replays step by step, and the
+timeline can group it however it likes. Fixed keys mean the page never checks
+whether a key exists. Storing `git_commit` lets code references link to the
+exact version that ran. The full `messages[]` is repeated in each request and
+before/after copy (decision F on #1): simple, and still small at 10 passes.
+**What would change it:** traces getting slow to load on the page. Then store
+each message once and refer to it by index.
+
+## D25 — Guard events: every check recorded, "caught" means something went wrong
+
+**Status:** **Proposed** (issue #29)
+**Date:** 2026-11-13
+**Options:** record only guards that catch something · record every check
+**Decision:** every check records a guard event,
+`{name, checked, value, caught, action, message}`. `caught` is `true` only
+when something went wrong; then the event uses the guard's own error-case
+step (STEPS.md E1–E5). The stop_reason check is never "caught": it records
+`action: "finish"` on `end_turn`. An unknown tool is caught by `tool_exists`
+alone: no `tool_call` or `tool_succeeded` event, because no tool ran, and its
+`tool_result` has `actor: python` and no crossing. The grader's own
+max_tokens check got its own step (E5 `grader_cut_off`). `evaluate_job` finds
+the run's recorder through `tracing.active()`.
+**Reasoning:** the page should show that each check happened, not only when
+it fired. That's the point of D21's "break the agent" runs. Reserving
+`caught` for failures keeps "Claude finished" from reading like an error.
+Recording an unknown tool without a tool crossing keeps the trace truthful:
+nothing reached a tool. A module-level active recorder avoids adding a
+recorder parameter to every tool function.
+**What would change it:** tools that run in parallel (D20), where one global
+"active recorder" and "current tool call" no longer work; then pass the
+recorder and parent explicitly.
