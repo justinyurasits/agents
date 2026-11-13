@@ -424,7 +424,7 @@ tools, so it shouldn't occur.
 
 ## D30 — How a recording is checked against its scenario
 
-**Status:** **Proposed** (issue #53)
+**Status:** **Approved** (issue #53, PR #54)
 **Date:** 2026-11-13
 **Options:** parse the prose `expected_tools` / `expected_outcome` · add a
 machine-readable `expect` to each scenario · compare the exact tool sequence
