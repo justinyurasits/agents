@@ -1,6 +1,6 @@
 """
 Job Evaluator Agent — end-to-end, one pass.
-Step numbers in comments match the step-by-step diagram (1–11).
+`# STEP: <step_id>` markers label the code each step in docs/STEPS.md points to.
 
 Run:
     pip install -r requirements.txt
@@ -95,9 +95,10 @@ def evaluate_job(company, role_title, job_description,
         f"Remote: {remote}\nCompensation: {compensation}\n\n{job_description}"
     )
 
-    # STEP 7 — a separate, one-off Claude call. No tools, no loop.
+    # A separate, one-off Claude call. No tools, no loop.
     # The outer `messages` list is not touched.
     print("  [step 7] evaluate_job → inner Claude call (API call #2)")
+    # STEP: inner_grader
     eval_response = client.messages.create(
         model=MODEL,
         max_tokens=MAX_TOKENS,
@@ -127,16 +128,18 @@ def flag_for_review(company, role_title, missing_info):
 # THE AGENT LOOP
 # ---------------------------------------------------------------------------
 def run_agent(job_text):
-    # STEP 1 — the starting conversation: one user message.
+    # The starting conversation: one user message.
+    # STEP: conversation_setup
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
     print(f"[step 1] messages has {len(messages)} item")
 
     # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
     # own Claude call happens inside a tool, so it doesn't count.
     for api_calls in range(1, MAX_PASSES + 1):
-        # STEP 2 / STEP 9 — send system + tools + the WHOLE messages list.
+        # Send system + tools + the WHOLE messages list.
         print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
               f"sending {len(messages)} message(s)")
+        # STEP: send_to_claude
         response = client.messages.create(
             model=MODEL,
             max_tokens=MAX_TOKENS,
@@ -145,7 +148,8 @@ def run_agent(job_text):
             messages=messages,
         )
 
-        # STEP 3 / STEP 10 happen inside Claude. STEP 4 / STEP 10: what came back.
+        # Claude decides on Anthropic's servers (step claude_decides, no
+        # code here). This prints what came back.
         print(f"[step 4/10] stop_reason = {response.stop_reason}")
         for block in response.content:
             if block.type == "text":
@@ -153,28 +157,34 @@ def run_agent(job_text):
             elif block.type == "tool_use":
                 print(f"           tool_use: id={block.id} name={block.name}")
 
-        # STEP 11 — Claude chose to stop. Exit the loop.
+        # Read why Claude stopped. end_turn: Claude chose to stop, so exit the
+        # loop. (On that last pass this check is also step claude_done.)
+        # STEP: check_reply
         if response.stop_reason == "end_turn":
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
+            # STEP: answer_returned
             return next(b for b in response.content if b.type == "text").text
 
         # Claude ran out of room mid-reply. Anything in it (even a tool
         # request) may be incomplete, so stop rather than act on it.
+        # STEP: reply_cut_off
         if response.stop_reason == "max_tokens":
             print(f"\n[stop] max_tokens → reply cut off at {MAX_TOKENS} tokens.")
             return (f"Claude's reply was cut off (hit the max_tokens limit "
                     f"of {MAX_TOKENS}).")
 
-        # STEP 5 — save Claude's FULL turn, tool_use block included.
+        # Save Claude's FULL turn, tool_use block included.
+        # STEP: save_turn
         messages.append({"role": "assistant", "content": response.content})
         print(f"[step 5] appended assistant turn → messages has {len(messages)}")
 
-        # STEP 6 — dispatch: match the name string to a real function.
+        # Dispatch: match the name string to a real function.
         # Claude can ask for several tools in one turn. Every tool_use block
         # needs its own tool_result, or the next API call is rejected, so
         # run them all (one after another) and collect the results.
         tool_results = []
+        # STEP: run_tools
         for tool_block in (b for b in response.content if b.type == "tool_use"):
             print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
 
@@ -186,10 +196,12 @@ def run_agent(job_text):
                 elif tool_block.name == "flag_for_review":
                     result = flag_for_review(**tool_block.input)
                 else:
-                    known = ", ".join(t["name"] for t in tools)
-                    raise ValueError(f"Unknown tool {tool_block.name!r}. "
-                                     f"Available tools: {known}.")
+                    # STEP: unknown_tool
+                    raise ValueError(
+                        f"Unknown tool {tool_block.name!r}. Available tools: "
+                        f"{', '.join(t['name'] for t in tools)}.")
                 outcome = {"content": json.dumps(result)}
+            # STEP: tool_failed
             except Exception as e:
                 error = f"{type(e).__name__}: {e}"
                 print(f"[step 6] {tool_block.name} raised → {error}")
@@ -202,17 +214,19 @@ def run_agent(job_text):
                 **outcome,
             })
 
-        # STEP 8 — return ALL the results in ONE user-role message.
+        # Return ALL the results in ONE user-role message.
+        # STEP: results_back
         messages.append({"role": "user", "content": tool_results})
         ids = ", ".join(
             r["tool_use_id"] + (" is_error" if r.get("is_error") else "")
             for r in tool_results)
         print(f"[step 8] appended {len(tool_results)} tool_result(s) "
               f"(ids: {ids}) → messages has {len(messages)}")
-        # ...back to the top of the loop (step 9).
+        # ...back to the top of the loop for the next pass.
 
     # Used up every pass without end_turn: stop instead of looping forever.
     print(f"\n[cap] {MAX_PASSES} outer calls without end_turn → stopping.")
+    # STEP: pass_cap
     return f"Stopped after {MAX_PASSES} passes without finishing."
 
 
@@ -227,5 +241,6 @@ Design and ship agentic workflows on Northwind's platform. Partner with
 enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
+    # STEP: agent_starts
     final = run_agent(job)
     print("\nFINAL ANSWER:\n" + final)

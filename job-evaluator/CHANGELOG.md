@@ -15,6 +15,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Cap the agent loop at `MAX_PASSES = 10` outer API calls; if Claude never finishes, return "Stopped after 10 passes without finishing." instead of looping forever (#15).
 - Handle replies cut off by the token limit (`MAX_TOKENS = 2000`, one constant for both calls): the main loop stops with a clear message, and a cut-off grader reply is reported as cut off rather than as invalid JSON (#18).
 - Rewrite docs/SPEC.md as the agent's design doc (overview, components, loop, what Claude sees, guards table, rules in code vs prompt, trace placeholder, known limits); fix the run instructions in agent.py's docstring and drop the nonexistent candidate profile from STEPS.md step 1 (#23).
+- Add `# STEP: <step_id>` markers to agent.py and `code_refs.py` to look up each step's code and current line number; STEPS.md gets step ids, four error-case steps (tool fails, unknown tool, reply cut off, too many passes), and no more hard-coded line numbers (#27).
 - Restore compensation in the sample job. Used a fictional company.
 
 ## 0.1.0 — 2026-11-11
