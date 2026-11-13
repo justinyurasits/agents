@@ -194,3 +194,12 @@ The grader's reply was valid JSON but not a real answer: an answer that
 isn't yes or no, missing reasons, or the wrong shape. The tool reports exactly
 what was wrong, and the error goes back to Claude like any tool failure (E1).
 Code: `# STEP: invalid_grade` in agent.py (`if problem:`)
+
+### E9. Claude stops for a reason the agent doesn't handle
+
+Step id: `unexpected_stop`
+
+Claude's reply carries a label this agent has no plan for, for example
+"refusal" (Claude declined to answer). Python won't guess what to do with it,
+so it stops the run and says which label it was.
+Code: `# STEP: unexpected_stop` in agent.py (`if response.stop_reason != "tool_use":`)

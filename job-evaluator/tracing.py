@@ -37,7 +37,8 @@ END_STEPS = {"end_turn": "answer_returned",
              "max_tokens": "reply_cut_off",
              "pass_cap": "pass_cap",
              "api_error": "api_call_failed",
-             "no_text": "no_final_answer"}
+             "no_text": "no_final_answer",
+             "unexpected_stop": "unexpected_stop"}
 
 
 def to_json(obj):
@@ -224,7 +225,7 @@ class Recorder:
     # --- guards -----------------------------------------------------------
     # Every check the loop or a tool makes records a guard event, whether or
     # not it caught anything. `caught` is true only when something went
-    # wrong; then the event uses the error-case step (STEPS.md, E1–E8).
+    # wrong; then the event uses the error-case step (STEPS.md, E1–E9).
 
     def guard(self, step_id, name, checked, value, caught,
               action=None, message=None, parent=None, injected=False):
@@ -250,6 +251,11 @@ class Recorder:
         if not finished and stop_reason != "max_tokens":
             self.guard("check_reply", "max_tokens", 'stop_reason == "max_tokens"',
                        stop_reason, False, injected=self._inject_tokens)
+            # Only tool_use goes on to the tools; anything else is recorded
+            # by end("unexpected_stop") as the caught guard (#21).
+            if stop_reason == "tool_use":
+                self.guard("check_reply", "stop_reason_known", 'stop_reason == "tool_use"',
+                           stop_reason, False, injected=self._inject_tokens)
 
     def tool_checked(self, tool_block):
         """Before dispatch: does the tool exist? If so, record the call.
@@ -349,6 +355,10 @@ class Recorder:
         elif ended_by == "max_tokens":
             self.guard("reply_cut_off", "max_tokens", 'stop_reason == "max_tokens"',
                        "max_tokens", True, action="run_stopped", message=text,
+                       injected=self._inject_tokens)
+        elif ended_by == "unexpected_stop":
+            self.guard("unexpected_stop", "stop_reason_known", 'stop_reason == "tool_use"',
+                       value, True, action="run_stopped", message=text,
                        injected=self._inject_tokens)
         elif ended_by == "pass_cap":
             limit = self.run["max_passes"]

@@ -144,9 +144,10 @@ Every check in `agent.py` that exists to keep a run from crashing, hanging, or a
 | **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
 | **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
 | **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
+| **Unhandled stop reason** (`if response.stop_reason != "tool_use"` in `run_agent`, after the cut-off check) | A reply whose `stop_reason` isn't `end_turn`, `max_tokens` or `tool_use`: `refusal`, `stop_sequence`, `pause_turn`, `model_context_window_exceeded` | Returns `"Claude stopped for a reason this agent doesn't handle (stop_reason 'refusal'). The run stopped."` Nothing in the reply runs, not even a tool request, and no further request is sent. Before this, the reply went on to the dispatch, which sent a user message with empty `content` that the API rejects. | [#21](https://github.com/justinyurasits/agents/issues/21), D29 | [`test_unexpected_stop.py`](../tests/test_unexpected_stop.py) |
 | **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't an answer: not an object, `answer` missing or not yes / no (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid answer becomes `{"rating", "reasons"}`; other keys aren't passed on. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42), [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31 and #32 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31, #32 and #21 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -196,7 +197,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `model`, `limits` | `claude-sonnet-5-5`; `{"max_passes": 10, "max_tokens": 2000}` |
 | `tools` | The full tool definitions, stored once |
 | `events` | One per step, in order (below) |
-| `result` | `{"ended_by": "end_turn" \| "max_tokens" \| "pass_cap" \| "api_error" \| "no_text", "text": …}`: what `run_agent` returned |
+| `result` | `{"ended_by": "end_turn" \| "max_tokens" \| "pass_cap" \| "api_error" \| "no_text" \| "unexpected_stop", "text": …}`: what `run_agent` returned |
 
 ### Events
 
@@ -212,7 +213,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `inner_grader` | `inner_api_request` (tool → claude) | Same shape as `api_request`, with `system` = `RUBRIC` and `tools` = `[]`. `parent` = the `evaluate_job` tool_call. |
 | `inner_grader` | `inner_api_response` (claude → tool) | Same shape as `api_response`, with `tokens`. `parent` = the `evaluate_job` tool_call. |
 | `run_tools` | `tool_result` (tool → python) | `tool`, `tool_use_id`, `is_error`, `content`. For an unknown tool, `actor` is `python` and `crossing` is `null`: no tool ran, Python itself answers. |
-| `answer_returned` / `reply_cut_off` / `pass_cap` / `api_call_failed` / `no_final_answer` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
+| `answer_returned` / `reply_cut_off` / `pass_cap` / `api_call_failed` / `no_final_answer` / `unexpected_stop` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
 
 Content blocks are stored exactly as the API returned them (`model_dump()`), except that thinking blocks drop their opaque `signature`. Data is converted when the event is recorded, so later changes to `messages` can't alter it.
 
@@ -224,13 +225,14 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 "guard": {"name": "…", "checked": "…", "value": …, "caught": false, "action": null, "message": null}
 ```
 
-**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E8) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
+**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E9) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
 
 | Guard | When it's recorded | Step (not caught → caught) | `value` | When caught: `action`, `message` |
 |---|---|---|---|---|
 | `pass_count` | Start of every pass; and once after the last pass if the cap is hit | `send_to_claude` → `pass_cap` | pass number (11 when caught) | `run_stopped`, the cap message |
 | `stop_reason` | Every reply | `check_reply`, or `claude_done` on `end_turn` (never caught; `action: "finish"` on `end_turn`) | the stop reason | — |
 | `max_tokens` (main loop) | Every reply that isn't `end_turn` | `check_reply` → `reply_cut_off` | the stop reason | `run_stopped`, the cut-off message |
+| `stop_reason_known` | Every reply that isn't `end_turn` or `max_tokens` | `check_reply` → `unexpected_stop` | the stop reason | `run_stopped`, the unhandled-stop message |
 | `tool_exists` | Every tool request | `run_tools` → `unknown_tool` | the tool name | `error_sent_to_claude`, the `ValueError` text |
 | `max_tokens` (grader) | Every grader reply, with `parent` | `inner_grader` → `grader_cut_off` | the stop reason | `error_raised`, the cut-off text |
 | `api_call_succeeded` | Every outer call to Claude | `send_to_claude` → `api_call_failed` | error type when caught | `run_stopped`, the API-error message |
@@ -295,7 +297,6 @@ The `print` lines are still there for following a run live, one line per event. 
 
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
-- **Unexpected `stop_reason`** (e.g. `refusal`). Anything other than `end_turn` or `max_tokens` goes to the tool dispatch. With no tool requests in the reply, an empty user message is sent; the API will most likely reject it, and the run fails with an API error. This comes from reading the code; it hasn't been reproduced live. → [#21](https://github.com/justinyurasits/agents/issues/21)
 - **Reading pay is a heuristic** (`lowest_base`, #26). It assumes US dollars and a yearly salary; it skips hourly, daily, weekly and monthly pay rather than compare it, and ignores numbers under 10,000 (bonus percentages, weeks of leave). A posting quoted in another currency would be compared as if it were dollars.
 - **Remote status comes from Claude #1.** The remote screen trusts the `remote` boolean Claude fills in; if Claude leaves it out, the screen is skipped.
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
