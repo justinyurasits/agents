@@ -404,7 +404,7 @@ instead of parsing text.
 
 ## D29 — A stop reason the agent doesn't handle stops the run
 
-**Status:** **Proposed** (issue #21)
+**Status:** **Approved** (issue #21, PR #52)
 **Date:** 2026-11-13
 **Options:** list each unhandled stop reason and stop on those · stop on
 anything that isn't `tool_use` · handle some (e.g. resume after `pause_turn`)
