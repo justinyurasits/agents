@@ -53,7 +53,8 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `tools` | The two tool definitions (name, description, input schema) sent to Claude on every outer call. The descriptions are how Claude decides which tool to use. |
 | `RUBRIC` | System prompt for the grader call inside `evaluate_job`: the criteria above plus "Respond with JSON only". |
 | `strip_json_fences(text)` | Removes a surrounding ```` ``` ```` / ```` ```json ```` fence from the grader's reply. Pure string function. |
-| `evaluate_job(...)` | Tool. Makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, and returns it as a dict. |
+| `RATINGS`, `grade_problem(grade)` | The three valid ratings, and a pure function that says what's wrong with the grader's parsed JSON (or `None`). A rule in code, not the prompt. |
+| `evaluate_job(...)` | Tool. Makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns it as a dict (or raises `ValueError` naming the problem). |
 | `flag_for_review(...)` | Tool. Plain Python, no API call. Returns `{"status": "flagged", "company", "role_title", "missing_info"}`. |
 | `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
 | `run_agent(job_text, recorder=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). |
@@ -135,8 +136,9 @@ Every check in `agent.py` that exists to keep a run from crashing, hanging, or a
 | **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
 | **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
 | **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
+| **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't a rating: not an object, `rating` missing or not STRONG / WORTH REVIEWING / IGNORE, `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid grade, extra keys included, is returned unchanged. | [#32](https://github.com/justinyurasits/agents/issues/32) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30 and #31 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31 and #32 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -150,7 +152,8 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 | Must be remote | Prompt (`RUBRIC`) | **Code** | Same. |
 | Builds the consulting practice | Prompt (`RUBRIC`) | Prompt | Needs judgment. |
 | Rate vs flag (is enough info present?) | Tool descriptions, decided by Claude #1 | Prompt | Judgment about an unstructured posting. |
-| Grader reply format (JSON) | Prompt (`RUBRIC`), parsed in code | Both | The prompt asks for JSON; code strips fences and parses it. The *contents* aren't checked (see Known limits). |
+| Grader reply format (JSON) | Prompt (`RUBRIC`), parsed and checked in code | Both | The prompt asks for JSON; code strips fences, parses it, and checks the rating and reasons (`grade_problem`, #32). |
+| The three rating values | Prompt (`RUBRIC`) **and** code (`RATINGS`) | Both | The prompt tells the grader what to answer; the code rejects anything else. |
 | Max passes, max tokens | Code (`MAX_PASSES`, `MAX_TOKENS`) | Code | |
 | Which tool names exist | Code (`tools` + the dispatch) | Code | |
 
@@ -216,6 +219,7 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 | `api_call_succeeded` | Every outer call to Claude | `send_to_claude` → `api_call_failed` | error type when caught | `run_stopped`, the API-error message |
 | `tool_succeeded` | Every tool that ran | `run_tools` → `tool_failed` | exception type when caught | `error_sent_to_claude`, `"<Type>: <message>"` |
 | `final_text_present` | Every `end_turn` reply | `answer_returned` → `no_final_answer` | `"text"`, or `null` when caught | `run_stopped`, the no-answer message |
+| `grade_valid` | Every parsed grader reply, with `parent` | `inner_grader` → `invalid_grade` | the problem when caught | `error_raised`, the problem text |
 
 So a grader that's cut off shows two caught guards in order: `max_tokens` (`grader_cut_off`), then `tool_succeeded` (`tool_failed`) with the same text. An unknown tool shows only `tool_exists`, because no tool ran. A run that hits a guarded stop ends with the caught guard, then the final event.
 
@@ -246,7 +250,6 @@ The `print` lines are still there for following a run live, one line per event. 
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
 - **Unexpected `stop_reason`** (e.g. `refusal`). Anything other than `end_turn` or `max_tokens` goes to the tool dispatch. With no tool requests in the reply, an empty user message is sent; the API will most likely reject it, and the run fails with an API error. This comes from reading the code; it hasn't been reproduced live. → [#21](https://github.com/justinyurasits/agents/issues/21)
-- **The grader's JSON isn't validated.** Whatever object the grader returns is passed on as the result. A missing `rating`, or a value other than the three ratings, isn't caught. → [#32](https://github.com/justinyurasits/agents/issues/32)
 - **Hard rules live in the prompt** ($180K floor, remote). See [section 6](#6-rules-in-code-vs-prompt). No issue yet.
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
 - **The cap is fixed in code**, not configurable from outside, and it counts passes, not tokens or dollars. Out of scope for #15.

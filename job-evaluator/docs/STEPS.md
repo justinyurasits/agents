@@ -173,3 +173,12 @@ Claude said it was done, but its reply had no text in it, for example only
 its thinking. Python returns a message saying there was no final answer
 instead of crashing at the very last step.
 Code: `# STEP: no_final_answer` in agent.py (`if answer is None:`)
+
+### E8. The grader's rating isn't valid
+
+Step id: `invalid_grade`
+
+The grader's reply was valid JSON but not a real rating: a rating that
+doesn't exist, missing reasons, or the wrong shape. The tool reports exactly
+what was wrong, and the error goes back to Claude like any tool failure (E1).
+Code: `# STEP: invalid_grade` in agent.py (`if problem:`)
