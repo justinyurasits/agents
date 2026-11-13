@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Run view — Explorer, linear map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#0E1116}
+a{color:#F2B84B}a:hover{color:#FFD27A}
+</style>
+</helmet>
+<div style="min-height: 1240px; background: #0E1116; color: #E6EDF3; font-family: Inter, system-ui, sans-serif; box-sizing: border-box; padding: 28px 32px 40px">
+<div style="max-width: 1376px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #9AA4B2">SCENARIO 4 · TOOL FAILS, AGENT RECOVERS</div>
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Inside the agent loop</h1>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px">
+<button type="button" style="height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid #2A313C; background: #161B22; color: #E6EDF3; font-family: inherit; font-size: 13px">Scenario ▾</button>
+<button type="button" aria-label="Previous step" style="height: 44px; width: 44px; border-radius: 8px; border: 1px solid #2A313C; background: #161B22; color: #E6EDF3; font-size: 16px">‹</button>
+<button type="button" style="height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #F2B84B; background: #F2B84B; color: #1A1206; font-weight: 600; font-family: inherit; font-size: 13px">❚❚ Pause</button>
+<button type="button" aria-label="Next step" style="height: 44px; width: 44px; border-radius: 8px; border: 1px solid #2A313C; background: #161B22; color: #E6EDF3; font-size: 16px">›</button>
+<button type="button" style="height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid #2A313C; background: #161B22; color: #E6EDF3; font-family: inherit; font-size: 13px">1×</button>
+</div>
+</header>
+
+<section aria-label="Execution map" style="background: #161B22; border: 1px solid #2A313C; border-radius: 16px; padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2"><span>EXECUTION MAP · LINEAR</span><span>Pass 2 · API calls so far: 2 (1 main, 1 inside the tool)</span></div>
+
+<div style="display: flex; align-items: stretch; flex-wrap: wrap; gap: 0">
+
+<div style="flex: 1 1 190px; min-width: 180px; min-height: 150px; border: 1px solid #3A3260; background: #1B1830; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 19px; font-weight: 600; color: #CFC6FF">Claude</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9AA4B2">waiting</span></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9C93D9">decides · never runs code</div>
+<div style="font-size: 13px; color: #B9B2E6; line-height: 1.5">Main conversation: picks a tool or finishes. Also answers evaluate_job's separate call.</div>
+</div>
+
+<div style="flex: 1 1 170px; min-width: 150px; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 0 10px">
+<div style="display: flex; flex-direction: column; gap: 5px; align-items: center">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px dashed #F2B84B; color: #F2B84B; background: #2A2213">next · 3 messages</span>
+<div style="display: flex; align-items: center; width: 100%"><span style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 9px solid #F2B84B"></span><span style="flex: 1; border-top: 2px dashed #F2B84B"></span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 5px; align-items: center">
+<div style="display: flex; align-items: center; width: 100%"><span style="flex: 1; border-top: 2px solid #3A4250"></span><span style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid #3A4250"></span></div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #0B0E13; border: 1px solid #2A313C; color: #9AA4B2">tool_use · toolu_01A · evaluate_job</span>
+</div>
+</div>
+
+<div style="flex: 1 1 210px; min-width: 190px; min-height: 150px; border: 2px solid #5BD69B; background: #12301F; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 0 0 7px rgba(91,214,155,0.12); box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 19px; font-weight: 600; color: #8DE6B6">Python</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #5BD69B; color: #0B2416">executing</span></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #7FCBA3">the agent loop</div>
+<div style="font-size: 13px; color: #A8DCC0; line-height: 1.5">Calls Claude, runs tools, holds the messages.</div>
+</div>
+
+<div style="flex: 1 1 170px; min-width: 150px; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 0 10px">
+<div style="display: flex; flex-direction: column; gap: 5px; align-items: center">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #0B0E13; border: 1px solid #2A313C; color: #9AA4B2">evaluate_job(company="Northwind…")</span>
+<div style="display: flex; align-items: center; width: 100%"><span style="flex: 1; border-top: 2px solid #3A4250"></span><span style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid #3A4250"></span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 5px; align-items: center">
+<div style="display: flex; align-items: center; width: 100%"><span style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 9px solid #FF7A7A"></span><span style="flex: 1; border-top: 2px solid #FF7A7A"></span></div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #3A1A1D; border: 1px solid #FF7A7A; color: #FFB3B3">JSONDecodeError</span>
+</div>
+</div>
+
+<div style="flex: 1 1 200px; min-width: 180px; min-height: 150px; border: 1px solid #5A3A1E; background: #241A10; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 19px; font-weight: 600; color: #F5C28A">Tools</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #FF9B9B">evaluate_job failed</span></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #D9A672">Python functions</div>
+<div style="font-size: 13px; color: #E0B98E; line-height: 1.5">Do the work. evaluate_job calls Claude itself to grade the job.</div>
+</div>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 0; padding: 0 8% 0 8%">
+<div style="display: flex; justify-content: space-between"><span style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid #8A6BD9; margin-left: -5px"></span><span></span></div>
+<div style="height: 34px; border: 2px dashed #8A6BD9; border-top: 0; border-radius: 0 0 14px 14px"></div>
+<div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: -15px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #1B1830; border: 1px solid #8A6BD9; color: #CFC6FF">evaluate_job's own API call · rubric + job · no tools · separate conversation</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #3A1A1D; border: 1px solid #FF7A7A; color: #FFB3B3">↩ '{"rating": "STR…' broken JSON</span>
+</div>
+</div>
+
+<div style="font-size: 13px; color: #9AA4B2; line-height: 1.5; max-width: 900px">In this agent, Claude requests tools and Python runs them. Tools are Python code too: evaluate_job makes its own, separate call to Claude to grade the job (the dashed path). That call has no tools and never sees the main conversation.</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px">
+<span style="padding: 7px 12px; border-radius: 8px; background: #161B22; border: 1px solid #2A313C"><span style="color: #9AA4B2">Executing ·</span> <span style="color: #8DE6B6">Python</span></span>
+<span style="padding: 7px 12px; border-radius: 8px; background: #161B22; border: 1px solid #2A313C"><span style="color: #9AA4B2">Has ·</span> the error from evaluate_job</span>
+<span style="padding: 7px 12px; border-radius: 8px; background: #161B22; border: 1px solid #2A313C"><span style="color: #9AA4B2">Because ·</span> the grader's reply wasn't valid JSON</span>
+<span style="padding: 7px 12px; border-radius: 8px; background: #161B22; border: 1px solid #2A313C"><span style="color: #9AA4B2">Next ·</span> Python calls Claude again</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+
+<section aria-label="Timeline" style="flex: 1 1 280px; max-width: 320px; min-width: 0; background: #161B22; border: 1px solid #2A313C; border-radius: 12px; padding: 16px 0">
+<div style="padding: 0 18px 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2">TIMELINE</div>
+<div style="padding: 6px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #9AA4B2; border-top: 1px solid #2A313C">PASS 1</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #9AA4B2"><span style="width: 8px; height: 8px; border-radius: 50%; background: #5BD69B"></span>Python → Claude: request</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #9AA4B2"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B4A6FF"></span>Claude → Python: tool_use</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #9AA4B2"><span style="width: 8px; height: 8px; border-radius: 50%; background: #5BD69B"></span>Python → Tool: evaluate_job</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px 7px 34px; font-size: 13px; color: #9AA4B2"><span style="width: 8px; height: 8px; border-radius: 50%; background: #F5C28A"></span>Tool → Claude: grade this</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px 7px 34px; font-size: 13px; color: #FF9B9B"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FF7A7A"></span>Claude → Tool: broken JSON</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #FF9B9B"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FF7A7A"></span>Tool → Python: error</div>
+<div style="padding: 6px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #9AA4B2; border-top: 1px solid #2A313C; margin-top: 4px">PASS 2</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 15px; font-size: 13px; font-weight: 500; color: #E6EDF3; background: #1F2630; border-left: 3px solid #F2B84B"><span style="width: 8px; height: 8px; border-radius: 50%; background: #F2B84B"></span>Python adds the error to messages</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #5C6673"><span style="width: 8px; height: 8px; border-radius: 50%; border: 1px solid #5C6673"></span>Python → Claude: request</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 18px; font-size: 13px; color: #5C6673"><span style="width: 8px; height: 8px; border-radius: 50%; border: 1px solid #5C6673"></span>Claude → Python: ?</div>
+</section>
+
+<section aria-label="Step inspector" style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="background: #161B22; border: 1px solid #2A313C; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600">Python sends the error back instead of crashing</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #C9D1D9">The grader's reply couldn't be parsed, so evaluate_job failed. Python turns the failure into the tool's result, marked <span style="font-family: 'JetBrains Mono', monospace; color: #FF9B9B">is_error</span> and tagged with Claude's request ID. On the next call, Claude sees it and decides whether and how to recover.</p>
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #7D8693"><span>Explanation written for this page · not Claude's output</span><a href="#" style="font-size: 13px">Built in issue #4 →</a></div>
+</div>
+
+<div style="background: #161B22; border: 1px solid #2A313C; border-radius: 12px; overflow: hidden">
+<div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #2A313C">
+<button type="button" role="tab" aria-selected="true" style="height: 44px; padding: 0 18px; border: 0; border-bottom: 2px solid #F2B84B; background: transparent; color: #E6EDF3; font-family: Inter, sans-serif; font-size: 13px; font-weight: 500">State change</button>
+<button type="button" role="tab" aria-selected="false" style="height: 44px; padding: 0 18px; border: 0; background: transparent; color: #9AA4B2; font-family: Inter, sans-serif; font-size: 13px">Code</button>
+<button type="button" role="tab" aria-selected="false" style="height: 44px; padding: 0 18px; border: 0; background: transparent; color: #9AA4B2; font-family: Inter, sans-serif; font-size: 13px">Payload</button>
+<button type="button" role="tab" aria-selected="false" style="height: 44px; padding: 0 18px; border: 0; background: transparent; color: #9AA4B2; font-family: Inter, sans-serif; font-size: 13px">Claude's response</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 18px 20px; align-items: stretch">
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9AA4B2"><span>BEFORE · messages[]</span><span>2</span></div>
+<div style="padding: 9px 12px; border-radius: 8px; background: #0B0E13; border: 1px solid #2A313C; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2">[0] user · job posting</div>
+<div style="padding: 9px 12px; border-radius: 8px; background: #0B0E13; border: 1px solid #2A313C; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2">[1] assistant · tool_use toolu_01A</div>
+</div>
+<div style="display: flex; align-items: center; color: #F2B84B; font-size: 20px" aria-hidden="true">→</div>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9AA4B2"><span>AFTER · messages[]</span><span style="color: #F2B84B">3 · +1</span></div>
+<div style="padding: 9px 12px; border-radius: 8px; background: #0B0E13; border: 1px solid #2A313C; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2">[0] user · job posting</div>
+<div style="padding: 9px 12px; border-radius: 8px; background: #0B0E13; border: 1px solid #2A313C; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA4B2">[1] assistant · tool_use toolu_01A</div>
+<div style="padding: 9px 12px; border-radius: 8px; background: #3A1A1D; border: 1px solid #FF7A7A; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #FFB3B3">[2] user · tool_result toolu_01A · is_error</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
