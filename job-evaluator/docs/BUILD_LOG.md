@@ -55,3 +55,28 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Set up the project board and write issues #1–8 with acceptance criteria.
 - Take issue #1 through the full branch → PR → merge loop.
 - I deleted the compensation from the job and the code was running without that all day.
+
+## 2026-11-13
+
+**Broke**
+
+- Issue #31's fix landed on the wrong branch and reached `main` through an
+  unrelated PR.
+  - What happened: Claude Code was working on #31 in the main repo folder,
+    with its changes not yet committed. In that same folder the branch was
+    switched to `main`, then to a new `scenarios-data` branch. Git carries
+    uncommitted changes across a branch switch, so the #31 work moved onto
+    `scenarios-data`, and Claude Code committed it there without noticing the
+    branch had changed.
+  - How it reached `main`: the scenarios were committed on top and opened as
+    PR #39, which merged with the #31 commit inside it. Claude Code had
+    meanwhile rebuilt #31 cleanly in a separate worktree as PR #40, so the
+    same change was now in two places.
+  - How it was closed out: confirmed the commit that reached `main` was
+    identical to #40's (same 9 files, same diff), closed #40 unmerged, and
+    rewrote no history. A `git stash` in between reported "No local changes
+    to save", because the work was already committed: nothing was lost. The
+    D26 approval that only lived in #40 moved to the #32 PR.
+  - Fix going forward: Claude Code always works in its own git worktree
+    (`../agents-worktrees/<branch>`), never in the main repo folder. Added to
+    CLAUDE.md in the #32 PR.
