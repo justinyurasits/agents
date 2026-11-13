@@ -22,14 +22,15 @@ EXPECTED = {
     "agent_starts":       ("final = run_agent(job, recorder=recorder)", "recorder=recorder)", 1),
     "conversation_setup": ('messages = [{"role": "user"', "job_text}\"}]", 1),
     "send_to_claude":     ("response = client.messages.create(", ")", 7),
-    "check_reply":        ('if response.stop_reason == "end_turn":', "return answer", 7),
+    "check_reply":        ('if response.stop_reason == "end_turn":', "return answer", 14),
     "save_turn":          ('messages.append({"role": "assistant"', "})", 1),
     "run_tools":          ("for tool_block in (b for b in response.content", "})", 30),
     "inner_grader":       ("eval_response = client.messages.create(", ")", 6),
     "results_back":       ('messages.append({"role": "user", "content": tool_results})',
                            "tool_results})", 1),
-    "answer_returned":    ('answer = next(b for b in response.content if b.type == "text").text',
-                           ".text", 1),
+    "answer_returned":    ('answer = next((b.text for b in response.content if b.type == "text"), None)',
+                           "None)", 1),
+    "no_final_answer":    ("if answer is None:", "return answer", 4),
     "tool_failed":        ("except Exception as e:", '"is_error": True}', 4),
     "unknown_tool":       ("raise ValueError(", 'for t in tools)}.")', 3),
     "reply_cut_off":      ('if response.stop_reason == "max_tokens":', "return answer", 6),
@@ -83,7 +84,7 @@ class MarkersMatchStepsTest(unittest.TestCase):
 
     def test_four_error_case_steps_exist_with_markers(self):
         for step_id in ("tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
-                        "grader_cut_off", "api_call_failed"):
+                        "grader_cut_off", "api_call_failed", "no_final_answer"):
             with self.subTest(step_id):
                 self.assertIn(step_id, self.step_ids)
                 self.assertIn(step_id, self.markers)

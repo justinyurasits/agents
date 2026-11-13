@@ -32,6 +32,7 @@ It's a small, deliberately visible agent. It was built to learn and demonstrate 
 | Case | Returned string |
 |---|---|
 | Claude finished (`end_turn`) | Claude's final answer (the reply's first text block) |
+| Claude finished but wrote no text (e.g. only a thinking block) | `"Claude finished without writing a final answer."` |
 | Claude's reply hit the token limit | `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` |
 | 10 passes without finishing | `"Stopped after 10 passes without finishing."` |
 | The call to Claude itself failed (network, rate limit, overloaded, bad key) | `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` (no status for network errors) |
@@ -77,7 +78,7 @@ The step-by-step walkthrough, written for someone who has never seen an agent, i
 
 1. Send the system prompt, `tools`, and the **whole** `messages` list to Claude. Claude keeps no memory between calls; this list is the memory. If the call itself fails with an API error, return a message naming the error. **Done.**
 2. Read the reply's `stop_reason`:
-   - `end_turn` → return the reply's first **text** block (found by type, because a thinking block can come first). **Done.**
+   - `end_turn` → return the reply's first **text** block (found by type, because a thinking block can come first), or the no-answer message if it has none. **Done.**
    - `max_tokens` → return the cut-off message. Nothing in the reply is acted on. **Done.**
    - anything else → treated as a tool request. [Known limits](#8-known-limits) covers what that means for unexpected stop reasons.
 3. Append Claude's full reply to `messages` as the assistant turn.
@@ -133,8 +134,9 @@ Every check in `agent.py` that exists to keep a run from crashing, hanging, or a
 | **Cut-off reply, main loop** (`stop_reason == "max_tokens"` in `run_agent`) | Claude #1's reply hit `MAX_TOKENS` | Returns `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` Nothing in the reply runs, not even a tool request. | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_main_loop_reply_*` |
 | **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
 | **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
+| **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18 and #30 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30 and #31 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -174,7 +176,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `model`, `limits` | `claude-sonnet-5-5`; `{"max_passes": 10, "max_tokens": 2000}` |
 | `tools` | The full tool definitions, stored once |
 | `events` | One per step, in order (below) |
-| `result` | `{"ended_by": "end_turn" \| "max_tokens" \| "pass_cap" \| "api_error", "text": …}`: what `run_agent` returned |
+| `result` | `{"ended_by": "end_turn" \| "max_tokens" \| "pass_cap" \| "api_error" \| "no_text", "text": …}`: what `run_agent` returned |
 
 ### Events
 
@@ -190,7 +192,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `inner_grader` | `inner_api_request` (tool → claude) | Same shape as `api_request`, with `system` = `RUBRIC` and `tools` = `[]`. `parent` = the `evaluate_job` tool_call. |
 | `inner_grader` | `inner_api_response` (claude → tool) | Same shape as `api_response`, with `tokens`. `parent` = the `evaluate_job` tool_call. |
 | `run_tools` | `tool_result` (tool → python) | `tool`, `tool_use_id`, `is_error`, `content`. For an unknown tool, `actor` is `python` and `crossing` is `null`: no tool ran, Python itself answers. |
-| `answer_returned` / `reply_cut_off` / `pass_cap` / `api_call_failed` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
+| `answer_returned` / `reply_cut_off` / `pass_cap` / `api_call_failed` / `no_final_answer` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
 
 Content blocks are stored exactly as the API returned them (`model_dump()`), except that thinking blocks drop their opaque `signature`. Data is converted when the event is recorded, so later changes to `messages` can't alter it.
 
@@ -213,6 +215,7 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 | `max_tokens` (grader) | Every grader reply, with `parent` | `inner_grader` → `grader_cut_off` | the stop reason | `error_raised`, the cut-off text |
 | `api_call_succeeded` | Every outer call to Claude | `send_to_claude` → `api_call_failed` | error type when caught | `run_stopped`, the API-error message |
 | `tool_succeeded` | Every tool that ran | `run_tools` → `tool_failed` | exception type when caught | `error_sent_to_claude`, `"<Type>: <message>"` |
+| `final_text_present` | Every `end_turn` reply | `answer_returned` → `no_final_answer` | `"text"`, or `null` when caught | `run_stopped`, the no-answer message |
 
 So a grader that's cut off shows two caught guards in order: `max_tokens` (`grader_cut_off`), then `tool_succeeded` (`tool_failed`) with the same text. An unknown tool shows only `tool_exists`, because no tool ran. A run that hits a guarded stop ends with the caught guard, then the final event.
 
@@ -243,7 +246,6 @@ The `print` lines are still there for following a run live, one line per event. 
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
 - **Unexpected `stop_reason`** (e.g. `refusal`). Anything other than `end_turn` or `max_tokens` goes to the tool dispatch. With no tool requests in the reply, an empty user message is sent; the API will most likely reject it, and the run fails with an API error. This comes from reading the code; it hasn't been reproduced live. → [#21](https://github.com/justinyurasits/agents/issues/21)
-- **`end_turn` with no text block** would raise `StopIteration` from the final `next(...)`. Not seen in practice. → [#31](https://github.com/justinyurasits/agents/issues/31)
 - **The grader's JSON isn't validated.** Whatever object the grader returns is passed on as the result. A missing `rating`, or a value other than the three ratings, isn't caught. → [#32](https://github.com/justinyurasits/agents/issues/32)
 - **Hard rules live in the prompt** ($180K floor, remote). See [section 6](#6-rules-in-code-vs-prompt). No issue yet.
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
