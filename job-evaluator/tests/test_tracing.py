@@ -44,6 +44,7 @@ CLEAN_SEQUENCE = [
     (1, "inner_grader", "inner_api_request"),
     (1, "inner_grader", "inner_api_response"),
     (1, "inner_grader", ("guard", "max_tokens")),
+    (1, "inner_grader", ("guard", "grade_valid")),
     (1, "run_tools", ("guard", "tool_succeeded")),
     (1, "run_tools", "tool_result"),
     (1, "results_back", None),
@@ -102,7 +103,8 @@ class CleanRunTest(TraceTestCase):
         with open(code_refs.AGENT_PATH.replace("agent.py", "docs/STEPS.md"), encoding="utf-8") as f:
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
         not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
-                            "grader_cut_off", "api_call_failed", "no_final_answer"}
+                            "grader_cut_off", "api_call_failed", "no_final_answer",
+                            "invalid_grade"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
 
     def test_seq_and_ids(self):

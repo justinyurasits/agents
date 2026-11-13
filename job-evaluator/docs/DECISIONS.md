@@ -319,7 +319,7 @@ recorder and parent explicitly.
 
 ## D26 — A failed call to Claude stops the run with the error's type only
 
-**Status:** **Proposed** (issue #30)
+**Status:** **Approved** (issue #30, PR #38)
 **Date:** 2026-11-13
 **Options:** let the exception crash the run · retry · stop and return a
 message (with the error's text, or with only its type and status)

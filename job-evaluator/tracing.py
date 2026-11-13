@@ -274,6 +274,13 @@ class Recorder:
                           action="error_raised" if caught else None,
                           message=message, parent=self._call)
 
+    def grade_checked(self, problem):
+        caught = problem is not None
+        return self.guard("invalid_grade" if caught else "inner_grader", "grade_valid",
+                          "rating is one of the three and reasons is a list of strings",
+                          problem, caught, action="error_raised" if caught else None,
+                          message=problem, parent=self._call)
+
     # --- the end of the run ---------------------------------------------
 
     def end(self, ended_by, text, value=None):

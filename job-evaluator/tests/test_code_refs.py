@@ -35,6 +35,7 @@ EXPECTED = {
     "unknown_tool":       ("raise ValueError(", 'for t in tools)}.")', 3),
     "reply_cut_off":      ('if response.stop_reason == "max_tokens":', "return answer", 6),
     "api_call_failed":    ("except anthropic.APIError as e:", "return answer", 10),
+    "invalid_grade":      ("if problem:", "raise ValueError(problem)", 2),
     "grader_cut_off":     ('if eval_response.stop_reason == "max_tokens":', 'of {MAX_TOKENS}).")', 3),
     "pass_cap":           ('answer = f"Stopped after {MAX_PASSES} passes without finishing."',
                            'finishing."', 1),
@@ -84,7 +85,8 @@ class MarkersMatchStepsTest(unittest.TestCase):
 
     def test_four_error_case_steps_exist_with_markers(self):
         for step_id in ("tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
-                        "grader_cut_off", "api_call_failed", "no_final_answer"):
+                        "grader_cut_off", "api_call_failed", "no_final_answer",
+                        "invalid_grade"):
             with self.subTest(step_id):
                 self.assertIn(step_id, self.step_ids)
                 self.assertIn(step_id, self.markers)

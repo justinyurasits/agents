@@ -75,6 +75,32 @@ WORTH REVIEWING: meets two of the three.
 IGNORE: meets one or none.
 Respond with JSON only: {"rating": "...", "reasons": ["...", "..."]}"""
 
+# The only ratings the grader may give. A fixed rule, so it's checked in code
+# (CLAUDE.md), not left to the prompt.
+RATINGS = ("STRONG", "WORTH REVIEWING", "IGNORE")
+
+
+def grade_problem(grade):
+    """What's wrong with the grader's parsed JSON, or None if it's valid.
+
+    Valid means: an object with `rating` (one of RATINGS) and `reasons` (a
+    list of strings). Other keys are allowed. Pure function, no API call.
+    """
+    if not isinstance(grade, dict):
+        return f"The grader's reply is a JSON {type(grade).__name__}, not an object."
+    if "rating" not in grade:
+        return "The grader's reply has no 'rating'."
+    if grade["rating"] not in RATINGS:
+        return (f"The grader's rating {grade['rating']!r} isn't one of "
+                f"{', '.join(RATINGS)}.")
+    if "reasons" not in grade:
+        return "The grader's reply has no 'reasons'."
+    reasons = grade["reasons"]
+    if not isinstance(reasons, list) or not all(isinstance(r, str) for r in reasons):
+        return "The grader's 'reasons' isn't a list of strings."
+    return None
+
+
 # A reply wrapped in a markdown code fence: ``` or ```json, then the JSON,
 # then a closing ```. The (.*?) group captures just the JSON in between.
 _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
@@ -124,7 +150,15 @@ def evaluate_job(company, role_title, job_description,
 
     # Claude sometimes wraps the JSON in ```json fences; json.loads can't
     # read those, so strip them first.
-    return json.loads(strip_json_fences(raw))
+    grade = json.loads(strip_json_fences(raw))
+    # Valid JSON isn't enough: check it's a real rating before passing it on.
+    # A problem goes back to Claude as a tool error, like any other (#8).
+    problem = grade_problem(grade)
+    rec.grade_checked(problem)
+    # STEP: invalid_grade
+    if problem:
+        raise ValueError(problem)
+    return grade
 
 
 def flag_for_review(company, role_title, missing_info):

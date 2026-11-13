@@ -18,13 +18,13 @@ with mock.patch("dotenv.load_dotenv"), \
     import agent
 
 
-EXPECTED = {"rating": "STRONG"}
+EXPECTED = {"rating": "STRONG", "reasons": ["remote"]}
 
 # The three reply shapes from issue #2.
 REPLIES = {
-    "json_fence":  '```json\n{"rating": "STRONG"}\n```',
-    "bare_fence":  '```{"rating": "STRONG"}\n```',
-    "plain_json":  '{"rating": "STRONG"}',
+    "json_fence":  '```json\n{"rating": "STRONG", "reasons": ["remote"]}\n```',
+    "bare_fence":  '```{"rating": "STRONG", "reasons": ["remote"]}\n```',
+    "plain_json":  '{"rating": "STRONG", "reasons": ["remote"]}',
 }
 
 

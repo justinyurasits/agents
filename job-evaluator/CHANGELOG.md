@@ -20,6 +20,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Trace `evaluate_job`'s grader call (with `parent` = its tool call) and every guard check (pass count, stop reason, max_tokens in the loop and the grader, tool exists, tool succeeded); add step E5 `grader_cut_off`; every event has `injected: false` (#29).
 - When the call to Claude itself fails (network, timeout, rate limit, overloaded, server error, bad key), stop the run and return a message naming the error type and status instead of crashing; new step E6 `api_call_failed` and an `api_call_succeeded` guard in the trace (#30).
 - When Claude finishes with no text in its reply (e.g. only thinking), return "Claude finished without writing a final answer." instead of crashing with `StopIteration`; new step E7 `no_final_answer` and a `final_text_present` guard in the trace (#31).
+- Check the grader's JSON before returning it: a rating outside STRONG / WORTH REVIEWING / IGNORE, missing or non-list `reasons`, or JSON that isn't an object becomes an `is_error` tool result naming the problem; new step E8 `invalid_grade` and a `grade_valid` guard in the trace (#32).
 - Restore compensation in the sample job. Used a fictional company.
 
 ## 0.1.0 — 2026-11-11

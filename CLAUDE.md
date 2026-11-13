@@ -11,6 +11,11 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
 ## How work happens
 
 - Work only from a GitHub issue. Read it first: `gh issue view <N>`.
+- Always work in a separate git worktree, never in Justin's main repo
+  folder (`~/Documents/agents`): `git worktree add
+  ../agents-worktrees/<branch> -b <branch> origin/main`. He may be using
+  the main folder at the same time, and a branch switch there carries
+  uncommitted work onto the wrong branch.
 - Read the agent's docs/SPEC.md and docs/STEPS.md before changing code.
 - One issue per branch, one branch per PR.
 - Branch name: `issue-<N>-<short-description>`, e.g. `issue-4-strip-json-fences`.
