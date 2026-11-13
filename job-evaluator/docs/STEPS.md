@@ -108,7 +108,7 @@ Step id: `answer_returned`
 
 Python takes Claude's final text and hands it back as the result. The loop
 ends.
-Code: `# STEP: answer_returned` in agent.py (`answer = next(b for b in response.content if b.type == "text").text`)
+Code: `# STEP: answer_returned` in agent.py (`answer = next((b.text for b in response.content if b.type == "text"), None)`)
 
 ## WHEN SOMETHING GOES WRONG
 
@@ -164,3 +164,12 @@ Python's call to Claude failed before any reply came back: the network was
 down, the service was busy, or the API key was wrong. With no reply to act on,
 Python stops the run and says which error it was.
 Code: `# STEP: api_call_failed` in agent.py (`except anthropic.APIError as e:`)
+
+### E7. Claude finishes without an answer
+
+Step id: `no_final_answer`
+
+Claude said it was done, but its reply had no text in it, for example only
+its thinking. Python returns a message saying there was no final answer
+instead of crashing at the very last step.
+Code: `# STEP: no_final_answer` in agent.py (`if answer is None:`)
