@@ -229,19 +229,20 @@ So a grader that's cut off shows two caught guards in order: `max_tokens` (`grad
 
 ### Terminal output
 
-The `print` lines are still there for following a run live, one line per event. Its `[step N]` numbers are an older numbering that matches neither STEPS.md nor the step markers; the trace from #1 uses step ids instead.
+The `print` lines are still there for following a run live, one line per event. Each starts with the **step id** in brackets, the same id as STEPS.md, the `# STEP:` markers and the trace (#44). In `agent.py` every print is tagged `# (terminal only)`: it shows what's happening and changes nothing.
 
 | Line | When |
 |---|---|
-| `[step 1] messages has 1 item` | Start |
-| `[step 2]` / `[step 9] outer API call, sending N message(s)` | Each outer call (2 = first, 9 = later) |
-| `[step 4/10] stop_reason = …`, then one `text:` or `tool_use: id=… name=…` line per text or tool_use block | Each reply (thinking blocks aren't printed) |
-| `[step 5] appended assistant turn …` | Before dispatch |
-| `[step 6] dispatching <tool>(**{…})`, and `[step 6] <tool> raised → <Type>: <message>` on failure | Each tool |
-| `  [step 7] …` (indented) | Inside `evaluate_job`'s grader call |
-| `[step 8] appended N tool_result(s) (ids: …[ is_error]) …` | After the tools run |
-| `[step 11] end_turn → done. Outer calls: N …` | Normal finish |
-| `[stop] max_tokens → …` / `[cap] 10 outer calls without end_turn → stopping.` | Guarded stops |
+| `[conversation_setup] messages has 1 item` | Start |
+| `[send_to_claude] pass N: sending N message(s)` | Each outer call |
+| `[claude_decides] stop_reason = …`, then one `text:` or `tool_use: id=… name=…` line per text or tool_use block | Each reply (thinking blocks aren't printed) |
+| `[claude_done] end_turn → done. Outer calls: N …` | Normal finish |
+| `[save_turn] appended assistant turn …` | Before dispatch |
+| `[run_tools] dispatching <tool>(**{…})` | Each tool |
+| `[tool_failed] <tool> raised → <Type>: <message>` | A tool failed (E1) |
+| `  [inner_grader] …` (indented) | Inside `evaluate_job`'s grader call |
+| `[results_back] appended N tool_result(s) (ids: …[ is_error]) …` | After the tools run |
+| `[reply_cut_off] …` / `[pass_cap] …` / `[api_call_failed] …` | Guarded stops (E3, E4, E6) |
 
 ---
 

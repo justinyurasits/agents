@@ -22,6 +22,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - When Claude finishes with no text in its reply (e.g. only thinking), return "Claude finished without writing a final answer." instead of crashing with `StopIteration`; new step E7 `no_final_answer` and a `final_text_present` guard in the trace (#31).
 - Check the grader's JSON before returning it: a rating outside STRONG / WORTH REVIEWING / IGNORE, missing or non-list `reasons`, or JSON that isn't an object becomes an `is_error` tool result naming the problem; new step E8 `invalid_grade` and a `grade_valid` guard in the trace (#32).
 - Accept the grader's rating in any case (`"strong"`, `"Worth Reviewing"`) and return it in uppercase (#42).
+- Annotate agent.py as a guided tour: a map of the loop, `(terminal only)` / `(trace only)` tags on every print and recording line, a `GUARD (E<n> …)` label on every guard, examples of what `messages` and content blocks look like, and notes on Python idioms. Terminal output now uses step ids (`[send_to_claude]`) instead of `[step N]` (#44).
 - Restore compensation in the sample job. Used a fictional company.
 
 ## 0.1.0 — 2026-11-11
