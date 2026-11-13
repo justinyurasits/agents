@@ -17,7 +17,7 @@ Python runs the requested tool, appends the request + tool_result, sends again
 ```
 
 Tools:
-- `evaluate_job` — makes a separate, focused Claude call with the rating rubric and returns `{rating, reasons}`
+- `evaluate_job` — checks the hard rules in code first (remote, $180K base floor; a posting that fails one is IGNORE), then makes a separate, focused Claude call that answers one yes/no question, and returns `{rating, reasons}`
 - `flag_for_review` — plain Python, no model call; returns what's missing
 
 See [docs/SPEC.md](docs/SPEC.md) for the full spec.

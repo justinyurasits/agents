@@ -59,8 +59,13 @@ class InnerCallTest(TraceTestCase):
     def test_only_events_inside_a_tool_have_a_parent(self):
         _, rec = self.record(outer=one_tool_then_done("toolu_1", "evaluate_job", EVAL_INPUT),
                              inner=[fakes.reply(fakes.text(GRADE))])
-        parented = {e["step_id"] for e in rec.events if e["parent"]}
-        self.assertEqual(parented, {"inner_grader"})
+        parented = {(e["step_id"], kind(e)) for e in rec.events if e["parent"]}
+        # The hard rules, and the grader's call and checks after them.
+        self.assertEqual(parented, {("inner_grader", "inner_api_request"),
+                                    ("inner_grader", "inner_api_response"),
+                                    ("inner_grader", ("guard", "max_tokens")),
+                                    ("inner_grader", ("guard", "grade_valid")),
+                                    ("hard_screen", None)})
 
     def test_evaluate_job_outside_a_run_records_nothing(self):
         _, rec = self.record(outer=[fakes.reply(fakes.text(FINAL))])
@@ -139,7 +144,7 @@ class CaughtGuardTest(TraceTestCase):
 
     def test_grader_reply_cut_off(self):
         _, rec = self.record(outer=one_tool_then_done("toolu_1", "evaluate_job", EVAL_INPUT),
-                             inner=[fakes.reply(fakes.text('{"rating": "STR'), stop_reason="max_tokens")])
+                             inner=[fakes.reply(fakes.text('{"answer": "ye'), stop_reason="max_tokens")])
         call = next(e for e in rec.events if kind(e) == "tool_call")
         grader = next(e for e in guards(rec, "max_tokens", caught=True))
         self.assertEqual(grader["step_id"], "grader_cut_off")

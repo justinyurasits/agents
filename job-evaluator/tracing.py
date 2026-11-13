@@ -224,7 +224,7 @@ class Recorder:
     # --- guards -----------------------------------------------------------
     # Every check the loop or a tool makes records a guard event, whether or
     # not it caught anything. `caught` is true only when something went
-    # wrong; then the event uses the error-case step (STEPS.md, E1–E5).
+    # wrong; then the event uses the error-case step (STEPS.md, E1–E8).
 
     def guard(self, step_id, name, checked, value, caught,
               action=None, message=None, parent=None, injected=False):
@@ -300,6 +300,20 @@ class Recorder:
                           payload={"stop_reason": response.stop_reason,
                                    "content": response.content},
                           tokens=tokens, parent=self._call)
+
+    # --- rules (#26, D28) ------------------------------------------------
+    # A rule applies one of Justin's decisions; it isn't a guard. Failing it
+    # is the agent working as intended, so it's a normal event (no `guard`,
+    # no `caught`) at a normal step, with the outcome in the payload.
+
+    def rule_checked(self, rule):
+        """One hard rule in evaluate_job, before the rating call. `outcome`
+        is passed, failed or skipped; a skipped rule's value is what it
+        couldn't read (e.g. "competitive")."""
+        return self.event("hard_screen", "python", parent=self._call,
+                          payload={"rule": rule["name"], "checked": rule["checked"],
+                                   "value": rule["value"], "outcome": rule["outcome"],
+                                   "note": rule["note"]})
 
     def grader_checked(self, stop_reason):
         caught = stop_reason == "max_tokens"

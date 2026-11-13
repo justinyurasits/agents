@@ -47,7 +47,7 @@ class NeverFinishingClaude:
             self.outer_calls += 1
             return tool_use_reply(self.outer_calls, self.tool_name, self.tool_input)
         self.inner_calls += 1
-        return text_response('{"rating": "STRONG", "reasons": ["x"]}')
+        return text_response('{"answer": "yes", "reasons": ["x"]}')
 
 
 class LoopCapTest(FakeClientTestCase):

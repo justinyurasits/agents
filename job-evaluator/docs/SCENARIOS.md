@@ -152,7 +152,7 @@ Remote within the US. Salary and benefits discussed during interviews.
 
 ### 5. Hard screen in code
 
-**What the visitor sees:** Base pay is below the floor, so a rule in code rejects the posting before Claude is ever asked.
+**What the visitor sees:** Base pay is below the floor, so a rule in code rejects the posting before the grader is ever asked.
 
 ```text
 Tallowmere Robotics — AI Product Manager
@@ -176,9 +176,9 @@ What you bring:
 Fully remote in the US. Base salary $140,000–$165,000 plus equity.
 ```
 
-**Expected tools:** none (no tool runs)
+**Expected tools:** evaluate_job (stops at the hard screen)
 
-**Expected outcome:** Rejected by a hard screen in code: base pay is below the $180K floor. No API call is made.
+**Expected outcome:** Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.
 
 ## Break the agent (fault injected on purpose, labeled on the page)
 

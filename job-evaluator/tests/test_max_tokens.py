@@ -96,7 +96,7 @@ class MaxTokensTest(FakeClientTestCase):
     def test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json(self):
         final, fake = self.run_recording([
             tool_use_reply("toolu_1", "evaluate_job", EVAL_INPUT),           # outer 1
-            text_response('{"rating": "STRONG", "reasons": ["Remote, $2',     # inner
+            text_response('{"answer": "yes", "reasons": ["Builds LLM ag',     # inner
                           stop_reason="max_tokens"),
             text_response("The grader was cut off."),                         # outer 2
         ])
@@ -115,7 +115,7 @@ class MaxTokensTest(FakeClientTestCase):
     def test_normal_run_is_unaffected(self):
         final, fake = self.run_recording([
             tool_use_reply("toolu_1", "evaluate_job", EVAL_INPUT),
-            text_response('{"rating": "STRONG", "reasons": ["x"]}'),   # end_turn
+            text_response('{"answer": "yes", "reasons": ["x"]}'),   # end_turn
             text_response("Rated STRONG."),
         ])
 
@@ -131,7 +131,7 @@ class MaxTokensTest(FakeClientTestCase):
         with mock.patch.object(agent, "MAX_TOKENS", 123):
             _, fake = self.run_recording([
                 tool_use_reply("toolu_1", "evaluate_job", EVAL_INPUT),
-                text_response('{"rating": "STRONG", "reasons": ["x"]}'),
+                text_response('{"answer": "yes", "reasons": ["x"]}'),
                 text_response("Rated STRONG."),
             ])
 
