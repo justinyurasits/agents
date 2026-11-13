@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside the agent loop</title>
+<!-- Page v0 (#57): replays one recorded run. Everything on it comes from the
+     recording (../recordings/) and steps.json (built from docs/STEPS.md by
+     build_steps.py). No framework, no build step, no requests except this
+     page's own files. Serve job-evaluator/ and open /site/:
+         python -m http.server 8000   then open localhost:8000/site/ -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <div class="title">
+    <div class="eyebrow" id="eyebrow">LOADING…</div>
+    <h1>Inside the agent loop</h1>
+  </div>
+  <div class="controls">
+    <button type="button" class="btn icon" id="back" aria-label="Previous step">‹</button>
+    <button type="button" class="btn primary" id="play">▶ Play</button>
+    <button type="button" class="btn icon" id="next" aria-label="Next step">›</button>
+    <button type="button" class="btn" id="speed" aria-label="Playback speed">1×</button>
+  </div>
+</header>
+
+<section class="map" aria-label="Execution map">
+  <div class="map-head"><span>EXECUTION MAP · LINEAR</span><span id="map-status"></span></div>
+
+  <div class="map-row">
+    <div class="box claude" id="box-claude">
+      <div class="box-head"><span class="box-name">Claude</span><span class="box-status" id="status-claude"></span></div>
+      <div class="box-role">decides · never runs code</div>
+      <div class="box-desc">Main conversation: picks a tool or finishes. Also answers evaluate_job's separate call.</div>
+    </div>
+
+    <div class="gap">
+      <div class="arrow" id="arrow-api_request" data-dir="left"></div>
+      <div class="arrow" id="arrow-api_response" data-dir="right"></div>
+    </div>
+
+    <div class="box python" id="box-python">
+      <div class="box-head"><span class="box-name">Python</span><span class="box-status" id="status-python"></span></div>
+      <div class="box-role">the agent loop</div>
+      <div class="box-desc">Calls Claude, runs tools, holds the messages.</div>
+      <div class="guards" id="guards" aria-label="Guards"></div>
+    </div>
+
+    <div class="gap">
+      <div class="arrow" id="arrow-tool_call" data-dir="right"></div>
+      <div class="arrow" id="arrow-tool_result" data-dir="left"></div>
+    </div>
+
+    <div class="box tools" id="box-tool">
+      <div class="box-head"><span class="box-name">Tools</span><span class="box-status" id="status-tool"></span></div>
+      <div class="box-role">Python functions</div>
+      <div class="box-desc">Do the work. evaluate_job calls Claude itself to grade the job.</div>
+    </div>
+  </div>
+
+  <div class="inner" id="inner">
+    <div class="inner-heads"><span class="inner-head"></span><span></span></div>
+    <div class="inner-path"></div>
+    <div class="inner-tags">
+      <span class="tag inner-desc">evaluate_job's own API call · rubric + job · no tools · separate conversation</span>
+      <span class="tag" id="inner-tag" hidden></span>
+    </div>
+  </div>
+
+  <div class="map-caption">In this agent, Claude requests tools and Python runs them. Tools are Python code too: evaluate_job makes its own, separate call to Claude to grade the job (the dashed path). That call has no tools and never sees the main conversation.</div>
+</section>
+
+<div class="facts" id="facts">
+  <span class="fact"><span class="k">Executing ·</span> <span id="fact-executing"></span></span>
+  <span class="fact"><span class="k">Has ·</span> <span id="fact-has"></span></span>
+  <span class="fact"><span class="k">Because ·</span> <span id="fact-because"></span></span>
+  <span class="fact"><span class="k">Next ·</span> <span id="fact-next"></span></span>
+</div>
+
+<div class="lower">
+  <section class="timeline" aria-label="Timeline">
+    <div class="timeline-head">TIMELINE</div>
+    <div class="timeline-list" id="timeline"></div>
+  </section>
+
+  <section class="inspector" aria-label="Step inspector">
+    <div class="card explain">
+      <div class="explain-top">
+        <span class="step-num" id="step-num"></span>
+        <span class="sim" id="sim" hidden>Simulated failure</span>
+      </div>
+      <h2 id="step-title"></h2>
+      <p id="step-text"></p>
+      <div class="explain-foot"><span>Written for this page · not Claude's output</span><span>from docs/STEPS.md</span></div>
+    </div>
+
+    <div class="card tabs-card">
+      <div role="tablist" class="tabs" id="tabs">
+        <button type="button" role="tab" data-tab="state" aria-selected="true">State change</button>
+        <button type="button" role="tab" data-tab="code" aria-selected="false">Code</button>
+        <button type="button" role="tab" data-tab="payload" aria-selected="false">Payload</button>
+        <button type="button" role="tab" data-tab="claude" aria-selected="false">Claude's response</button>
+      </div>
+      <div class="tab-body" id="tab-body" role="tabpanel"></div>
+    </div>
+  </section>
+</div>
+
+<p class="error" id="load-error" hidden></p>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

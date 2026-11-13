@@ -444,3 +444,33 @@ exact count would mismatch on Claude's choice rather than on a wrong path.
 Scenario 6 promises "retries or explains", so both are a PASS.
 **What would change it:** the page needing a finer check (e.g. the number of
 retries), or postings that must be evaluated in separate runs.
+
+## D31 — Page v0: how the page is served, and what it shows where
+
+**Status:** **Proposed** (issue #57)
+**Date:** 2026-11-13
+**Options:** put the page at the repo root or in `job-evaluator/site/` · copy
+the recording into `site/` or read it where it is · load Inter and JetBrains
+Mono from Google Fonts, ship the font files, or use them only when installed ·
+show every event in the timeline or only the crossings · show Claude's words
+wherever they occur, or only under "Claude's response"
+**Decision:** the page lives in `job-evaluator/site/` and is served from
+`job-evaluator/`, so it reads `../recordings/` and `../scenarios/` directly,
+with no copies to keep in sync. Fonts are used when installed and fall back to
+system fonts; nothing is downloaded. The timeline lists every event (47 in
+scenario 6), so Play visibly steps through all of them. Claude's prose (text,
+thinking, final answer, the grader's reply) appears only under "Claude's
+response"; in Payload it's replaced with a pointer to that tab. Tool requests
+(names, IDs, arguments) count as data and show in both. The map caption and the
+three box descriptions from the mockup are kept as fixed text, labelled
+"Written for this page"; step explanations come only from steps.json.
+**Reasoning:** the issue requires no requests except the page's own files,
+which rules out Google Fonts; shipping font files would add assets nobody asked
+for. A timeline that skipped guard and rule events would hide the steps the
+page exists to show. Keeping Claude's words in one place makes it plain what
+Claude wrote and what the page wrote.
+**What would change it:** GitHub Pages (M5) serving only `site/` (then the
+recording is copied in at publish time), the fonts mattering enough to ship
+them, or the timeline being too long once the other scenarios are added (then
+group the checks under each step).
+

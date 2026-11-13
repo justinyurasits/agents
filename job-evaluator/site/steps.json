@@ -1,0 +1,132 @@
+{
+  "source": "docs/STEPS.md",
+  "generated_by": "build_steps.py: edit docs/STEPS.md, then rerun it",
+  "steps": {
+    "agent_starts": {
+      "number": "1",
+      "title": "The agent starts",
+      "text": "A job posting is handed to the agent, which starts the loop.",
+      "error": false
+    },
+    "conversation_setup": {
+      "number": "2",
+      "title": "The conversation is set up",
+      "text": "Python creates the conversation Claude will see. It starts with one message: the job to evaluate.",
+      "error": false
+    },
+    "send_to_claude": {
+      "number": "3",
+      "title": "Python sends the conversation to Claude",
+      "text": "Python sends Claude the whole conversation so far, plus instructions and a list of tools it may ask for. Claude keeps no memory between calls, so everything goes every time.",
+      "error": false
+    },
+    "claude_decides": {
+      "number": "4",
+      "title": "Claude decides what to do",
+      "text": "Claude reads the job and the tool descriptions, then decides: ask for a tool, or answer directly. This happens on Anthropic's servers. Claude can't run anything itself; it can only send back a request.",
+      "error": false
+    },
+    "check_reply": {
+      "number": "5",
+      "title": "Python checks Claude's reply",
+      "text": "Every reply carries a label saying why Claude stopped: \"I want a tool run,\" \"I'm done,\" or \"I ran out of room.\" Python reads the label to decide what happens next; a reply that ran out of room is unfinished, so Python stops there.",
+      "error": false
+    },
+    "save_turn": {
+      "number": "6",
+      "title": "Python saves Claude's turn",
+      "text": "Claude's request is added to the conversation, so the next call shows Claude what it already asked for. The request carries an ID that the answer will have to match.",
+      "error": false
+    },
+    "run_tools": {
+      "number": "7",
+      "title": "Python runs the tool Claude asked for",
+      "text": "Python finds each tool request in Claude's reply and runs the matching function with the details Claude filled in. Claude can ask for more than one tool at once; Python runs them one after another.",
+      "error": false
+    },
+    "hard_screen": {
+      "number": "7a",
+      "title": "Inside evaluate_job: code checks your hard rules",
+      "text": "Before any rating call, code checks the fixed rules: the role must be remote, and its lowest base salary must be at least $180K. A posting that breaks one is rated IGNORE right here and the grader is never asked; a rule that can't be checked (no salary given, say) is skipped, not failed. This is a rule working as intended, not an error.",
+      "error": false
+    },
+    "inner_grader": {
+      "number": "7b",
+      "title": "Inside evaluate_job: a second Claude grades the job",
+      "text": "This tool asks a separate Claude call one question that needs judgment: does this role build hands-on AI experience? It answers yes or no, and code turns that into the rating (yes: STRONG, no: WORTH REVIEWING). It's a one-off question with no tools and no loop.",
+      "error": false
+    },
+    "results_back": {
+      "number": "8",
+      "title": "The result goes back into the conversation",
+      "text": "Python adds the tools' results to the conversation in one message. Each result is tagged with the same ID as the request it answers, so Claude knows which is which. Then the loop goes back to step 3.",
+      "error": false
+    },
+    "claude_done": {
+      "number": "9",
+      "title": "Claude says it's done",
+      "text": "On the next pass, Claude sees the result, decides nothing else is needed, and writes its final answer. The label on the reply now says \"I'm done.\"",
+      "error": false
+    },
+    "answer_returned": {
+      "number": "10",
+      "title": "The answer comes back",
+      "text": "Python takes Claude's final text and hands it back as the result. The loop ends.",
+      "error": false
+    },
+    "tool_failed": {
+      "number": "E1",
+      "title": "A tool fails",
+      "text": "A tool raised an error instead of returning a result. Python doesn't crash: it sends the error back to Claude as that tool's result, marked as an error, and Claude decides what to do next.",
+      "error": true
+    },
+    "unknown_tool": {
+      "number": "E2",
+      "title": "Claude asks for a tool that doesn't exist",
+      "text": "Claude asked for a tool name that isn't defined. Python answers with an error that names it and lists the real tools, so Claude can pick again.",
+      "error": true
+    },
+    "reply_cut_off": {
+      "number": "E3",
+      "title": "Claude's reply is cut off",
+      "text": "Claude's reply hit the length limit and stopped part-way. Python won't act on an unfinished reply, so it ends the run and says the reply was cut off.",
+      "error": true
+    },
+    "pass_cap": {
+      "number": "E4",
+      "title": "Too many passes",
+      "text": "Claude still hasn't finished after 10 trips around the loop. Python stops the run so a stuck agent can't loop, and spend money, forever.",
+      "error": true
+    },
+    "grader_cut_off": {
+      "number": "E5",
+      "title": "The grader's reply is cut off",
+      "text": "Inside evaluate_job, the grader's reply hit the length limit before its rating was complete. The tool reports that it was cut off, rather than \"invalid JSON,\" and the error goes back to Claude like any tool failure (E1).",
+      "error": true
+    },
+    "api_call_failed": {
+      "number": "E6",
+      "title": "The call to Claude fails",
+      "text": "Python's call to Claude failed before any reply came back: the network was down, the service was busy, or the API key was wrong. With no reply to act on, Python stops the run and says which error it was.",
+      "error": true
+    },
+    "no_final_answer": {
+      "number": "E7",
+      "title": "Claude finishes without an answer",
+      "text": "Claude said it was done, but its reply had no text in it, for example only its thinking. Python returns a message saying there was no final answer instead of crashing at the very last step.",
+      "error": true
+    },
+    "invalid_grade": {
+      "number": "E8",
+      "title": "The grader's rating isn't valid",
+      "text": "The grader's reply was valid JSON but not a real answer: an answer that isn't yes or no, missing reasons, or the wrong shape. The tool reports exactly what was wrong, and the error goes back to Claude like any tool failure (E1).",
+      "error": true
+    },
+    "unexpected_stop": {
+      "number": "E9",
+      "title": "Claude stops for a reason the agent doesn't handle",
+      "text": "Claude's reply carries a label this agent has no plan for, for example \"refusal\" (Claude declined to answer). Python won't guess what to do with it, so it stops the run and says which label it was.",
+      "error": true
+    }
+  }
+}

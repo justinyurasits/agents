@@ -41,7 +41,7 @@ Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `sc
 | 10 passes without finishing | `"Stopped after 10 passes without finishing."` |
 | The call to Claude itself failed (network, rate limit, overloaded, bad key) | `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` (no status for network errors) |
 
-The cases where it raises an exception instead of returning are in [Known limits](#8-known-limits).
+The cases where it raises an exception instead of returning are in [Known limits](#9-known-limits).
 
 ---
 
@@ -90,7 +90,7 @@ The step-by-step walkthrough, written for someone who has never seen an agent, i
 2. Read the reply's `stop_reason`:
    - `end_turn` → return the reply's first **text** block (found by type, because a thinking block can come first), or the no-answer message if it has none. **Done.**
    - `max_tokens` → return the cut-off message. Nothing in the reply is acted on. **Done.**
-   - anything else → treated as a tool request. [Known limits](#8-known-limits) covers what that means for unexpected stop reasons.
+   - anything else → treated as a tool request. [Known limits](#9-known-limits) covers what that means for unexpected stop reasons.
 3. Append Claude's full reply to `messages` as the assistant turn.
 4. Run **every** `tool_use` block in the reply, in order, each inside its own `try / except`.
 5. Append **one** user message holding one `tool_result` per request, each carrying that request's `tool_use_id`.
@@ -315,7 +315,35 @@ The `print` lines are still there for following a run live, one line per event. 
 
 ---
 
-## 8. Known limits
+## 8. The page (site/)
+
+Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one recorded run, `recordings/scenario-06.json`, in the Execution Explorer layout (D15). It's plain HTML, CSS and JavaScript in [`site/`](../site/): no framework, no build step, no API calls, no key. The design reference is [`design/explorer-d1-mockup.html`](../design/explorer-d1-mockup.html).
+
+**Run it:** from `job-evaluator/`, `python -m http.server 8000`, then open `localhost:8000/site/`. It has to be served (browsers won't `fetch` from a `file://` page), and it's served from `job-evaluator/` so the page can read `../recordings/` and `../scenarios/` without copies.
+
+**What it loads, and nothing else** (no fonts or scripts from other sites; a test checks the source has no URLs):
+
+| File | Used for |
+|---|---|
+| `recordings/scenario-06.json` | Every event: the map, the four questions, the timeline, the inspector |
+| `site/steps.json` | Each step's title and explanation, generated from [STEPS.md](STEPS.md) by [`build_steps.py`](../build_steps.py) |
+| `scenarios/scenarios.json` | The scenario's name in the header |
+
+**steps.json has one source.** `python build_steps.py` reads STEPS.md and writes, per step id, `{number, title, text, error}`: the text is the paragraph(s) between `Step id:` and `Code:`. Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step in the code or a recording has no explanation.
+
+**How each part is driven by the recording:**
+
+- **Execution map.** The box for the event's `actor` is highlighted. The four arrows show the latest crossing of each kind in the current pass: request (message count), Claude's reply (stop reason, tool ID and name), the tool call (tool and first argument), and the tool's result (`result · <rating>`, or the error type in red). The next event's crossing is drawn dashed, labelled `next ·`. The dashed path underneath is `evaluate_job`'s own call (`inner_api_*` crossings); it turns red, labelled "Simulated failure", once a `fault_injected` payload replaces the grader's reply. The header counts API calls so far, main and inner.
+- **Guard badges** in the Python box: one per guard the run checks. The guard checked at this event is lit green; a caught guard is lit red and stays lit for the rest of its pass.
+- **The four questions:** Executing (the actor), Has (what the event holds), Because (a caught guard's message, the fault, or the step before), Next (the next event).
+- **Timeline:** every event, grouped by pass (`START` = pass 0); events with a `parent` are indented; `injected` events are tagged "simulated". Click any one to jump.
+- **Explanation:** `steps.json[step_id]`, labelled "Written for this page · not Claude's output".
+- **Inspector tabs:** State change (`messages_before` → `messages_after`, new messages highlighted; at other steps the conversation as it stands), Code (the event's `code` and the commit it ran at), Payload, Claude's response.
+- **Claude's own words** (text and thinking blocks, the final answer, the grader's real reply) appear only under Claude's response. In Payload they're replaced with a pointer to that tab. Tool requests (names, IDs, arguments) are data and show in both.
+
+**Playback:** starts paused at the first event; Play / Pause, Back, Next, and 1× / 2× (2.5 s per step at 1×). Arrow keys step, space plays or pauses.
+
+## 9. Known limits
 
 - **Scenario 3 can't pass yet.** It expects a `research_company` tool that doesn't exist, so `record.py 3` saves it as a mismatch. No issue yet.
 
