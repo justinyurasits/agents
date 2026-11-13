@@ -338,3 +338,28 @@ an echoed key or header.
 **What would change it:** failures that a retry after a longer wait would fix
 in practice (e.g. repeated 529s during a demo). Then add a retry with backoff,
 which is a separate decision.
+
+## D27 — Fault injection: real responses kept, injected effects labelled, cap lowered for the runaway demo
+
+**Status:** **Proposed** (issue #46)
+**Date:** 2026-11-13
+**Options:** fake the failures in a test client · inject them into real runs ·
+for the runaway loop: keep the cap at 10, nudge Claude with "temporary,
+retry" errors, override Claude's end_turn, or lower the cap
+**Decision:** inject into real runs, from `faults.py`, only when asked
+(`--fault`, or a scenario's `fault`). Record every change as a
+`fault_injected` event showing the real and the injected value, keep real API
+responses unaltered, and mark `injected: true` exactly on what the fault does
+or causes (tool faults: until the error is back in the conversation; limit
+faults: everything made under the lowered limit). `unknown_tool` renames the
+request before it's saved, so the conversation stays consistent.
+`runaway_loop` lowers the cap to 2 for that run. All four choices made in chat
+on #46.
+**Reasoning:** BRIEF's truthfulness rule: recorded runs are real and
+simulated failures are labelled. Real Claude retries a failing tool once and
+then stops on its own (#8, #18, #29 live runs), so a cap of 10 would never be
+reached; overriding its end_turn would replace a real decision, and nudging
+might still not reach 10. Lowering the cap keeps every Claude decision real
+and the cap demo reliable.
+**What would change it:** Claude starting to retry more than once, which
+would make the lowered cap unnecessary or need to be higher.

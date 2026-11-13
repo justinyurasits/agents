@@ -4,7 +4,9 @@ Job Evaluator Agent: rates one job posting, or flags it for review.
 Run:
     pip install -r requirements.txt
     cp .env.example .env    # then put your Anthropic API key in .env
-    python agent.py
+    python agent.py                     # the built-in sample posting
+    python agent.py --scenario 6        # a scenario from scenarios/scenarios.json
+    python agent.py --fault tool_fails  # force one failure on purpose (faults.py)
 
 HOW TO READ THIS FILE
 ---------------------
@@ -32,13 +34,18 @@ THE WHOLE THING IN BRIEF
      reply asks for tools?                → run each one, add the results
                                             to messages, go round again
 4. Guards stop the run cleanly if something goes wrong (E1–E8).
+5. Faults (faults.py) make one thing go wrong on purpose, so the guards can
+   be shown working. They're off unless you ask for one, and every change a
+   fault makes is labelled `injected` in the trace.
 """
 
+import argparse
 import json
 import re
 import anthropic
 from dotenv import load_dotenv
 
+import faults
 import tracing
 
 # Read the API key from .env. override=True: .env wins over any stale key
@@ -202,6 +209,14 @@ def evaluate_job(company, role_title, job_description,
     # The reply is a list of content blocks; take the first text one.
     # (Find blocks by type, never by position: a thinking block can come first.)
     raw = next(b for b in eval_response.content if b.type == "text").text
+    # Fault injection (only with --fault tool_fails or runaway_loop): swap the
+    # grader's real reply for broken JSON. The real reply is still in the
+    # trace; the swap is recorded as injected.
+    fault = faults.active()
+    swapped = fault.grader_reply(raw)
+    if swapped != raw:
+        rec.fault_injected("inner_grader", {"grader_reply": {"real": raw, "injected": swapped}})  # (trace only)
+        raw = swapped
     print(f"  [inner_grader] raw string back: {raw[:80]}...")  # (terminal only)
 
     # Claude sometimes wraps the JSON in ```json fences; json.loads can't
@@ -246,6 +261,10 @@ def flag_for_review(company, role_title, missing_info):
 #       messages += all the results, in one message         results_back
 #   ran out of passes             → stop                    GUARD E4
 #
+# With a fault (faults.py) the same loop runs, but one thing is forced to go
+# wrong: a limit is lowered (max_passes / max_tokens below), Claude's tool
+# request is renamed, or the grader's reply is swapped for broken JSON.
+#
 # How `messages` grows in a normal two-pass run:
 #   pass 1 sends 1 message:
 #     [{"role": "user", "content": "Evaluate this job posting: ..."}]
@@ -258,14 +277,23 @@ def flag_for_review(company, role_title, missing_info):
 # Claude keeps no memory between calls: this list IS its memory, and the
 # whole list is sent every time.
 # ---------------------------------------------------------------------------
-def run_agent(job_text, recorder=None):
+def run_agent(job_text, recorder=None, fault=None):
     # `rec` writes one trace event per step (tracing.py). With no recorder,
     # NullRecorder does nothing, so the agent behaves exactly the same.
     # (`a or b` gives `a` if it's set, otherwise `b`.)
     rec = recorder or tracing.NullRecorder()  # (trace only)
     tracing.activate(rec)   # so evaluate_job's own Claude call is recorded too (trace only)
-    rec.start(job_text, model=MODEL, max_tokens=MAX_TOKENS, max_passes=MAX_PASSES,
-              system=SYSTEM_PROMPT, tools=tools)  # (trace only)
+
+    # Fault injection: a Fault() with no name changes nothing. With one, it
+    # may lower a limit for this run. activate() lets evaluate_job see it.
+    fault = fault or faults.Fault()
+    faults.activate(fault)
+    max_passes = fault.max_passes(MAX_PASSES)
+    max_tokens = fault.max_tokens(MAX_TOKENS)
+
+    rec.start(job_text, model=MODEL, max_tokens=max_tokens, max_passes=max_passes,
+              system=SYSTEM_PROMPT, tools=tools, fault=fault.name)  # (trace only)
+    rec.limits_injected(MAX_PASSES, max_passes, MAX_TOKENS, max_tokens)  # (trace only)
 
     # The starting conversation: one user message.
     # STEP: conversation_setup
@@ -273,11 +301,12 @@ def run_agent(job_text, recorder=None):
     rec.messages_changed("conversation_setup", [], messages)  # (trace only)
     print(f"[conversation_setup] messages has {len(messages)} item")  # (terminal only)
 
-    # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
-    # own Claude call happens inside a tool, so it doesn't count.
-    # range(1, MAX_PASSES + 1) counts 1, 2, ... 10. When it runs out, the
+    # At most max_passes passes (MAX_PASSES, unless a fault lowered it). A
+    # pass is one outer API call; evaluate_job's own Claude call happens
+    # inside a tool, so it doesn't count.
+    # range(1, max_passes + 1) counts 1, 2, ... 10. When it runs out, the
     # loop ends and we fall through to the cap at the bottom (E4).
-    for api_calls in range(1, MAX_PASSES + 1):
+    for api_calls in range(1, max_passes + 1):
         rec.pass_started(api_calls)        # records the pass-count check (trace only)
         # Send system + tools + the WHOLE messages list.
         print(f"\n[send_to_claude] pass {api_calls}: "
@@ -287,7 +316,7 @@ def run_agent(job_text, recorder=None):
             # STEP: send_to_claude
             response = client.messages.create(
                 model=MODEL,
-                max_tokens=MAX_TOKENS,
+                max_tokens=max_tokens,
                 system=SYSTEM_PROMPT,
                 tools=tools,
                 messages=messages,
@@ -317,6 +346,7 @@ def run_agent(job_text, recorder=None):
         #        ToolUseBlock(id="toolu_01…", name="evaluate_job",
         #                     input={"company": "Northwind Labs", ...})]
         rec.api_response(response)  # (trace only)
+
         print(f"[claude_decides] stop_reason = {response.stop_reason}")  # (terminal only)
         for block in response.content:
             if block.type == "text":
@@ -346,20 +376,28 @@ def run_agent(job_text, recorder=None):
             rec.end("end_turn", answer)  # (trace only)
             return answer
 
-        # GUARD (E3 reply_cut_off): the reply hit MAX_TOKENS and stopped
+        # GUARD (E3 reply_cut_off): the reply hit the token limit and stopped
         # part-way. Anything in it, even a tool request, may be incomplete,
         # so stop rather than act on it.
         # STEP: reply_cut_off
         if response.stop_reason == "max_tokens":
-            print(f"\n[reply_cut_off] reply cut off at {MAX_TOKENS} tokens.")  # (terminal only)
+            print(f"\n[reply_cut_off] reply cut off at {max_tokens} tokens.")  # (terminal only)
             answer = (f"Claude's reply was cut off (hit the max_tokens limit "
-                      f"of {MAX_TOKENS}).")
+                      f"of {max_tokens}).")
             rec.end("max_tokens", answer)  # (trace only)
             return answer
 
         # Save Claude's FULL turn, tool_use block included, so the next call
         # shows Claude what it already asked for. (The API needs the request
         # in the conversation before the result that answers it.)
+        # Fault injection (only with --fault unknown_tool, once): rename
+        # Claude's first tool request to a tool that doesn't exist, before it's
+        # saved, so the conversation stays consistent. The real response is
+        # already in the trace; the rename is recorded as injected.
+        renamed = fault.tool_request(response)
+        if renamed:
+            rec.fault_injected("save_turn", {"tool_name": {"real": renamed[0], "injected": renamed[1]}})  # (trace only)
+
         before = list(messages)  # a copy, for the trace's before/after (trace only)
         # STEP: save_turn
         messages.append({"role": "assistant", "content": response.content})
@@ -431,30 +469,67 @@ def run_agent(job_text, recorder=None):
     # GUARD (E4 pass_cap): used up every pass without end_turn (e.g. Claude
     # keeps retrying a tool that keeps failing). Stop instead of looping,
     # and spending, forever.
-    print(f"\n[pass_cap] {MAX_PASSES} outer calls without end_turn → stopping.")  # (terminal only)
+    print(f"\n[pass_cap] {max_passes} outer calls without end_turn → stopping.")  # (terminal only)
     # STEP: pass_cap
-    answer = f"Stopped after {MAX_PASSES} passes without finishing."
+    answer = f"Stopped after {max_passes} passes without finishing."
     rec.end("pass_cap", answer)  # (trace only)
     return answer
 
 
 # ---------------------------------------------------------------------------
-# TEST CASE
+# RUNNING IT
 # `if __name__ == "__main__":` runs only when you start this file directly
 # (python agent.py), not when tests import it.
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    job = """Northwind Labs — AI Agent Architect
+SAMPLE_JOB = """Northwind Labs — AI Agent Architect
 Location: Remote (US)
 Compensation: $200,000–$240,000 base
 Design and ship agentic workflows on Northwind's platform. Partner with
 enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
-    # Record this run as a trace (scenario names come with #17).
-    recorder = tracing.Recorder(scenario="clean")  # (trace only)
+SCENARIOS_FILE = "scenarios/scenarios.json"
+
+
+def choose_run(argv=None, scenarios_file=SCENARIOS_FILE):
+    """Work out what to run from the command line: (job text, scenario name,
+    fault name or None). No API call, so tests can check it directly.
+
+        python agent.py                      → the sample posting, no fault
+        python agent.py --scenario 6         → scenario 6's posting and fault
+        python agent.py --fault tool_fails   → the sample posting with that fault
+    """
+    # argparse reads options like --fault from the command line.
+    parser = argparse.ArgumentParser(description="Run the job evaluator agent.")
+    parser.add_argument("--scenario", type=int,
+                        help="run this scenario's posting (and its fault) from " + scenarios_file)
+    parser.add_argument("--fault", choices=faults.FAULTS,
+                        help="force one failure on purpose; overrides the scenario's fault")
+    args = parser.parse_args(argv)
+
+    job, name, fault = SAMPLE_JOB, "clean", None
+    if args.scenario is not None:
+        with open(scenarios_file, encoding="utf-8") as f:
+            scenario = next((s for s in json.load(f) if s["id"] == args.scenario), None)
+        if scenario is None:
+            parser.error(f"no scenario {args.scenario} in {scenarios_file}")
+        job, name, fault = scenario["posting"], f"scenario-{args.scenario}", scenario["fault"]
+    if args.fault:
+        fault = args.fault
+        if args.scenario is None:
+            name = args.fault
+    return job, name, fault
+
+
+if __name__ == "__main__":
+    job, name, fault_name = choose_run()
+    if fault_name:
+        print(f"Fault: injecting {fault_name!r} on purpose (labelled injected in the trace)")  # (terminal only)
+
+    # Record this run as a trace.
+    recorder = tracing.Recorder(scenario=name)  # (trace only)
     # STEP: agent_starts
-    final = run_agent(job, recorder=recorder)
+    final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))
     print("\nFINAL ANSWER:\n" + final)  # (terminal only)
     path = recorder.write()   # save the trace file to traces/ (trace only)
     print(f"\nTrace written to {path}")  # (terminal only)

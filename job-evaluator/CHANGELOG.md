@@ -23,6 +23,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Check the grader's JSON before returning it: a rating outside STRONG / WORTH REVIEWING / IGNORE, missing or non-list `reasons`, or JSON that isn't an object becomes an `is_error` tool result naming the problem; new step E8 `invalid_grade` and a `grade_valid` guard in the trace (#32).
 - Accept the grader's rating in any case (`"strong"`, `"Worth Reviewing"`) and return it in uppercase (#42).
 - Annotate agent.py as a guided tour: a map of the loop, `(terminal only)` / `(trace only)` tags on every print and recording line, a `GUARD (E<n> …)` label on every guard, examples of what `messages` and content blocks look like, and notes on Python idioms. Terminal output now uses step ids (`[send_to_claude]`) instead of `[step N]` (#44).
+- Add fault injection (`faults.py`; `python agent.py --fault <name>` or `--scenario <id>`): tool_fails, unknown_tool, runaway_loop (pass cap lowered to 2) and reply_cut_off, each recorded as `fault_injected` with `injected: true` on its effects; cut-off and cap messages now give the limit actually used (#46).
 - Restore compensation in the sample job. Used a fictional company.
 
 ## 0.1.0 — 2026-11-11

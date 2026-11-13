@@ -15,7 +15,7 @@ run is recorded (`code_refs.py`), so they can't go stale when the code moves.
 Step id: `agent_starts`
 
 A job posting is handed to the agent, which starts the loop.
-Code: `# STEP: agent_starts` in agent.py (`final = run_agent(job, recorder=recorder)`)
+Code: `# STEP: agent_starts` in agent.py (`final = run_agent(job, recorder=recorder, fault=...)`)
 
 ### 2. The conversation is set up
 

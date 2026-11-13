@@ -89,10 +89,10 @@
     "id": 8,
     "name": "Runaway loop stopped",
     "group": "break",
-    "behavior": "The tool fails on every attempt (injected). Claude keeps retrying until the loop cap stops the run.",
+    "behavior": "The tool fails on every attempt (injected). Claude retries; the loop cap, lowered to 2 passes for this demo (injected), stops the run.",
     "posting": "Lumen & Pine Media — Senior Product Manager, Generative AI Tools\nLocation: Remote (US)\nCompensation: $185,000–$215,000 base\n\nLumen & Pine Media publishes regional news and lifestyle sites. Our newsroom tools team builds software for editors and reporters, and we're adding AI tools for headline testing, summaries, and research help.\n\nAs Senior PM for Generative AI Tools, you'll work with editors to decide where AI helps and where it doesn't belong, prototype tools hands-on, and set clear rules for review before anything is published.\n\nWhat you'll do:\n- Prototype editorial AI tools with LLM APIs\n- Define review rules so nothing AI-written publishes unchecked\n- Run evaluation on summaries and headline suggestions\n- Train newsroom staff on the tools you ship\n\nWhat you bring:\n- 6+ years in product management, including AI or content tools\n- Hands-on prototyping experience\n- Respect for editorial standards\n\nRemote within the US. Base salary $185,000–$215,000.",
     "expected_tools": ["evaluate_job (repeated, always fails)"],
-    "expected_outcome": "Every attempt fails; the run stops at 10 passes and returns \"Stopped after 10 passes without finishing.\"",
+    "expected_outcome": "Every attempt fails; the run stops at the lowered cap of 2 passes and returns \"Stopped after 2 passes without finishing.\" (Real Claude retries a failing tool once and then stops on its own, so the cap is lowered for this fault; see #46.)",
     "company_facts": null,
     "fault": "runaway_loop"
   },

@@ -19,7 +19,8 @@ STEPS_PATH = os.path.join(ROOT, "docs", "STEPS.md")
 # What each step's code starts with and ends with, and how many lines it
 # spans. If code moves, these stay true; if code changes, update them.
 EXPECTED = {
-    "agent_starts":       ("final = run_agent(job, recorder=recorder)", "recorder=recorder)", 1),
+    "agent_starts":       ("final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))",
+                           "fault=faults.Fault(fault_name))", 1),
     "conversation_setup": ('messages = [{"role": "user"', "job_text}\"}]", 1),
     "send_to_claude":     ("response = client.messages.create(", ")", 7),
     "check_reply":        ('if response.stop_reason == "end_turn":', "return answer", 17),
@@ -37,7 +38,7 @@ EXPECTED = {
     "api_call_failed":    ("except anthropic.APIError as e:", "return answer", 9),
     "invalid_grade":      ("if problem:", "raise ValueError(problem)", 2),
     "grader_cut_off":     ('if eval_response.stop_reason == "max_tokens":', 'of {MAX_TOKENS}).")', 3),
-    "pass_cap":           ('answer = f"Stopped after {MAX_PASSES} passes without finishing."',
+    "pass_cap":           ('answer = f"Stopped after {max_passes} passes without finishing."',
                            'finishing."', 1),
 }
 

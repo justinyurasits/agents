@@ -25,6 +25,8 @@ It's a small, deliberately visible agent. It was built to learn and demonstrate 
 
 **Run it:** `python agent.py` from `job-evaluator/` (setup in [README.md](../README.md)). It evaluates a built-in sample posting (Northwind Labs, remote, $200K–$240K), prints each step and the final answer, and writes a trace file to `traces/` (section 7).
 
+Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `scenarios/scenarios.json` (its posting, and its fault if it has one), and `python agent.py --fault <name>` forces one failure on purpose (see [Faults injected on purpose](#faults-injected-on-purpose)).
+
 **Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call).
 
 **What `run_agent` can return.** It always returns a string. There are three kinds, and callers can only tell them apart by the text:
@@ -57,8 +59,9 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `evaluate_job(...)` | Tool. Makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns it as a dict (or raises `ValueError` naming the problem). |
 | `flag_for_review(...)` | Tool. Plain Python, no API call. Returns `{"status": "flagged", "company", "role_title", "missing_info"}`. |
 | `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
-| `run_agent(job_text, recorder=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). |
-| `if __name__ == "__main__"` | The sample posting and the call to `run_agent`. |
+| `run_agent(job_text, recorder=None, fault=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). With a `Fault`, it fails on purpose in one way. |
+| `SAMPLE_JOB`, `choose_run(argv)` | The built-in posting, and the command line (`--scenario`, `--fault`) turned into what to run. |
+| `if __name__ == "__main__"` | Runs `choose_run`, then `run_agent`, and writes the trace. |
 
 Next to it, [`code_refs.py`](../code_refs.py) finds the code each step points to. `agent.py` carries a `# STEP: <step_id>` comment directly above the code for each step in [STEPS.md](STEPS.md), and `code_ref(step_id, source)` returns that code's current line number and full statement (D23). Nothing stores line numbers by hand, so editing `agent.py` can't make a reference go stale.
 
@@ -167,7 +170,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 
 ### How a trace is made
 
-[`tracing.py`](../tracing.py) has a `Recorder`. `run_agent(job_text, recorder=None)` calls it at each step. With no recorder it uses `NullRecorder`, which records nothing, so the agent behaves exactly the same. `python agent.py` records the sample run as scenario `clean` and writes **`traces/<scenario>-<YYYYMMDD-HHMMSS>.json`**. `traces/` is gitignored except `traces/recorded/`, where runs used on the page are copied on purpose.
+[`tracing.py`](../tracing.py) has a `Recorder`. `run_agent(job_text, recorder=None, fault=None)` calls it at each step. With no recorder it uses `NullRecorder`, which records nothing, so the agent behaves exactly the same. `python agent.py` records the sample run as scenario `clean` and writes **`traces/<scenario>-<YYYYMMDD-HHMMSS>.json`**. `traces/` is gitignored except `traces/recorded/`, where runs used on the page are copied on purpose.
 
 ### The file
 
@@ -176,6 +179,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `trace_version` | `1` |
 | `scenario`, `started_at` | Scenario name; UTC start time |
 | `git_commit`, `git_dirty` | The commit that ran, and whether `job-evaluator/` had uncommitted changes. Lets the page link code references to the exact version. |
+| `fault` | The injected fault's name, or `null` |
 | `model`, `limits` | `claude-sonnet-5-5`; `{"max_passes": 10, "max_tokens": 2000}` |
 | `tools` | The full tool definitions, stored once |
 | `events` | One per step, in order (below) |
@@ -183,7 +187,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 
 ### Events
 
-**Every event has every key**, `null` when it doesn't apply: `id` (`e1`, `e2`, …), `seq`, `pass` (`0` = before the loop), `step_id` (from [STEPS.md](STEPS.md)), `actor` (`python`, `claude`, or `tool`), `crossing` (`{from, to, kind}` or `null`), `payload`, `messages_before`, `messages_after`, `code` (`{file, marker, line, lines}` from `code_refs.py`; `null` for `claude_decides`), `parent` (the `tool_call` event an event happened inside, else `null`), `tokens`, `guard`, `injected` (always `false` until the simulated-failure switch exists).
+**Every event has every key**, `null` when it doesn't apply: `id` (`e1`, `e2`, …), `seq`, `pass` (`0` = before the loop), `step_id` (from [STEPS.md](STEPS.md)), `actor` (`python`, `claude`, or `tool`), `crossing` (`{from, to, kind}` or `null`), `payload`, `messages_before`, `messages_after`, `code` (`{file, marker, line, lines}` from `code_refs.py`; `null` for `claude_decides`), `parent` (the `tool_call` event an event happened inside, else `null`), `tokens`, `guard`, `injected` (`true` only for what an injected fault did or caused; see below).
 
 | Step | `crossing.kind` | `payload` |
 |---|---|---|
@@ -226,6 +230,25 @@ So a grader that's cut off shows two caught guards in order: `max_tokens` (`grad
 `evaluate_job` records its grader call through `tracing.active()`, the recorder `run_agent` set for this run. Called outside a run, it records nothing.
 
 **No secrets:** the recorder never sees the API client, request headers, or environment variables, and `write()` refuses to write a trace that contains `sk-ant` anywhere.
+
+### Faults injected on purpose
+
+[`faults.py`](../faults.py) makes the agent fail in one specific way, so the "break the agent" scenarios (6–9) can be recorded on demand (#46, D27). It's off unless asked for: `--fault <name>`, or a scenario whose `fault` field names one. With no fault the agent behaves exactly as normal.
+
+| Fault | What it forces | Caught by |
+|---|---|---|
+| `tool_fails` | The grader's reply is replaced with broken JSON, **once** | `tool_succeeded` (E1); Claude can retry and succeed |
+| `unknown_tool` | Claude's first tool request is renamed to `rate_posting`, **once**, before it's saved, so the conversation stays consistent | `tool_exists` (E2) |
+| `runaway_loop` | The grader's reply is broken **every** time, and the pass cap is lowered to **2** | `pass_count` (E4): "Stopped after 2 passes without finishing." |
+| `reply_cut_off` | The main call's token limit is lowered to **30** | `max_tokens` (E3), whose message gives the limit actually used |
+
+**Why the cap is lowered for `runaway_loop`:** in every live run where a tool kept failing, real Claude retried once and then stopped on its own. With the cap at 10 it would explain the failure long before reaching the cap; at 2, the cap stops the run right after the retry.
+
+**How it shows in the trace:**
+- A **`fault_injected`** event where the fault acts, with `payload: {"fault": …, <what changed>: {"real": …, "injected": …}}` (or `{"normal": …, "injected": …}` for a limit).
+- **Tool faults** (`tool_fails`, `unknown_tool`, the grader part of `runaway_loop`): the events the fault causes are `injected: true`. That's the caught guard, the error result, and the `results_back` that adds it to the conversation. Claude's later reactions are real, so they're `false`.
+- **Limit faults:** every event made under the lowered limit is `injected: true`. For `reply_cut_off` that's the request, Claude's response, the checks and the end. For `runaway_loop` it's the pass-count checks and the end.
+- **Real API responses are recorded as they came back,** never altered: a swapped grader reply shows its real text in `inner_api_response`, and the injected text only in `fault_injected`.
 
 ### Terminal output
 

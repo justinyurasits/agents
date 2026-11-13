@@ -260,7 +260,7 @@ class SecretsAndFileTest(TraceTestCase):
             with open(path, encoding="utf-8") as f:
                 trace = json.load(f)
         self.assertEqual(list(trace), ["trace_version", "scenario", "started_at", "git_commit",
-                                       "git_dirty", "model", "limits", "tools", "events", "result"])
+                                       "git_dirty", "model", "limits", "fault", "tools", "events", "result"])
         self.assertEqual(trace["git_commit"], "abc1234")
         self.assertEqual(trace["limits"], {"max_passes": 10, "max_tokens": 2000})
         self.assertEqual([t["name"] for t in trace["tools"]], ["evaluate_job", "flag_for_review"])
