@@ -52,7 +52,10 @@ class FakeClaude:
 
     def create(self, **kwargs):
         queue = self.outer if "tools" in kwargs else self.inner
-        return queue.pop(0)
+        item = queue.pop(0)
+        if isinstance(item, BaseException):   # a queued error: the call fails
+            raise item
+        return item
 
 
 def use_fake(outer, inner=()):

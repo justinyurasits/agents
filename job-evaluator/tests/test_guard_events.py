@@ -173,7 +173,8 @@ class AllGuardsTest(TraceTestCase):
                 self.assertTrue(all(e["injected"] is False for e in rec.events))
 
     def test_guard_shape_and_meaning_of_caught(self):
-        error_steps = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap", "grader_cut_off"}
+        error_steps = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap", "grader_cut_off",
+                       "api_call_failed"}
         for name, rec in self.runs():
             for g in guards(rec):
                 with self.subTest(name, guard=g["id"]):

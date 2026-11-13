@@ -316,3 +316,25 @@ recorder parameter to every tool function.
 **What would change it:** tools that run in parallel (D20), where one global
 "active recorder" and "current tool call" no longer work; then pass the
 recorder and parent explicitly.
+
+## D26 — A failed call to Claude stops the run with the error's type only
+
+**Status:** **Proposed** (issue #30)
+**Date:** 2026-11-13
+**Options:** let the exception crash the run · retry · stop and return a
+message (with the error's text, or with only its type and status)
+**Decision:** catch `anthropic.APIError` around Claude #1's call. Stop the
+run and return `"Couldn't get a reply from Claude: <ErrorType> (status
+<code>). The run stopped."` No retries beyond the SDK's own. The trace
+records an `api_call_succeeded` guard on every call (caught on failure, step
+E6 `api_call_failed`) and ends with `ended_by: "api_error"`.
+**Reasoning:** with no reply there's nothing for Claude to decide, so unlike
+a tool error (D18) it can't go back to Claude: stopping with a clear message
+is the only safe move. The SDK already retries connection errors, 429s and
+5xx twice by default (`max_retries=2`), so the agent adds none (out of scope
+for #30). The message leaves out the error's text because it comes from
+outside the program; the type and status say what happened without risking
+an echoed key or header.
+**What would change it:** failures that a retry after a longer wait would fix
+in practice (e.g. repeated 529s during a demo). Then add a retry with backoff,
+which is a separate decision.

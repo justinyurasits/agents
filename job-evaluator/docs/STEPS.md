@@ -155,3 +155,12 @@ Inside evaluate_job, the grader's reply hit the length limit before its
 rating was complete. The tool reports that it was cut off, rather than
 "invalid JSON," and the error goes back to Claude like any tool failure (E1).
 Code: `# STEP: grader_cut_off` in agent.py (`if eval_response.stop_reason == "max_tokens":`)
+
+### E6. The call to Claude fails
+
+Step id: `api_call_failed`
+
+Python's call to Claude failed before any reply came back: the network was
+down, the service was busy, or the API key was wrong. With no reply to act on,
+Python stops the run and says which error it was.
+Code: `# STEP: api_call_failed` in agent.py (`except anthropic.APIError as e:`)

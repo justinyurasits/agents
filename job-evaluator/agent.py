@@ -158,14 +158,26 @@ def run_agent(job_text, recorder=None):
         print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
               f"sending {len(messages)} message(s)")
         rec.api_request(messages)
-        # STEP: send_to_claude
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=SYSTEM_PROMPT,
-            tools=tools,
-            messages=messages,
-        )
+        try:
+            # STEP: send_to_claude
+            response = client.messages.create(
+                model=MODEL,
+                max_tokens=MAX_TOKENS,
+                system=SYSTEM_PROMPT,
+                tools=tools,
+                messages=messages,
+            )
+        # STEP: api_call_failed
+        except anthropic.APIError as e:
+            # The call itself failed (network, rate limit, overloaded, bad
+            # key), so there's no reply to act on: stop and say why. Only the
+            # error's type and status go in the message, never the request.
+            status = getattr(e, "status_code", None)
+            answer = (f"Couldn't get a reply from Claude: {type(e).__name__}"
+                      f"{f' (status {status})' if status else ''}. The run stopped.")
+            print(f"\n[stop] API call failed → {answer}")
+            rec.end("api_error", answer, value=type(e).__name__)
+            return answer
 
         # Claude decides on Anthropic's servers (step claude_decides, no
         # code here). Record and print what came back.
