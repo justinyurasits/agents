@@ -63,6 +63,17 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   from the markers when a run is recorded.
 - Every guard (a check that stops a crash, a hang, or bad data) gets
   its own step in STEPS.md and a marker on its code.
+- agent.py is annotated as a guided tour for Justin; keep it that way in
+  every PR that touches it:
+  - tag every `print` `# (terminal only)` and every `rec.` / `tracing.`
+    line `# (trace only)`;
+  - put `# GUARD (E<n> <step_id>): <what it protects against>` above each
+    guard's marker, matching STEPS.md;
+  - start terminal output with the step id in brackets, e.g. `[run_tools]`;
+  - update the map in the module docstring and above `run_agent`, and the
+    "what this looks like" examples, when the loop or a data shape changes;
+  - explain any new Python idiom in one line where it first appears.
+  `tests/test_annotations.py` checks the first three; the last two are on you.
 - Before opening a PR, run the agent end to end and include a short
   summary of the output in the PR.
 - Before opening a PR, run the tests from the agent's folder
