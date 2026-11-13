@@ -24,8 +24,8 @@ BAD = {
     "unknown rating":     ('{"rating": "EXCELLENT", "reasons": ["remote"]}',
                            "The grader's rating 'EXCELLENT' isn't one of "
                            "STRONG, WORTH REVIEWING, IGNORE."),
-    "lowercase rating":   ('{"rating": "strong", "reasons": ["remote"]}',
-                           "The grader's rating 'strong' isn't one of "
+    "non-string rating":  ('{"rating": 5, "reasons": ["remote"]}',
+                           "The grader's rating 5 isn't one of "
                            "STRONG, WORTH REVIEWING, IGNORE."),
     "missing reasons":    ('{"rating": "STRONG"}',
                            "The grader's reply has no 'reasons'."),
@@ -123,6 +123,34 @@ class TraceTest(TraceTestCase):
         self.assertEqual(guard["step_id"], "inner_grader")
         self.assertIs(guard["guard"]["caught"], False)
         self.assertIsNone(guard["guard"]["message"])
+
+
+
+class AnyCaseTest(TraceTestCase):
+    """Issue #42: ratings are accepted in any case and returned in uppercase."""
+
+    CASES = {"strong": "STRONG", "Strong": "STRONG", "worth reviewing": "WORTH REVIEWING",
+             "Worth Reviewing": "WORTH REVIEWING", "ignore": "IGNORE", "STRONG": "STRONG"}
+
+    def test_grade_problem_accepts_any_case(self):
+        for given in self.CASES:
+            with self.subTest(given):
+                self.assertIsNone(agent.grade_problem({"rating": given, "reasons": ["x"]}))
+
+    def test_rating_comes_back_uppercase_everything_else_unchanged(self):
+        for given, expected in self.CASES.items():
+            with self.subTest(given):
+                grade = {"rating": given, "reasons": ["remote"], "confidence": "high"}
+                _, rec = self.record(**evaluate_then_finish(json.dumps(grade)))
+                result = next(e for e in rec.events if kind(e) == "tool_result")
+                self.assertIs(result["payload"]["is_error"], False)
+                self.assertEqual(json.loads(result["payload"]["content"]),
+                                 {**grade, "rating": expected})
+
+    def test_unknown_rating_in_lowercase_is_still_rejected(self):
+        problem = agent.grade_problem({"rating": "excellent", "reasons": []})
+        self.assertEqual(problem, "The grader's rating 'excellent' isn't one of "
+                                  "STRONG, WORTH REVIEWING, IGNORE.")
 
 
 if __name__ == "__main__":
