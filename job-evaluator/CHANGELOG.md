@@ -25,6 +25,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Annotate agent.py as a guided tour: a map of the loop, `(terminal only)` / `(trace only)` tags on every print and recording line, a `GUARD (E<n> …)` label on every guard, examples of what `messages` and content blocks look like, and notes on Python idioms. Terminal output now uses step ids (`[send_to_claude]`) instead of `[step N]` (#44).
 - Add fault injection (`faults.py`; `python agent.py --fault <name>` or `--scenario <id>`): tool_fails, unknown_tool, runaway_loop (pass cap lowered to 2) and reply_cut_off, each recorded as `fault_injected` with `injected: true` on its effects; cut-off and cap messages now give the limit actually used (#46).
 - Restore compensation in the sample job. Used a fictional company.
+- Scenario 8's visitor text now says the cap was lowered only for the demo, and that in real runs Claude usually stops retrying on its own (#49).
 
 ## 0.1.0 — 2026-11-11
 
