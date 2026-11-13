@@ -35,7 +35,8 @@ CROSSING_KINDS = ("api_request", "api_response", "tool_call", "tool_result",
 # How a run ended → the step that shows it.
 END_STEPS = {"end_turn": "answer_returned",
              "max_tokens": "reply_cut_off",
-             "pass_cap": "pass_cap"}
+             "pass_cap": "pass_cap",
+             "api_error": "api_call_failed"}
 
 
 def to_json(obj):
@@ -171,6 +172,10 @@ class Recorder:
                           payload=payload)
 
     def api_response(self, response):
+        # The call returned a reply, so the API-call guard didn't catch
+        # anything. (A failed call is recorded by end("api_error").)
+        self.guard("send_to_claude", "api_call_succeeded",
+                   "client.messages.create returned a reply", None, False)
         usage = getattr(response, "usage", None)
         tokens = ({"input": usage.input_tokens, "output": usage.output_tokens}
                   if usage is not None else None)
@@ -270,8 +275,12 @@ class Recorder:
 
     # --- the end of the run ---------------------------------------------
 
-    def end(self, ended_by, text):
-        if ended_by == "max_tokens":
+    def end(self, ended_by, text, value=None):
+        if ended_by == "api_error":
+            self.guard("api_call_failed", "api_call_succeeded",
+                       "client.messages.create returned a reply", value, True,
+                       action="run_stopped", message=text)
+        elif ended_by == "max_tokens":
             self.guard("reply_cut_off", "max_tokens", 'stop_reason == "max_tokens"',
                        "max_tokens", True, action="run_stopped", message=text)
         elif ended_by == "pass_cap":
