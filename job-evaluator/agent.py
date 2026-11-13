@@ -1,11 +1,37 @@
 """
-Job Evaluator Agent — end-to-end, one pass.
-`# STEP: <step_id>` markers label the code each step in docs/STEPS.md points to.
+Job Evaluator Agent: rates one job posting, or flags it for review.
 
 Run:
     pip install -r requirements.txt
     cp .env.example .env    # then put your Anthropic API key in .env
     python agent.py
+
+HOW TO READ THIS FILE
+---------------------
+Three kinds of line are mixed together. Only the first kind decides what the
+agent does; the other two are tagged so you can skip them:
+
+    the agent itself        API calls, tool dispatch, messages.append(...)
+    # (terminal only)       print(...) lines: what you see while it runs
+    # (trace only)          rec.… / tracing.… lines: record the run to a
+                            trace file for the page; they never change what
+                            the agent does
+
+`# STEP: <step_id>` marks the code each step in docs/STEPS.md points to
+(the page looks the line up from the marker). `GUARD (E<n> <step_id>)`
+labels a check that stops a crash, a hang, or bad data; E1–E8 are the
+"When something goes wrong" steps in STEPS.md.
+
+THE WHOLE THING IN BRIEF
+------------------------
+1. `tools` describes two tools to Claude: evaluate_job and flag_for_review.
+2. run_agent(job) starts a conversation (`messages`) with the posting.
+3. Each pass of the loop:
+     send messages + tools to Claude      → Claude replies
+     reply says "done"?                   → return its text
+     reply asks for tools?                → run each one, add the results
+                                            to messages, go round again
+4. Guards stop the run cleanly if something goes wrong (E1–E8).
 """
 
 import json
@@ -15,6 +41,8 @@ from dotenv import load_dotenv
 
 import tracing
 
+# Read the API key from .env. override=True: .env wins over any stale key
+# already set in the terminal (that caused a 401 once; see BUILD_LOG).
 load_dotenv(override=True)
 client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from env
 MODEL = "claude-sonnet-5-5"
@@ -25,6 +53,10 @@ MAX_TOKENS = 2000  # longest reply Claude may write, for both API calls
 # ---------------------------------------------------------------------------
 # TOOL DEFINITIONS — the only thing Claude ever sees about your tools.
 # Plain dicts. Sent with every outer API call.
+#
+# Claude reads each `description` to decide WHICH tool to ask for, and uses
+# `input_schema` to fill in the arguments. It never sees the Python
+# functions below; it can only send back a request naming a tool.
 # ---------------------------------------------------------------------------
 tools = [
     {
@@ -69,6 +101,9 @@ tools = [
 # ---------------------------------------------------------------------------
 # TOOL FUNCTIONS — real Python. Claude never sees these.
 # ---------------------------------------------------------------------------
+
+# System prompt for the GRADER: a second Claude, called from inside
+# evaluate_job. The agent (Claude #1) never sees this text.
 RUBRIC = """You rate job postings for Justin.
 STRONG: remote, $180K+ base, and builds his AI consulting practice.
 WORTH REVIEWING: meets two of the three.
@@ -86,18 +121,24 @@ def grade_problem(grade):
     Valid means: an object with `rating` (one of RATINGS, in any case) and
     `reasons` (a list of strings). Other keys are allowed. Pure function, no
     API call.
+
+    A valid grade looks like:
+        {"rating": "WORTH REVIEWING", "reasons": ["Remote (US)", "Pay is $200K+"]}
     """
+    # isinstance(x, dict) asks "is x a dict?" (a JSON object becomes a dict).
     if not isinstance(grade, dict):
         return f"The grader's reply is a JSON {type(grade).__name__}, not an object."
     if "rating" not in grade:
         return "The grader's reply has no 'rating'."
     rating = grade["rating"]
+    # .upper() makes the check case-insensitive: "strong" counts as STRONG.
     if not isinstance(rating, str) or rating.upper() not in RATINGS:
         return (f"The grader's rating {grade['rating']!r} isn't one of "
                 f"{', '.join(RATINGS)}.")
     if "reasons" not in grade:
         return "The grader's reply has no 'reasons'."
     reasons = grade["reasons"]
+    # all(...) is True only if every item passes the check.
     if not isinstance(reasons, list) or not all(isinstance(r, str) for r in reasons):
         return "The grader's 'reasons' isn't a list of strings."
     return None
@@ -121,17 +162,25 @@ def strip_json_fences(text):
 
 def evaluate_job(company, role_title, job_description,
                  location="Unknown", remote="Unknown", compensation="Unknown"):
+    """Tool: ask a second Claude (the grader) to rate the job.
+
+    The arguments are exactly what Claude #1 filled in from the tool's
+    input_schema. Optional ones it left out arrive as "Unknown".
+    Returns {"rating": ..., "reasons": [...]}, or raises an error, which
+    run_agent sends back to Claude #1 as a failed tool result (E1).
+    """
     job_summary = (
         f"Company: {company}\nRole: {role_title}\nLocation: {location}\n"
         f"Remote: {remote}\nCompensation: {compensation}\n\n{job_description}"
     )
 
     # A separate, one-off Claude call. No tools, no loop.
-    # The outer `messages` list is not touched.
-    rec = tracing.active()            # the run's recorder, if any
+    # The outer `messages` list is not touched: the grader gets its own
+    # one-message conversation, which is thrown away when this returns.
+    rec = tracing.active()            # the run's recorder, if any (trace only)
     grader_messages = [{"role": "user", "content": job_summary}]
-    print("  [step 7] evaluate_job → inner Claude call (API call #2)")
-    rec.inner_api_request(RUBRIC, grader_messages)
+    print("  [inner_grader] evaluate_job → the grader's own Claude call")  # (terminal only)
+    rec.inner_api_request(RUBRIC, grader_messages)  # (trace only)
     # STEP: inner_grader
     eval_response = client.messages.create(
         model=MODEL,
@@ -139,24 +188,31 @@ def evaluate_job(company, role_title, job_description,
         system=RUBRIC,
         messages=grader_messages,
     )
-    rec.inner_api_response(eval_response)
-    # A reply that hit the token limit is unfinished. Say so plainly, rather
-    # than letting json.loads report a confusing "invalid JSON".
-    rec.grader_checked(eval_response.stop_reason)
+    rec.inner_api_response(eval_response)  # (trace only)
+
+    # GUARD (E5 grader_cut_off): the grader's reply hit MAX_TOKENS and stopped
+    # part-way, so its JSON is unfinished. Say so plainly, rather than letting
+    # json.loads report a confusing "invalid JSON".
+    rec.grader_checked(eval_response.stop_reason)  # (trace only)
     # STEP: grader_cut_off
     if eval_response.stop_reason == "max_tokens":
         raise RuntimeError(f"The grader's reply was cut off (hit the "
                            f"max_tokens limit of {MAX_TOKENS}).")
+
+    # The reply is a list of content blocks; take the first text one.
+    # (Find blocks by type, never by position: a thinking block can come first.)
     raw = next(b for b in eval_response.content if b.type == "text").text
-    print(f"  [step 7] raw string back: {raw[:80]}...")
+    print(f"  [inner_grader] raw string back: {raw[:80]}...")  # (terminal only)
 
     # Claude sometimes wraps the JSON in ```json fences; json.loads can't
     # read those, so strip them first.
     grade = json.loads(strip_json_fences(raw))
-    # Valid JSON isn't enough: check it's a real rating before passing it on.
-    # A problem goes back to Claude as a tool error, like any other (#8).
+
+    # GUARD (E8 invalid_grade): valid JSON isn't enough; check it's a real
+    # rating before passing it on. A problem goes back to Claude as a tool
+    # error, like any other (#8).
     problem = grade_problem(grade)
-    rec.grade_checked(problem)
+    rec.grade_checked(problem)  # (trace only)
     # STEP: invalid_grade
     if problem:
         raise ValueError(problem)
@@ -167,36 +223,66 @@ def evaluate_job(company, role_title, job_description,
 
 
 def flag_for_review(company, role_title, missing_info):
-    # No Claude call at all — a tool can be any Python.
+    """Tool: mark the posting for a human to look at. No Claude call at all:
+    a tool can be any Python."""
     return {"status": "flagged", "company": company,
             "role_title": role_title, "missing_info": missing_info}
 
 
 # ---------------------------------------------------------------------------
 # THE AGENT LOOP
+#
+#   messages = [the posting]                                conversation_setup
+#   repeat, at most MAX_PASSES times:
+#       reply = Claude(system, tools, messages)             send_to_claude
+#           call failed?          → stop                    GUARD E6
+#       done (end_turn)?          → return its text          check_reply / claude_done
+#           no text in it?        → stop                    GUARD E7
+#       cut off (max_tokens)?     → stop                    GUARD E3
+#       messages += Claude's reply                          save_turn
+#       for each tool request in the reply:                 run_tools
+#           unknown tool?         → error result            GUARD E2
+#           tool raised?          → error result            GUARD E1
+#       messages += all the results, in one message         results_back
+#   ran out of passes             → stop                    GUARD E4
+#
+# How `messages` grows in a normal two-pass run:
+#   pass 1 sends 1 message:
+#     [{"role": "user", "content": "Evaluate this job posting: ..."}]
+#   pass 2 sends 3, after save_turn and results_back added one each:
+#     [{"role": "user", "content": "Evaluate this job posting: ..."},
+#      {"role": "assistant", "content": [<tool_use block: evaluate_job, id "toolu_01…">]},
+#      {"role": "user", "content": [{"type": "tool_result",
+#                                    "tool_use_id": "toolu_01…",
+#                                    "content": '{"rating": "WORTH REVIEWING", ...}'}]}]
+# Claude keeps no memory between calls: this list IS its memory, and the
+# whole list is sent every time.
 # ---------------------------------------------------------------------------
 def run_agent(job_text, recorder=None):
     # `rec` writes one trace event per step (tracing.py). With no recorder,
     # NullRecorder does nothing, so the agent behaves exactly the same.
-    rec = recorder or tracing.NullRecorder()
-    tracing.activate(rec)   # so evaluate_job's own Claude call is recorded too
+    # (`a or b` gives `a` if it's set, otherwise `b`.)
+    rec = recorder or tracing.NullRecorder()  # (trace only)
+    tracing.activate(rec)   # so evaluate_job's own Claude call is recorded too (trace only)
     rec.start(job_text, model=MODEL, max_tokens=MAX_TOKENS, max_passes=MAX_PASSES,
-              system=SYSTEM_PROMPT, tools=tools)
+              system=SYSTEM_PROMPT, tools=tools)  # (trace only)
 
     # The starting conversation: one user message.
     # STEP: conversation_setup
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
-    rec.messages_changed("conversation_setup", [], messages)
-    print(f"[step 1] messages has {len(messages)} item")
+    rec.messages_changed("conversation_setup", [], messages)  # (trace only)
+    print(f"[conversation_setup] messages has {len(messages)} item")  # (terminal only)
 
     # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
     # own Claude call happens inside a tool, so it doesn't count.
+    # range(1, MAX_PASSES + 1) counts 1, 2, ... 10. When it runs out, the
+    # loop ends and we fall through to the cap at the bottom (E4).
     for api_calls in range(1, MAX_PASSES + 1):
-        rec.pass_started(api_calls)        # records the pass-count check
+        rec.pass_started(api_calls)        # records the pass-count check (trace only)
         # Send system + tools + the WHOLE messages list.
-        print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
-              f"sending {len(messages)} message(s)")
-        rec.api_request(messages)
+        print(f"\n[send_to_claude] pass {api_calls}: "
+              f"sending {len(messages)} message(s)")  # (terminal only)
+        rec.api_request(messages)  # (trace only)
         try:
             # STEP: send_to_claude
             response = client.messages.create(
@@ -206,95 +292,123 @@ def run_agent(job_text, recorder=None):
                 tools=tools,
                 messages=messages,
             )
+        # GUARD (E6 api_call_failed): the call itself failed (network, rate
+        # limit, overloaded, bad key), so there's no reply to act on: stop and
+        # say why. Only the error's type and status go in the message, never
+        # the request.
         # STEP: api_call_failed
         except anthropic.APIError as e:
-            # The call itself failed (network, rate limit, overloaded, bad
-            # key), so there's no reply to act on: stop and say why. Only the
-            # error's type and status go in the message, never the request.
+            # getattr(e, "status_code", None): the HTTP status if this error
+            # has one (a network error doesn't), otherwise None.
             status = getattr(e, "status_code", None)
             answer = (f"Couldn't get a reply from Claude: {type(e).__name__}"
                       f"{f' (status {status})' if status else ''}. The run stopped.")
-            print(f"\n[stop] API call failed → {answer}")
-            rec.end("api_error", answer, value=type(e).__name__)
+            print(f"\n[api_call_failed] {answer}")  # (terminal only)
+            rec.end("api_error", answer, value=type(e).__name__)  # (trace only)
             return answer
 
         # Claude decides on Anthropic's servers (step claude_decides, no
-        # code here). Record and print what came back.
-        rec.api_response(response)
-        print(f"[step 4/10] stop_reason = {response.stop_reason}")
+        # code here). `response` is what came back:
+        #   response.stop_reason  why Claude stopped: "end_turn" (done),
+        #                         "tool_use" (wants tools), "max_tokens" (cut off)
+        #   response.content      a list of blocks, e.g.
+        #       [ThinkingBlock(thinking="..."),          (sometimes)
+        #        TextBlock(text="I'll rate this."),
+        #        ToolUseBlock(id="toolu_01…", name="evaluate_job",
+        #                     input={"company": "Northwind Labs", ...})]
+        rec.api_response(response)  # (trace only)
+        print(f"[claude_decides] stop_reason = {response.stop_reason}")  # (terminal only)
         for block in response.content:
             if block.type == "text":
-                print(f"           text: {block.text[:80]}")
+                print(f"           text: {block.text[:80]}")  # (terminal only)
             elif block.type == "tool_use":
-                print(f"           tool_use: id={block.id} name={block.name}")
+                print(f"           tool_use: id={block.id} name={block.name}")  # (terminal only)
 
         # Read why Claude stopped. end_turn: Claude chose to stop, so exit the
         # loop. (On that last pass this check is also step claude_done.)
-        rec.reply_checked(response.stop_reason)
+        rec.reply_checked(response.stop_reason)  # (trace only)
         # STEP: check_reply
         if response.stop_reason == "end_turn":
-            print(f"\n[step 11] end_turn → done. "
-                  f"Outer calls: {api_calls}, plus any inner tool calls.")
+            print(f"\n[claude_done] end_turn → done. "
+                  f"Outer calls: {api_calls}, plus any inner tool calls.")  # (terminal only)
+            # next(<matches>, None): the first text block's text, or None if
+            # the reply has no text block at all.
             # STEP: answer_returned
             answer = next((b.text for b in response.content if b.type == "text"), None)
-            # Claude said it's done but wrote no text (e.g. only a thinking
-            # block). Say so, rather than crash at the very last step.
+            # GUARD (E7 no_final_answer): Claude said it's done but wrote no
+            # text (e.g. only a thinking block). Say so, rather than crash at
+            # the very last step.
             # STEP: no_final_answer
             if answer is None:
                 answer = "Claude finished without writing a final answer."
-                rec.end("no_text", answer)
+                rec.end("no_text", answer)  # (trace only)
                 return answer
-            rec.end("end_turn", answer)
+            rec.end("end_turn", answer)  # (trace only)
             return answer
 
-        # Claude ran out of room mid-reply. Anything in it (even a tool
-        # request) may be incomplete, so stop rather than act on it.
+        # GUARD (E3 reply_cut_off): the reply hit MAX_TOKENS and stopped
+        # part-way. Anything in it, even a tool request, may be incomplete,
+        # so stop rather than act on it.
         # STEP: reply_cut_off
         if response.stop_reason == "max_tokens":
-            print(f"\n[stop] max_tokens → reply cut off at {MAX_TOKENS} tokens.")
+            print(f"\n[reply_cut_off] reply cut off at {MAX_TOKENS} tokens.")  # (terminal only)
             answer = (f"Claude's reply was cut off (hit the max_tokens limit "
                       f"of {MAX_TOKENS}).")
-            rec.end("max_tokens", answer)
+            rec.end("max_tokens", answer)  # (trace only)
             return answer
 
-        # Save Claude's FULL turn, tool_use block included.
-        before = list(messages)
+        # Save Claude's FULL turn, tool_use block included, so the next call
+        # shows Claude what it already asked for. (The API needs the request
+        # in the conversation before the result that answers it.)
+        before = list(messages)  # a copy, for the trace's before/after (trace only)
         # STEP: save_turn
         messages.append({"role": "assistant", "content": response.content})
-        rec.messages_changed("save_turn", before, messages)
-        print(f"[step 5] appended assistant turn → messages has {len(messages)}")
+        rec.messages_changed("save_turn", before, messages)  # (trace only)
+        print(f"[save_turn] appended assistant turn → messages has {len(messages)}")  # (terminal only)
 
         # Dispatch: match the name string to a real function.
         # Claude can ask for several tools in one turn. Every tool_use block
         # needs its own tool_result, or the next API call is rejected, so
         # run them all (one after another) and collect the results.
         tool_results = []
+        # (b for b in ... if ...) yields just the tool_use blocks, in order.
         # STEP: run_tools
         for tool_block in (b for b in response.content if b.type == "tool_use"):
-            print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
-            rec.tool_checked(tool_block)       # does it exist? then the call
+            print(f"[run_tools] dispatching {tool_block.name}(**{tool_block.input})")  # (terminal only)
+            rec.tool_checked(tool_block)       # does it exist? then the call (trace only)
 
             # If the tool raises, don't crash: send the error back to Claude
             # as the tool_result, marked is_error, and let Claude decide.
             try:
+                # **tool_block.input unpacks Claude's arguments into keyword
+                # arguments: {"company": "X", ...} → evaluate_job(company="X", ...)
                 if tool_block.name == "evaluate_job":
                     result = evaluate_job(**tool_block.input)
                 elif tool_block.name == "flag_for_review":
                     result = flag_for_review(**tool_block.input)
                 else:
+                    # GUARD (E2 unknown_tool): Claude asked for a tool that
+                    # doesn't exist. Raise, so the except below sends Claude
+                    # an error naming the real tools.
                     # STEP: unknown_tool
                     raise ValueError(
                         f"Unknown tool {tool_block.name!r}. Available tools: "
                         f"{', '.join(t['name'] for t in tools)}.")
                 outcome = {"content": json.dumps(result)}
+            # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad
+            # arguments, the grader's own call failing) becomes an is_error
+            # result for Claude, instead of crashing the run.
             # STEP: tool_failed
             except Exception as e:
                 error = f"{type(e).__name__}: {e}"
-                print(f"[step 6] {tool_block.name} raised → {error}")
+                print(f"[tool_failed] {tool_block.name} raised → {error}")  # (terminal only)
                 outcome = {"content": error, "is_error": True}
-            rec.tool_finished(tool_block, outcome)   # did it succeed? then the result
+            rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)
 
             # Each result carries the SAME id Claude gave its request.
+            # **outcome copies outcome's keys into this dict, giving e.g.
+            #   {"type": "tool_result", "tool_use_id": "toolu_01…",
+            #    "content": "JSONDecodeError: ...", "is_error": True}
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_block.id,
@@ -302,27 +416,32 @@ def run_agent(job_text, recorder=None):
             })
 
         # Return ALL the results in ONE user-role message.
-        before = list(messages)
+        before = list(messages)  # a copy, for the trace's before/after (trace only)
         # STEP: results_back
         messages.append({"role": "user", "content": tool_results})
-        rec.messages_changed("results_back", before, messages)
+        rec.messages_changed("results_back", before, messages)  # (trace only)
+        # (terminal only) `ids` just builds the text for the print below.
         ids = ", ".join(
             r["tool_use_id"] + (" is_error" if r.get("is_error") else "")
             for r in tool_results)
-        print(f"[step 8] appended {len(tool_results)} tool_result(s) "
-              f"(ids: {ids}) → messages has {len(messages)}")
+        print(f"[results_back] appended {len(tool_results)} tool_result(s) "
+              f"(ids: {ids}) → messages has {len(messages)}")  # (terminal only)
         # ...back to the top of the loop for the next pass.
 
-    # Used up every pass without end_turn: stop instead of looping forever.
-    print(f"\n[cap] {MAX_PASSES} outer calls without end_turn → stopping.")
+    # GUARD (E4 pass_cap): used up every pass without end_turn (e.g. Claude
+    # keeps retrying a tool that keeps failing). Stop instead of looping,
+    # and spending, forever.
+    print(f"\n[pass_cap] {MAX_PASSES} outer calls without end_turn → stopping.")  # (terminal only)
     # STEP: pass_cap
     answer = f"Stopped after {MAX_PASSES} passes without finishing."
-    rec.end("pass_cap", answer)
+    rec.end("pass_cap", answer)  # (trace only)
     return answer
 
 
 # ---------------------------------------------------------------------------
 # TEST CASE
+# `if __name__ == "__main__":` runs only when you start this file directly
+# (python agent.py), not when tests import it.
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     job = """Northwind Labs — AI Agent Architect
@@ -333,8 +452,9 @@ enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
     # Record this run as a trace (scenario names come with #17).
-    recorder = tracing.Recorder(scenario="clean")
+    recorder = tracing.Recorder(scenario="clean")  # (trace only)
     # STEP: agent_starts
     final = run_agent(job, recorder=recorder)
-    print("\nFINAL ANSWER:\n" + final)
-    print(f"\nTrace written to {recorder.write()}")
+    print("\nFINAL ANSWER:\n" + final)  # (terminal only)
+    path = recorder.write()   # save the trace file to traces/ (trace only)
+    print(f"\nTrace written to {path}")  # (terminal only)
