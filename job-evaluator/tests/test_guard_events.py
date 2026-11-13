@@ -166,6 +166,8 @@ class AllGuardsTest(TraceTestCase):
         "bad_json": dict(outer=one_tool_then_done("toolu_1", "evaluate_job", EVAL_INPUT),
                          inner=[fakes.reply(fakes.text("not json"))]),
         "cut_off": dict(outer=[fakes.reply(fakes.text("Here"), stop_reason="max_tokens")]),
+        "refusal": dict(outer=[fakes.reply(fakes.text("I can't help with that."),
+                                           stop_reason="refusal")]),
     }
 
     def runs(self):
@@ -179,7 +181,7 @@ class AllGuardsTest(TraceTestCase):
 
     def test_guard_shape_and_meaning_of_caught(self):
         error_steps = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap", "grader_cut_off",
-                       "api_call_failed", "no_final_answer", "invalid_grade"}
+                       "api_call_failed", "no_final_answer", "invalid_grade", "unexpected_stop"}
         for name, rec in self.runs():
             for g in guards(rec):
                 with self.subTest(name, guard=g["id"]):

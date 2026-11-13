@@ -401,3 +401,23 @@ grader.
 **What would change it:** postings whose pay `lowest_base` misreads (other
 currencies, unusual formats); then extract a number in Claude #1's tool input
 instead of parsing text.
+
+## D29 — A stop reason the agent doesn't handle stops the run
+
+**Status:** **Approved** (issue #21, PR #52)
+**Date:** 2026-11-13
+**Options:** list each unhandled stop reason and stop on those · stop on
+anything that isn't `tool_use` · handle some (e.g. resume after `pause_turn`)
+**Decision:** after the `end_turn` and `max_tokens` checks, anything other
+than `tool_use` stops the run with "Claude stopped for a reason this agent
+doesn't handle (stop_reason '…'). The run stopped." Nothing in the reply is
+acted on, even a tool request, and no further request is sent. Only the stop
+reason goes in the message, not any text Claude wrote.
+**Reasoning:** same as D22: the run must always finish, and it shouldn't act
+on a reply it doesn't understand. Checking for "not `tool_use`" rather than a
+list means a stop reason the API adds later is stopped too; the SDK already
+lists one (`model_context_window_exceeded`) the issue didn't mention.
+Resuming after `pause_turn` is out of scope (#21); this agent uses no server
+tools, so it shouldn't occur.
+**What would change it:** the agent starting to use server tools (then
+`pause_turn` needs a resume), or wanting to show Claude's refusal text.

@@ -24,7 +24,7 @@ agent does; the other two are tagged so you can skip them:
 labelled above their marker:
 
     GUARD (E<n> <step_id>)  catches a failure: a crash, a hang, or bad data.
-                            E1–E8 are the "When something goes wrong" steps.
+                            E1–E9 are the "When something goes wrong" steps.
     RULE (<step_id>)        applies one of Justin's decisions, like the $180K
                             floor. When it rejects a posting, that's the agent
                             working as intended, so it's a normal step.
@@ -41,7 +41,7 @@ THE WHOLE THING IN BRIEF
    Inside evaluate_job, code checks the hard rules first (remote, the $180K
    floor); only a posting that passes them goes to the grader, a second
    Claude that answers one yes/no question.
-4. Guards stop the run cleanly if something goes wrong (E1–E8).
+4. Guards stop the run cleanly if something goes wrong (E1–E9).
 5. Faults (faults.py) make one thing go wrong on purpose, so the guards can
    be shown working. They're off unless you ask for one, and every change a
    fault makes is labelled `injected` in the trace.
@@ -363,6 +363,7 @@ def flag_for_review(company, role_title, missing_info):
 #       done (end_turn)?          → return its text          check_reply / claude_done
 #           no text in it?        → stop                    GUARD E7
 #       cut off (max_tokens)?     → stop                    GUARD E3
+#       any reason but tool_use?  → stop                    GUARD E9
 #       messages += Claude's reply                          save_turn
 #       for each tool request in the reply:                 run_tools
 #           unknown tool?         → error result            GUARD E2
@@ -450,7 +451,9 @@ def run_agent(job_text, recorder=None, fault=None):
         # Claude decides on Anthropic's servers (step claude_decides, no
         # code here). `response` is what came back:
         #   response.stop_reason  why Claude stopped: "end_turn" (done),
-        #                         "tool_use" (wants tools), "max_tokens" (cut off)
+        #                         "tool_use" (wants tools), "max_tokens" (cut off),
+        #                         or one this agent doesn't handle, e.g.
+        #                         "refusal" (Claude declined) → GUARD E9
         #   response.content      a list of blocks, e.g.
         #       [ThinkingBlock(thinking="..."),          (sometimes)
         #        TextBlock(text="I'll rate this."),
@@ -496,6 +499,18 @@ def run_agent(job_text, recorder=None, fault=None):
             answer = (f"Claude's reply was cut off (hit the max_tokens limit "
                       f"of {max_tokens}).")
             rec.end("max_tokens", answer)  # (trace only)
+            return answer
+
+        # GUARD (E9 unexpected_stop): only a tool_use reply asks for tools.
+        # Any other stop reason (refusal, stop_sequence, pause_turn, ...)
+        # means a reply this agent doesn't handle; acting on it would send an
+        # empty tool-results message the API rejects. Stop and name the reason.
+        # STEP: unexpected_stop
+        if response.stop_reason != "tool_use":
+            print(f"\n[unexpected_stop] stop_reason = {response.stop_reason!r} → stopping.")  # (terminal only)
+            answer = (f"Claude stopped for a reason this agent doesn't handle "
+                      f"(stop_reason {response.stop_reason!r}). The run stopped.")
+            rec.end("unexpected_stop", answer, value=response.stop_reason)  # (trace only)
             return answer
 
         # Save Claude's FULL turn, tool_use block included, so the next call

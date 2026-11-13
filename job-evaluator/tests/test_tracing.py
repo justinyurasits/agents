@@ -39,6 +39,7 @@ CLEAN_SEQUENCE = [
     (1, "claude_decides", "api_response"),
     (1, "check_reply", ("guard", "stop_reason")),
     (1, "check_reply", ("guard", "max_tokens")),
+    (1, "check_reply", ("guard", "stop_reason_known")),
     (1, "save_turn", None),
     (1, "run_tools", ("guard", "tool_exists")),
     (1, "run_tools", "tool_call"),
@@ -107,7 +108,7 @@ class CleanRunTest(TraceTestCase):
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
         not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
                             "grader_cut_off", "api_call_failed", "no_final_answer",
-                            "invalid_grade"}
+                            "invalid_grade", "unexpected_stop"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
 
     def test_seq_and_ids(self):

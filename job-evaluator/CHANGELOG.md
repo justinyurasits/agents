@@ -27,6 +27,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Restore compensation in the sample job. Used a fictional company.
 - Scenario 8's visitor text now says the cap was lowered only for the demo, and that in real runs Claude usually stops retrying on its own (#49).
 - Move the $180K floor and the remote rule from the grader's prompt into code: `evaluate_job` screens first and returns IGNORE without a rating call; the grader now answers only "does this role build hands-on AI experience?" (yes → STRONG, no → WORTH REVIEWING). The screens are a normal step, `hard_screen` ("Code checks your hard rules"), recorded as rule events, not guards; agent.py labels rules `RULE (<step_id>)` and guards `GUARD (E<n> …)`, checked by `test_annotations.py` (#26).
+- Stop the run when Claude's reply has a stop reason the agent doesn't handle (e.g. `refusal`), instead of sending an empty tool-results message the API rejects. New guard step E9 `unexpected_stop` (#21).
 
 ## 0.1.0 — 2026-11-11
 
