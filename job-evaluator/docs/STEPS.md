@@ -15,7 +15,7 @@ run is recorded (`code_refs.py`), so they can't go stale when the code moves.
 Step id: `agent_starts`
 
 A job posting is handed to the agent, which starts the loop.
-Code: `# STEP: agent_starts` in agent.py (`final = run_agent(job)`)
+Code: `# STEP: agent_starts` in agent.py (`final = run_agent(job, recorder=recorder)`)
 
 ### 2. The conversation is set up
 
@@ -108,7 +108,7 @@ Step id: `answer_returned`
 
 Python takes Claude's final text and hands it back as the result. The loop
 ends.
-Code: `# STEP: answer_returned` in agent.py (`return next(b for b in response.content if b.type == "text").text`)
+Code: `# STEP: answer_returned` in agent.py (`answer = next(b for b in response.content if b.type == "text").text`)
 
 ## WHEN SOMETHING GOES WRONG
 
@@ -145,4 +145,4 @@ Step id: `pass_cap`
 
 Claude still hasn't finished after 10 trips around the loop. Python stops
 the run so a stuck agent can't loop, and spend money, forever.
-Code: `# STEP: pass_cap` in agent.py (`return f"Stopped after ... passes without finishing."`)
+Code: `# STEP: pass_cap` in agent.py (`answer = f"Stopped after ... passes without finishing."`)

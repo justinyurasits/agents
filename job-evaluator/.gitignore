@@ -1,0 +1,4 @@
+# Trace files from local runs. Runs used on the page are copied into
+# traces/recorded/ on purpose and committed (decision G on #1).
+traces/*
+!traces/recorded/

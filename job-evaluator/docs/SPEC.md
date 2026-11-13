@@ -23,7 +23,7 @@ Rating criteria, as written in the grader's prompt (`RUBRIC`):
 
 It's a small, deliberately visible agent. It was built to learn and demonstrate the agent loop, so every step prints a line to the terminal.
 
-**Run it:** `python agent.py` from `job-evaluator/` (setup in [README.md](../README.md)). It evaluates a built-in sample posting (Northwind Labs, remote, $200K–$240K) and prints the trace and the final answer.
+**Run it:** `python agent.py` from `job-evaluator/` (setup in [README.md](../README.md)). It evaluates a built-in sample posting (Northwind Labs, remote, $200K–$240K), prints each step and the final answer, and writes a trace file to `traces/` (section 7).
 
 **Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call).
 
@@ -53,7 +53,8 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `strip_json_fences(text)` | Removes a surrounding ```` ``` ```` / ```` ```json ```` fence from the grader's reply. Pure string function. |
 | `evaluate_job(...)` | Tool. Makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, and returns it as a dict. |
 | `flag_for_review(...)` | Tool. Plain Python, no API call. Returns `{"status": "flagged", "company", "role_title", "missing_info"}`. |
-| `run_agent(job_text)` | The agent loop (next section). |
+| `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
+| `run_agent(job_text, recorder=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). |
 | `if __name__ == "__main__"` | The sample posting and the call to `run_agent`. |
 
 Next to it, [`code_refs.py`](../code_refs.py) finds the code each step points to. `agent.py` carries a `# STEP: <step_id>` comment directly above the code for each step in [STEPS.md](STEPS.md), and `code_ref(step_id, source)` returns that code's current line number and full statement (D23). Nothing stores line numbers by hand, so editing `agent.py` can't make a reference go stale.
@@ -155,9 +156,48 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 
 ## 7. Trace format
 
-> **Placeholder until [#1](https://github.com/justinyurasits/agents/issues/1)** ("Emit step events from the agent loop"). #1 will define a structured trace for the web page (D15, D21), built in three parts: step markers ([#27](https://github.com/justinyurasits/agents/issues/27)), the recorder and core events ([#28](https://github.com/justinyurasits/agents/issues/28)), and guard events ([#29](https://github.com/justinyurasits/agents/issues/29)). Until then, the only trace is what's printed to the terminal.
+Every recorded run writes a **trace**: one JSON event per step, which the page (D15) replays. Built for [#1](https://github.com/justinyurasits/agents/issues/1) in three parts: step markers ([#27](https://github.com/justinyurasits/agents/issues/27)), the recorder and core events ([#28](https://github.com/justinyurasits/agents/issues/28), this section), and inner calls plus guard events ([#29](https://github.com/justinyurasits/agents/issues/29), **not built yet**). The format decision is D24.
 
-The current terminal output is one line per event. Its `[step N]` numbers are an older numbering that matches neither STEPS.md nor the step markers; the trace from #1 uses step ids instead.
+### How a trace is made
+
+[`tracing.py`](../tracing.py) has a `Recorder`. `run_agent(job_text, recorder=None)` calls it at each step. With no recorder it uses `NullRecorder`, which records nothing, so the agent behaves exactly the same. `python agent.py` records the sample run as scenario `clean` and writes **`traces/<scenario>-<YYYYMMDD-HHMMSS>.json`**. `traces/` is gitignored except `traces/recorded/`, where runs used on the page are copied on purpose.
+
+### The file
+
+| Key | What |
+|---|---|
+| `trace_version` | `1` |
+| `scenario`, `started_at` | Scenario name; UTC start time |
+| `git_commit`, `git_dirty` | The commit that ran, and whether `job-evaluator/` had uncommitted changes. Lets the page link code references to the exact version. |
+| `model`, `limits` | `claude-sonnet-5-5`; `{"max_passes": 10, "max_tokens": 2000}` |
+| `tools` | The full tool definitions, stored once |
+| `events` | One per step, in order (below) |
+| `result` | `{"ended_by": "end_turn" \| "max_tokens" \| "pass_cap", "text": …}`: what `run_agent` returned |
+
+### Events
+
+**Every event has every key**, `null` when it doesn't apply: `id` (`e1`, `e2`, …), `seq`, `pass` (`0` = before the loop), `step_id` (from [STEPS.md](STEPS.md)), `actor` (`python`, `claude`, or `tool`), `crossing` (`{from, to, kind}` or `null`), `payload`, `messages_before`, `messages_after`, `code` (`{file, marker, line, lines}` from `code_refs.py`; `null` for `claude_decides`), `parent`, `tokens`, `guard`, `injected` (always `false` for now).
+
+| Step | `crossing.kind` | `payload` |
+|---|---|---|
+| `agent_starts` | — | `job_text` |
+| `conversation_setup`, `save_turn`, `results_back` | — | `null`; `messages_before` / `messages_after` hold the conversation before and after (each adds exactly one message) |
+| `send_to_claude` | `api_request` (python → claude) | `model`, `max_tokens`, `system`, `tools` (names only), `messages` (as sent) |
+| `claude_decides` | `api_response` (claude → python) | `stop_reason`, `content` (every block: thinking, text, tool_use); `tokens` = `{input, output}` |
+| `check_reply` / `claude_done` | — | `stop_reason`. `claude_done` on the pass where it's `end_turn` (STEPS.md step 9). |
+| `run_tools` | `tool_call` (python → tool) | `tool`, `tool_use_id`, `arguments` |
+| `run_tools` | `tool_result` (tool → python) | `tool`, `tool_use_id`, `is_error`, `content` |
+| `answer_returned` / `reply_cut_off` / `pass_cap` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
+
+Content blocks are stored exactly as the API returned them (`model_dump()`), except that thinking blocks drop their opaque `signature`. Data is converted when the event is recorded, so later changes to `messages` can't alter it.
+
+**Coming in #29:** `inner_api_request` / `inner_api_response` events for `evaluate_job`'s grader call (with `parent`), and guard events (`guard` filled in).
+
+**No secrets:** the recorder never sees the API client, request headers, or environment variables, and `write()` refuses to write a trace that contains `sk-ant` anywhere.
+
+### Terminal output
+
+The `print` lines are still there for following a run live, one line per event. Its `[step N]` numbers are an older numbering that matches neither STEPS.md nor the step markers; the trace from #1 uses step ids instead.
 
 | Line | When |
 |---|---|
@@ -186,4 +226,4 @@ What the code does **not** handle today. Each item is checked against the code, 
 - **The cap is fixed in code**, not configurable from outside, and it counts passes, not tokens or dollars. Out of scope for #15.
 - **Return values are plain strings.** A caller can only tell "finished", "cut off", and "stopped at the cap" apart by comparing the text (see [Overview](#1-overview)).
 - **Tools run one at a time**, in order (D20). Fine with two tools; slow if several grader calls ever happen in one turn.
-- **No structured trace yet**, only `print` lines. → [#1](https://github.com/justinyurasits/agents/issues/1), built in three parts: [#27](https://github.com/justinyurasits/agents/issues/27), [#28](https://github.com/justinyurasits/agents/issues/28), [#29](https://github.com/justinyurasits/agents/issues/29)
+- **The trace doesn't yet record `evaluate_job`'s grader call or guard events.** → [#29](https://github.com/justinyurasits/agents/issues/29)

@@ -19,21 +19,21 @@ STEPS_PATH = os.path.join(ROOT, "docs", "STEPS.md")
 # What each step's code starts with and ends with, and how many lines it
 # spans. If code moves, these stay true; if code changes, update them.
 EXPECTED = {
-    "agent_starts":       ("final = run_agent(job)", "final = run_agent(job)", 1),
+    "agent_starts":       ("final = run_agent(job, recorder=recorder)", "recorder=recorder)", 1),
     "conversation_setup": ('messages = [{"role": "user"', "job_text}\"}]", 1),
     "send_to_claude":     ("response = client.messages.create(", ")", 7),
-    "check_reply":        ('if response.stop_reason == "end_turn":', '.text', 5),
+    "check_reply":        ('if response.stop_reason == "end_turn":', "return answer", 7),
     "save_turn":          ('messages.append({"role": "assistant"', "})", 1),
-    "run_tools":          ("for tool_block in (b for b in response.content", "})", 28),
+    "run_tools":          ("for tool_block in (b for b in response.content", "})", 30),
     "inner_grader":       ("eval_response = client.messages.create(", ")", 6),
     "results_back":       ('messages.append({"role": "user", "content": tool_results})',
                            "tool_results})", 1),
-    "answer_returned":    ('return next(b for b in response.content if b.type == "text").text',
+    "answer_returned":    ('answer = next(b for b in response.content if b.type == "text").text',
                            ".text", 1),
     "tool_failed":        ("except Exception as e:", '"is_error": True}', 4),
     "unknown_tool":       ("raise ValueError(", 'for t in tools)}.")', 3),
-    "reply_cut_off":      ('if response.stop_reason == "max_tokens":', '{MAX_TOKENS}).")', 4),
-    "pass_cap":           ('return f"Stopped after {MAX_PASSES} passes without finishing."',
+    "reply_cut_off":      ('if response.stop_reason == "max_tokens":', "return answer", 6),
+    "pass_cap":           ('answer = f"Stopped after {MAX_PASSES} passes without finishing."',
                            'finishing."', 1),
 }
 
