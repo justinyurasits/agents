@@ -153,7 +153,7 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 
 ## 7. Trace format
 
-> **Placeholder until [#1](https://github.com/justinyurasits/agents/issues/1)** ("Emit step events from the agent loop"). #1 will define a structured trace for the web page (D15, D21). Until then, the only trace is what's printed to the terminal.
+> **Placeholder until [#1](https://github.com/justinyurasits/agents/issues/1)** ("Emit step events from the agent loop"). #1 will define a structured trace for the web page (D15, D21), built in three parts: step markers ([#27](https://github.com/justinyurasits/agents/issues/27)), the recorder and core events ([#28](https://github.com/justinyurasits/agents/issues/28)), and guard events ([#29](https://github.com/justinyurasits/agents/issues/29)). Until then, the only trace is what's printed to the terminal.
 
 The current terminal output is one line per event. Its step numbers match the comments in `agent.py`, not the numbering in STEPS.md.
 
@@ -176,12 +176,12 @@ The current terminal output is one line per event. Its step numbers match the co
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
 - **Unexpected `stop_reason`** (e.g. `refusal`). Anything other than `end_turn` or `max_tokens` goes to the tool dispatch. With no tool requests in the reply, an empty user message is sent; the API will most likely reject it, and the run fails with an API error. This comes from reading the code; it hasn't been reproduced live. → [#21](https://github.com/justinyurasits/agents/issues/21)
-- **API errors on the outer call aren't caught.** A network error, rate limit, or bad key on Claude #1's call raises out of `run_agent`. The same errors on the *grader's* call are caught, because that call runs inside a tool. No issue yet.
-- **`end_turn` with no text block** would raise `StopIteration` from the final `next(...)`. Not seen in practice. No issue yet.
-- **The grader's JSON isn't validated.** Whatever object the grader returns is passed on as the result. A missing `rating`, or a value other than the three ratings, isn't caught. No issue yet.
+- **API errors on the outer call aren't caught.** A network error, rate limit, or bad key on Claude #1's call raises out of `run_agent`. The same errors on the *grader's* call are caught, because that call runs inside a tool. → [#30](https://github.com/justinyurasits/agents/issues/30)
+- **`end_turn` with no text block** would raise `StopIteration` from the final `next(...)`. Not seen in practice. → [#31](https://github.com/justinyurasits/agents/issues/31)
+- **The grader's JSON isn't validated.** Whatever object the grader returns is passed on as the result. A missing `rating`, or a value other than the three ratings, isn't caught. → [#32](https://github.com/justinyurasits/agents/issues/32)
 - **Hard rules live in the prompt** ($180K floor, remote). See [section 6](#6-rules-in-code-vs-prompt). No issue yet.
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
 - **The cap is fixed in code**, not configurable from outside, and it counts passes, not tokens or dollars. Out of scope for #15.
 - **Return values are plain strings.** A caller can only tell "finished", "cut off", and "stopped at the cap" apart by comparing the text (see [Overview](#1-overview)).
 - **Tools run one at a time**, in order (D20). Fine with two tools; slow if several grader calls ever happen in one turn.
-- **No structured trace yet**, only `print` lines. → [#1](https://github.com/justinyurasits/agents/issues/1)
+- **No structured trace yet**, only `print` lines. → [#1](https://github.com/justinyurasits/agents/issues/1), built in three parts: [#27](https://github.com/justinyurasits/agents/issues/27), [#28](https://github.com/justinyurasits/agents/issues/28), [#29](https://github.com/justinyurasits/agents/issues/29)
