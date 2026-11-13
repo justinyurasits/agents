@@ -53,7 +53,11 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   blocks can come first).
 - Step markers: `# STEP: <step_id>` comments anchor code references
   for the step-by-step page. Don't remove or rename one without
-  updating STEPS.md.
+  updating STEPS.md. A marker goes on the line directly above the code.
+- Never write line numbers in STEPS.md. `code_refs.py` looks them up
+  from the markers when a run is recorded.
+- Every guard (a check that stops a crash, a hang, or bad data) gets
+  its own step in STEPS.md and a marker on its code.
 - Before opening a PR, run the agent end to end and include a short
   summary of the output in the PR.
 - Before opening a PR, run the tests from the agent's folder

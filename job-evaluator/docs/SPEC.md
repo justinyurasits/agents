@@ -56,6 +56,8 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `run_agent(job_text)` | The agent loop (next section). |
 | `if __name__ == "__main__"` | The sample posting and the call to `run_agent`. |
 
+Next to it, [`code_refs.py`](../code_refs.py) finds the code each step points to. `agent.py` carries a `# STEP: <step_id>` comment directly above the code for each step in [STEPS.md](STEPS.md), and `code_ref(step_id, source)` returns that code's current line number and full statement (D23). Nothing stores line numbers by hand, so editing `agent.py` can't make a reference go stale.
+
 There are two Claude roles, and they never mix:
 
 - **Claude #1, the agent** (outer calls in `run_agent`): sees the posting and the tools, and decides what to do.
@@ -155,7 +157,7 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 
 > **Placeholder until [#1](https://github.com/justinyurasits/agents/issues/1)** ("Emit step events from the agent loop"). #1 will define a structured trace for the web page (D15, D21), built in three parts: step markers ([#27](https://github.com/justinyurasits/agents/issues/27)), the recorder and core events ([#28](https://github.com/justinyurasits/agents/issues/28)), and guard events ([#29](https://github.com/justinyurasits/agents/issues/29)). Until then, the only trace is what's printed to the terminal.
 
-The current terminal output is one line per event. Its step numbers match the comments in `agent.py`, not the numbering in STEPS.md.
+The current terminal output is one line per event. Its `[step N]` numbers are an older numbering that matches neither STEPS.md nor the step markers; the trace from #1 uses step ids instead.
 
 | Line | When |
 |---|---|

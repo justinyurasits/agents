@@ -247,3 +247,25 @@ Running a tool on half-written input is worse than stopping. Checking
 "invalid JSON" and hide it.
 **What would change it:** cut-offs happening in normal use. Then raise
 `MAX_TOKENS` or retry with a bigger limit (out of scope for #18).
+
+## D23 — Code references come from step markers, found with `ast`
+
+**Status:** **Proposed** (issue #27)
+**Date:** 2026-11-13
+**Options:** hand-written line numbers in STEPS.md · a start and end marker
+around each block · one marker above the code, with the code's extent found
+by parsing
+**Decision:** one `# STEP: <step_id>` comment directly above the code.
+`code_refs.py` reads the source, finds the marker, and uses Python's `ast`
+module to take the outermost statement (or `except` clause) starting on the
+next line, so a multi-line call or a whole `if` / `for` block comes back
+complete. Step 9 (`claude_done`) shares step 5's marker, and step 4
+(`claude_decides`) has no code. A missing or duplicated marker, or a marker
+not directly above code, raises an error.
+**Reasoning:** hand-written line numbers in STEPS.md went stale on almost
+every PR. One marker per step is the least to maintain, and `ast` knows where
+a statement ends better than a hand-placed end marker would. Failing loudly
+on a broken marker means a wrong reference shows up as a test failure, not
+on the page.
+**What would change it:** a step that needs to point at part of a statement,
+or at code spread over several places. Then add an explicit end marker.
