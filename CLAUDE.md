@@ -13,7 +13,7 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
 - Work only from a GitHub issue. Read it first: `gh issue view <N>`.
 - Always work in a separate git worktree, never in Justin's main repo
   folder (`~/Documents/agents`): `git worktree add
-  ../agents-worktrees/<branch> -b <branch> origin/main`. He may be using
+../agents-worktrees/<branch> -b <branch> origin/main`. He may be using
   the main folder at the same time, and a branch switch there carries
   uncommitted work onto the wrong branch.
 - Read the agent's docs/SPEC.md and docs/STEPS.md before changing code.
@@ -33,7 +33,7 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
 - docs/STEPS.md if a step was added, removed, or renamed.
 - docs/DECISIONS.md if a design choice was made. Add it marked
   **Proposed**; Justin approves it in review.
-- Do not write in BUILD_LOG.md. That is Justin's.
+- You can suggest writing for BUILD_LOG.md and LEARNINGS.md which is in the Agents folder. Do this after each PR.
 
 ## Ask before
 
@@ -74,12 +74,12 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
     line `# (trace only)`;
   - put `# GUARD (E<n> <step_id>): <what it protects against>` above each
     guard's marker, matching STEPS.md, and `# RULE (<step_id>): <what it
-    decides>` above each rule's marker;
+decides>` above each rule's marker;
   - start terminal output with the step id in brackets, e.g. `[run_tools]`;
   - update the map in the module docstring and above `run_agent`, and the
     "what this looks like" examples, when the loop or a data shape changes;
   - explain any new Python idiom in one line where it first appears.
-  `tests/test_annotations.py` checks the first three; the last two are on you.
+    `tests/test_annotations.py` checks the first three; the last two are on you.
 - Before opening a PR, run the agent end to end and include a short
   summary of the output in the PR.
 - Before opening a PR, run the tests from the agent's folder
