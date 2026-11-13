@@ -36,7 +36,8 @@ CROSSING_KINDS = ("api_request", "api_response", "tool_call", "tool_result",
 END_STEPS = {"end_turn": "answer_returned",
              "max_tokens": "reply_cut_off",
              "pass_cap": "pass_cap",
-             "api_error": "api_call_failed"}
+             "api_error": "api_call_failed",
+             "no_text": "no_final_answer"}
 
 
 def to_json(obj):
@@ -280,6 +281,14 @@ class Recorder:
             self.guard("api_call_failed", "api_call_succeeded",
                        "client.messages.create returned a reply", value, True,
                        action="run_stopped", message=text)
+        elif ended_by in ("end_turn", "no_text"):
+            # Claude finished: did it write a final answer?
+            missing = ended_by == "no_text"
+            self.guard("no_final_answer" if missing else "answer_returned",
+                       "final_text_present", "the reply has a text block",
+                       None if missing else "text", missing,
+                       action="run_stopped" if missing else None,
+                       message=text if missing else None)
         elif ended_by == "max_tokens":
             self.guard("reply_cut_off", "max_tokens", 'stop_reason == "max_tokens"',
                        "max_tokens", True, action="run_stopped", message=text)

@@ -197,7 +197,14 @@ def run_agent(job_text, recorder=None):
             print(f"\n[step 11] end_turn → done. "
                   f"Outer calls: {api_calls}, plus any inner tool calls.")
             # STEP: answer_returned
-            answer = next(b for b in response.content if b.type == "text").text
+            answer = next((b.text for b in response.content if b.type == "text"), None)
+            # Claude said it's done but wrote no text (e.g. only a thinking
+            # block). Say so, rather than crash at the very last step.
+            # STEP: no_final_answer
+            if answer is None:
+                answer = "Claude finished without writing a final answer."
+                rec.end("no_text", answer)
+                return answer
             rec.end("end_turn", answer)
             return answer
 
