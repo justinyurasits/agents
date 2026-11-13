@@ -83,14 +83,16 @@ RATINGS = ("STRONG", "WORTH REVIEWING", "IGNORE")
 def grade_problem(grade):
     """What's wrong with the grader's parsed JSON, or None if it's valid.
 
-    Valid means: an object with `rating` (one of RATINGS) and `reasons` (a
-    list of strings). Other keys are allowed. Pure function, no API call.
+    Valid means: an object with `rating` (one of RATINGS, in any case) and
+    `reasons` (a list of strings). Other keys are allowed. Pure function, no
+    API call.
     """
     if not isinstance(grade, dict):
         return f"The grader's reply is a JSON {type(grade).__name__}, not an object."
     if "rating" not in grade:
         return "The grader's reply has no 'rating'."
-    if grade["rating"] not in RATINGS:
+    rating = grade["rating"]
+    if not isinstance(rating, str) or rating.upper() not in RATINGS:
         return (f"The grader's rating {grade['rating']!r} isn't one of "
                 f"{', '.join(RATINGS)}.")
     if "reasons" not in grade:
@@ -158,6 +160,9 @@ def evaluate_job(company, role_title, job_description,
     # STEP: invalid_grade
     if problem:
         raise ValueError(problem)
+    # Any case is accepted; pass it on in uppercase so the three ratings are
+    # always spelled the same.
+    grade["rating"] = grade["rating"].upper()
     return grade
 
 
