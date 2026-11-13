@@ -66,6 +66,7 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
 | `run_agent(job_text, recorder=None, fault=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). With a `Fault`, it fails on purpose in one way. |
 | `SAMPLE_JOB`, `choose_run(argv)` | The built-in posting, and the command line (`--scenario`, `--fault`) turned into what to run. |
+| `scenario_job_text(scenario)` | A scenario's posting, or its postings joined with a `---` line (`POSTING_SEPARATOR`). Used by `choose_run` and `record.py`. |
 | `if __name__ == "__main__"` | Runs `choose_run`, then `run_agent`, and writes the trace. |
 
 Next to it, [`code_refs.py`](../code_refs.py) finds the code each step points to. `agent.py` carries a `# STEP: <step_id>` comment directly above the code for each step in [STEPS.md](STEPS.md), and `code_ref(step_id, source)` returns that code's current line number and full statement (D23). Nothing stores line numbers by hand, so editing `agent.py` can't make a reference go stale.
@@ -184,7 +185,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 
 ### How a trace is made
 
-[`tracing.py`](../tracing.py) has a `Recorder`. `run_agent(job_text, recorder=None, fault=None)` calls it at each step. With no recorder it uses `NullRecorder`, which records nothing, so the agent behaves exactly the same. `python agent.py` records the sample run as scenario `clean` and writes **`traces/<scenario>-<YYYYMMDD-HHMMSS>.json`**. `traces/` is gitignored except `traces/recorded/`, where runs used on the page are copied on purpose.
+[`tracing.py`](../tracing.py) has a `Recorder`. `run_agent(job_text, recorder=None, fault=None)` calls it at each step. With no recorder it uses `NullRecorder`, which records nothing, so the agent behaves exactly the same. `python agent.py` records the sample run as scenario `clean` and writes **`traces/<scenario>-<YYYYMMDD-HHMMSS>.json`**. `traces/` is gitignored. Runs used on the page are made by `record.py` and saved to `recordings/`, which is committed (see [Recording scenarios](#recording-scenarios-recordpy)).
 
 ### The file
 
@@ -274,6 +275,27 @@ So a grader that's cut off shows two caught guards in order: `max_tokens` (`grad
 - **Limit faults:** every event made under the lowered limit is `injected: true`. For `reply_cut_off` that's the request, Claude's response, the checks and the end. For `runaway_loop` it's the pass-count checks and the end.
 - **Real API responses are recorded as they came back,** never altered: a swapped grader reply shows its real text in `inner_api_response`, and the injected text only in `fault_injected`.
 
+### Recording scenarios (record.py)
+
+[`record.py`](../record.py) makes the runs the page plays (#53, D30): `python record.py <id>` or `python record.py --all`. Each is a **real run** of the scenario's posting(s) and fault exactly as written in `scenarios/scenarios.json`, saved to **`recordings/scenario-<id>.json`** (two digits, e.g. `scenario-05.json`), replacing the previous recording. A scenario id that doesn't exist prints the valid ids and exits (code 2) before anything runs.
+
+The file is the trace (format above) plus two keys:
+
+```json
+"mismatch": false,
+"check": {"expected": {"tools": ["evaluate_job"], "outcome": "STRONG"},
+          "actual":   {"tools": ["evaluate_job"], "outcome": ["STRONG"]},
+          "mismatch": false, "differences": []}
+```
+
+**What's compared** is the scenario's `expect`, never Claude's wording:
+
+- **Tools:** every tool Claude asked for, in order, including an unknown one, with back-to-back repeats counted once, so a retry doesn't change the path.
+- **Outcome:** `stopped` if a guard stopped the run; otherwise one entry per tool that succeeded with a verdict (`evaluate_job`'s rating, or `flagged` for `flag_for_review`), or `no rating` if there was none.
+- `expect` can be a list of acceptable results; matching any one is a PASS (scenario 6: a rating after Claude's retry, or no rating after it explains the failure).
+
+It prints PASS, or MISMATCH with each difference (e.g. `tools: expected evaluate_job; got flag_for_review`), and exits 1 if any run mismatched. A mismatched run is still saved, with every step and error, so it's visible rather than lost. Every run also regenerates `docs/SCENARIOS.md` from the JSON, including a "Checked by record.py" line per scenario; a test fails if the committed doc and the JSON ever disagree.
+
 ### Terminal output
 
 The `print` lines are still there for following a run live, one line per event. Each starts with the **step id** in brackets, the same id as STEPS.md, the `# STEP:` markers and the trace (#44). In `agent.py` every print is tagged `# (terminal only)`: it shows what's happening and changes nothing.
@@ -294,6 +316,8 @@ The `print` lines are still there for following a run live, one line per event. 
 ---
 
 ## 8. Known limits
+
+- **Scenario 3 can't pass yet.** It expects a `research_company` tool that doesn't exist, so `record.py 3` saves it as a mismatch. No issue yet.
 
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 

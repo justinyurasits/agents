@@ -421,3 +421,26 @@ Resuming after `pause_turn` is out of scope (#21); this agent uses no server
 tools, so it shouldn't occur.
 **What would change it:** the agent starting to use server tools (then
 `pause_turn` needs a resume), or wanting to show Claude's refusal text.
+
+## D30 — How a recording is checked against its scenario
+
+**Status:** **Proposed** (issue #53)
+**Date:** 2026-11-13
+**Options:** parse the prose `expected_tools` / `expected_outcome` · add a
+machine-readable `expect` to each scenario · compare the exact tool sequence
+or count retries once · for multiple postings, run them separately or together
+**Decision:** each scenario in `scenarios.json` gets an `expect`
+(`{"tools": [...], "outcome": ...}`), next to the prose, which stays for the
+page. Outcome is one of STRONG, WORTH REVIEWING, IGNORE, `flagged`, `stopped`,
+`no rating`, or a list when the run handles several postings. `expect` may be
+a list of acceptable results (scenario 6). Back-to-back calls to the same tool
+count once. Several postings are sent together in one run, joined with a
+`---` line, which also fixes `agent.py --scenario 4` (it passed the list as
+text). SCENARIOS.md shows the `expect` as a "Checked by record.py" line. The
+first three choices made in chat on #53.
+**Reasoning:** parsing prose is fragile, since a wording edit would silently
+change the check. Retries vary between real runs (scenarios 6 and 8), so an
+exact count would mismatch on Claude's choice rather than on a wrong path.
+Scenario 6 promises "retries or explains", so both are a PASS.
+**What would change it:** the page needing a finer check (e.g. the number of
+retries), or postings that must be evaluated in separate runs.

@@ -396,14 +396,19 @@ class Recorder:
         Refuses (raises ValueError, writes nothing) if "sk-ant" appears
         anywhere in the trace.
         """
-        text = json.dumps(self.to_dict(), indent=2, ensure_ascii=False)
-        if SECRET_MARKER in text:
-            raise ValueError(f"trace contains {SECRET_MARKER!r}; not writing it")
         if directory is None:
             directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "traces")
-        os.makedirs(directory, exist_ok=True)
         stamp = self.started.strftime("%Y%m%d-%H%M%S")
-        path = os.path.join(directory, f"{self.scenario}-{stamp}.json")
+        return self.write_to(os.path.join(directory, f"{self.scenario}-{stamp}.json"))
+
+    def write_to(self, path, extra=None):
+        """Write the trace to exactly `path` (replacing any file there), with
+        `extra` keys added at the top level (record.py adds its check, #53).
+        Same refusal as write() if "sk-ant" appears anywhere."""
+        text = json.dumps({**self.to_dict(), **(extra or {})}, indent=2, ensure_ascii=False)
+        if SECRET_MARKER in text:
+            raise ValueError(f"trace contains {SECRET_MARKER!r}; not writing it")
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(text + "\n")
         return path
