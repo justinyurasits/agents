@@ -7,6 +7,7 @@ Run:
     python agent.py                     # the built-in sample posting
     python agent.py --scenario 6        # a scenario from scenarios/scenarios.json
     python agent.py --fault tool_fails  # force one failure on purpose (faults.py)
+    python record.py 5                  # record a scenario for the page (record.py)
 
 HOW TO READ THIS FILE
 ---------------------
@@ -615,6 +616,16 @@ enterprise customers to architect multi-agent systems using LLM tool use,
 evaluation frameworks, and integrations with customer data."""
 
 SCENARIOS_FILE = "scenarios/scenarios.json"
+POSTING_SEPARATOR = "\n\n---\n\n"   # between postings when a scenario has several
+
+
+def scenario_job_text(scenario):
+    """The job text for a scenario: its posting, or its postings joined with
+    a --- line between them (scenario 4 has two). Used by choose_run and by
+    record.py, so both run exactly the same text."""
+    posting = scenario["posting"]
+    # isinstance(posting, list): several postings, stored as a JSON list.
+    return POSTING_SEPARATOR.join(posting) if isinstance(posting, list) else posting
 
 
 def choose_run(argv=None, scenarios_file=SCENARIOS_FILE):
@@ -639,7 +650,7 @@ def choose_run(argv=None, scenarios_file=SCENARIOS_FILE):
             scenario = next((s for s in json.load(f) if s["id"] == args.scenario), None)
         if scenario is None:
             parser.error(f"no scenario {args.scenario} in {scenarios_file}")
-        job, name, fault = scenario["posting"], f"scenario-{args.scenario}", scenario["fault"]
+        job, name, fault = scenario_job_text(scenario), f"scenario-{args.scenario}", scenario["fault"]
     if args.fault:
         fault = args.fault
         if args.scenario is None:

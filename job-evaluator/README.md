@@ -33,7 +33,11 @@ cp .env.example .env               # then add your Anthropic API key
 python agent.py                     # the built-in sample posting
 python agent.py --scenario 6        # a scenario from scenarios/scenarios.json
 python agent.py --fault tool_fails  # force one failure on purpose (see faults.py)
+python record.py 5                  # record scenario 5 for the page and check it
+python record.py --all              # record every scenario
 ```
+
+`record.py` runs a scenario for real (it needs your API key and makes 2–4 API calls per scenario), saves it to `recordings/scenario-<id>.json`, and checks it against the scenario's `expect` in `scenarios/scenarios.json`: the tools called and the outcome, not Claude's wording. It prints PASS, or MISMATCH with what differed; a mismatched run is still saved, marked `"mismatch": true`. It also regenerates `docs/SCENARIOS.md` from the JSON.
 
 The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) (e.g. `[send_to_claude]`), so you can follow a run in the terminal. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
 

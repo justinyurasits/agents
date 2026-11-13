@@ -1,4 +1,3 @@
-# Trace files from local runs. Runs used on the page are copied into
-# traces/recorded/ on purpose and committed (decision G on #1).
-traces/*
-!traces/recorded/
+# Trace files from local runs. Runs used on the page are made with
+# record.py and saved to recordings/, which is committed (#53).
+traces/

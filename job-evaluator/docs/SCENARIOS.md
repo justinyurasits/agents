@@ -1,6 +1,6 @@
 # Scenarios
 
-The runs the page plays. Generated from `scenarios/scenarios.json`; edit the JSON, not this file.
+The runs the page plays. Generated from `scenarios/scenarios.json`; edit the JSON, not this file. `python record.py` regenerates it.
 
 Every company and posting here is fictional, written for this demo.
 
@@ -37,6 +37,8 @@ Fully remote within the US. Base salary $200,000–$240,000 plus equity.
 
 **Expected outcome:** STRONG: remote, base above $180K, and the role is hands-on agent building.
 
+**Checked by record.py:** tools evaluate_job; outcome STRONG
+
 ### 2. Missing info
 
 **What the visitor sees:** No compensation anywhere: Claude picks flag_for_review instead of evaluate_job.
@@ -66,6 +68,8 @@ This is a fully remote role open to candidates anywhere in the US. Competitive s
 **Expected tools:** flag_for_review
 
 **Expected outcome:** Flagged for review: compensation is not listed.
+
+**Checked by record.py:** tools flag_for_review; outcome flagged
 
 ### 3. Multi-tool
 
@@ -104,6 +108,8 @@ Remote within the US, with occasional visits to our operations centers.
 **Expected tools:** research_company, evaluate_job
 
 **Expected outcome:** STRONG: research shows a $200K–$235K base for this level; remote; hands-on agent building.
+
+**Checked by record.py:** tools research_company, evaluate_job; outcome STRONG
 
 ### 4. Two tools at once
 
@@ -150,6 +156,8 @@ Remote within the US. Salary and benefits discussed during interviews.
 
 **Expected outcome:** Quillmark rated STRONG; Fernhollow flagged because compensation is not listed. Both tool results go back in one message.
 
+**Checked by record.py:** tools evaluate_job, flag_for_review; outcome STRONG, flagged
+
 ### 5. Hard screen in code
 
 **What the visitor sees:** Base pay is below the floor, so a rule in code rejects the posting before the grader is ever asked.
@@ -179,6 +187,8 @@ Fully remote in the US. Base salary $140,000–$165,000 plus equity.
 **Expected tools:** evaluate_job (stops at the hard screen)
 
 **Expected outcome:** Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.
+
+**Checked by record.py:** tools evaluate_job; outcome IGNORE
 
 ## Break the agent (fault injected on purpose, labeled on the page)
 
@@ -215,6 +225,8 @@ Remote within the US. Base salary $205,000–$240,000 plus equity.
 
 **Expected outcome:** evaluate_job fails (injected broken JSON); the error goes to Claude marked is_error; Claude retries or explains the failure; the run still finishes.
 
+**Checked by record.py:** tools evaluate_job; outcome STRONG **or** tools evaluate_job; outcome WORTH REVIEWING **or** tools evaluate_job; outcome no rating
+
 ### 7. Unknown tool
 
 **What the visitor sees:** Claude's tool request names a tool that doesn't exist (injected). Python replies with an error listing the real tools.
@@ -248,6 +260,8 @@ Remote within the US. Base salary $210,000–$245,000 plus equity.
 
 **Expected outcome:** Python returns an is_error result naming the real tools; Claude then calls evaluate_job and the posting rates STRONG.
 
+**Checked by record.py:** tools rate_posting, evaluate_job; outcome STRONG
+
 ### 8. Runaway loop stopped
 
 **What the visitor sees:** The tool fails on every attempt (injected). Claude retries; the loop cap, lowered to 2 passes for this demo (injected), stops the run. In real runs the cap is 10, and Claude usually stops retrying a failing tool on its own before reaching it.
@@ -280,6 +294,8 @@ Remote within the US. Base salary $185,000–$215,000.
 **Expected tools:** evaluate_job (repeated, always fails)
 
 **Expected outcome:** Every attempt fails; the run stops at the lowered cap of 2 passes and returns "Stopped after 2 passes without finishing." (Real Claude retries a failing tool once and then stops on its own, so the cap is lowered for this fault; see #46.)
+
+**Checked by record.py:** tools evaluate_job; outcome stopped
 
 ### 9. Reply cut off
 
@@ -320,3 +336,5 @@ We're fully remote within the US, with travel two to four times a year to meet a
 **Expected tools:** none (no tool runs)
 
 **Expected outcome:** The reply is cut off by the injected token limit; the run stops with "Claude's reply was cut off (hit the max_tokens limit of …)."
+
+**Checked by record.py:** tools none; outcome stopped
