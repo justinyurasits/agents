@@ -292,3 +292,27 @@ exact version that ran. The full `messages[]` is repeated in each request and
 before/after copy (decision F on #1): simple, and still small at 10 passes.
 **What would change it:** traces getting slow to load on the page. Then store
 each message once and refer to it by index.
+
+## D25 — Guard events: every check recorded, "caught" means something went wrong
+
+**Status:** **Proposed** (issue #29)
+**Date:** 2026-11-13
+**Options:** record only guards that catch something · record every check
+**Decision:** every check records a guard event,
+`{name, checked, value, caught, action, message}`. `caught` is `true` only
+when something went wrong; then the event uses the guard's own error-case
+step (STEPS.md E1–E5). The stop_reason check is never "caught": it records
+`action: "finish"` on `end_turn`. An unknown tool is caught by `tool_exists`
+alone: no `tool_call` or `tool_succeeded` event, because no tool ran, and its
+`tool_result` has `actor: python` and no crossing. The grader's own
+max_tokens check got its own step (E5 `grader_cut_off`). `evaluate_job` finds
+the run's recorder through `tracing.active()`.
+**Reasoning:** the page should show that each check happened, not only when
+it fired. That's the point of D21's "break the agent" runs. Reserving
+`caught` for failures keeps "Claude finished" from reading like an error.
+Recording an unknown tool without a tool crossing keeps the trace truthful:
+nothing reached a tool. A module-level active recorder avoids adding a
+recorder parameter to every tool function.
+**What would change it:** tools that run in parallel (D20), where one global
+"active recorder" and "current tool call" no longer work; then pass the
+recorder and parent explicitly.
