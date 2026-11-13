@@ -28,22 +28,37 @@ GRADE = '{"rating": "WORTH REVIEWING", "reasons": ["remote", "pay"]}'
 FINAL = "Northwind Labs: worth reviewing."
 
 # A clean run, as STEPS.md describes it: (pass, step_id, crossing kind).
-# Steps inside evaluate_job (inner_grader) and guard events come in #29.
+# Guard events show as ("guard", <name>).
 CLEAN_SEQUENCE = [
     (0, "agent_starts", None),
     (0, "conversation_setup", None),
+    (1, "send_to_claude", ("guard", "pass_count")),
     (1, "send_to_claude", "api_request"),
     (1, "claude_decides", "api_response"),
-    (1, "check_reply", None),
+    (1, "check_reply", ("guard", "stop_reason")),
+    (1, "check_reply", ("guard", "max_tokens")),
     (1, "save_turn", None),
+    (1, "run_tools", ("guard", "tool_exists")),
     (1, "run_tools", "tool_call"),
+    (1, "inner_grader", "inner_api_request"),
+    (1, "inner_grader", "inner_api_response"),
+    (1, "inner_grader", ("guard", "max_tokens")),
+    (1, "run_tools", ("guard", "tool_succeeded")),
     (1, "run_tools", "tool_result"),
     (1, "results_back", None),
+    (2, "send_to_claude", ("guard", "pass_count")),
     (2, "send_to_claude", "api_request"),
     (2, "claude_decides", "api_response"),
-    (2, "claude_done", None),
+    (2, "claude_done", ("guard", "stop_reason")),
     (2, "answer_returned", None),
 ]
+
+
+def kind(e):
+    """An event's crossing kind, or ("guard", name) for a guard event."""
+    if e["guard"]:
+        return ("guard", e["guard"]["name"])
+    return (e["crossing"] or {}).get("kind")
 
 
 class TraceTestCase(unittest.TestCase):
@@ -76,15 +91,15 @@ class CleanRunTest(TraceTestCase):
     def test_every_step_both_passes_in_order(self):
         final, rec = self.clean_run()
         self.assertEqual(final, FINAL)
-        got = [(e["pass"], e["step_id"], (e["crossing"] or {}).get("kind")) for e in rec.events]
+        got = [(e["pass"], e["step_id"], kind(e)) for e in rec.events]
         self.assertEqual(got, CLEAN_SEQUENCE)
 
     def test_covers_every_steps_md_step_except_inner_and_error_cases(self):
         _, rec = self.clean_run()
         with open(code_refs.AGENT_PATH.replace("agent.py", "docs/STEPS.md"), encoding="utf-8") as f:
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
-        not_in_clean_run = {"inner_grader",                       # #29
-                            "tool_failed", "unknown_tool", "reply_cut_off", "pass_cap"}
+        not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
+                            "grader_cut_off"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
 
     def test_seq_and_ids(self):
@@ -100,8 +115,6 @@ class CleanRunTest(TraceTestCase):
                 if e["crossing"]:
                     self.assertIn(e["crossing"]["kind"], tracing.CROSSING_KINDS)
                 self.assertIs(e["injected"], False)
-                self.assertIsNone(e["guard"])          # guard events come in #29
-                self.assertIsNone(e["parent"])
 
     def test_code_refs_match_the_markers(self):
         _, rec = self.clean_run()
@@ -117,7 +130,7 @@ class PayloadTest(TraceTestCase):
 
     def test_api_request_has_system_tool_names_and_messages_at_that_moment(self):
         _, rec = self.clean_run()
-        requests = [e for e in rec.events if e["step_id"] == "send_to_claude"]
+        requests = [e for e in rec.events if kind(e) == "api_request"]
         for e in requests:
             p = e["payload"]
             self.assertEqual(p["system"], agent.SYSTEM_PROMPT)

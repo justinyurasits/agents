@@ -146,3 +146,12 @@ Step id: `pass_cap`
 Claude still hasn't finished after 10 trips around the loop. Python stops
 the run so a stuck agent can't loop, and spend money, forever.
 Code: `# STEP: pass_cap` in agent.py (`answer = f"Stopped after ... passes without finishing."`)
+
+### E5. The grader's reply is cut off
+
+Step id: `grader_cut_off`
+
+Inside evaluate_job, the grader's reply hit the length limit before its
+rating was complete. The tool reports that it was cut off, rather than
+"invalid JSON," and the error goes back to Claude like any tool failure (E1).
+Code: `# STEP: grader_cut_off` in agent.py (`if eval_response.stop_reason == "max_tokens":`)

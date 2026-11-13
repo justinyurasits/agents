@@ -17,6 +17,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Rewrite docs/SPEC.md as the agent's design doc (overview, components, loop, what Claude sees, guards table, rules in code vs prompt, trace placeholder, known limits); fix the run instructions in agent.py's docstring and drop the nonexistent candidate profile from STEPS.md step 1 (#23).
 - Add `# STEP: <step_id>` markers to agent.py and `code_refs.py` to look up each step's code and current line number; STEPS.md gets step ids, four error-case steps (tool fails, unknown tool, reply cut off, too many passes), and no more hard-coded line numbers (#27).
 - Record a trace of each run: `tracing.Recorder` writes one event per step of the outer loop (API request and response with tokens, tool calls and results, messages before and after) to `traces/<scenario>-<timestamp>.json`; `run_agent` takes an optional recorder and behaves the same without one (#28).
+- Trace `evaluate_job`'s grader call (with `parent` = its tool call) and every guard check (pass count, stop reason, max_tokens in the loop and the grader, tool exists, tool succeeded); add step E5 `grader_cut_off`; every event has `injected: false` (#29).
 - Restore compensation in the sample job. Used a fictional company.
 
 ## 0.1.0 — 2026-11-11

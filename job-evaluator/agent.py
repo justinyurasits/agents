@@ -100,16 +100,22 @@ def evaluate_job(company, role_title, job_description,
 
     # A separate, one-off Claude call. No tools, no loop.
     # The outer `messages` list is not touched.
+    rec = tracing.active()            # the run's recorder, if any
+    grader_messages = [{"role": "user", "content": job_summary}]
     print("  [step 7] evaluate_job → inner Claude call (API call #2)")
+    rec.inner_api_request(RUBRIC, grader_messages)
     # STEP: inner_grader
     eval_response = client.messages.create(
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=RUBRIC,
-        messages=[{"role": "user", "content": job_summary}],
+        messages=grader_messages,
     )
+    rec.inner_api_response(eval_response)
     # A reply that hit the token limit is unfinished. Say so plainly, rather
     # than letting json.loads report a confusing "invalid JSON".
+    rec.grader_checked(eval_response.stop_reason)
+    # STEP: grader_cut_off
     if eval_response.stop_reason == "max_tokens":
         raise RuntimeError(f"The grader's reply was cut off (hit the "
                            f"max_tokens limit of {MAX_TOKENS}).")
@@ -134,6 +140,7 @@ def run_agent(job_text, recorder=None):
     # `rec` writes one trace event per step (tracing.py). With no recorder,
     # NullRecorder does nothing, so the agent behaves exactly the same.
     rec = recorder or tracing.NullRecorder()
+    tracing.activate(rec)   # so evaluate_job's own Claude call is recorded too
     rec.start(job_text, model=MODEL, max_tokens=MAX_TOKENS, max_passes=MAX_PASSES,
               system=SYSTEM_PROMPT, tools=tools)
 
@@ -146,7 +153,7 @@ def run_agent(job_text, recorder=None):
     # At most MAX_PASSES passes. A pass is one outer API call; evaluate_job's
     # own Claude call happens inside a tool, so it doesn't count.
     for api_calls in range(1, MAX_PASSES + 1):
-        rec.pass_number = api_calls
+        rec.pass_started(api_calls)        # records the pass-count check
         # Send system + tools + the WHOLE messages list.
         print(f"\n[step {2 if api_calls == 1 else 9}] outer API call, "
               f"sending {len(messages)} message(s)")
@@ -207,7 +214,7 @@ def run_agent(job_text, recorder=None):
         # STEP: run_tools
         for tool_block in (b for b in response.content if b.type == "tool_use"):
             print(f"[step 6] dispatching {tool_block.name}(**{tool_block.input})")
-            rec.tool_call(tool_block)
+            rec.tool_checked(tool_block)       # does it exist? then the call
 
             # If the tool raises, don't crash: send the error back to Claude
             # as the tool_result, marked is_error, and let Claude decide.
@@ -227,7 +234,7 @@ def run_agent(job_text, recorder=None):
                 error = f"{type(e).__name__}: {e}"
                 print(f"[step 6] {tool_block.name} raised → {error}")
                 outcome = {"content": error, "is_error": True}
-            rec.tool_result(tool_block, outcome)
+            rec.tool_finished(tool_block, outcome)   # did it succeed? then the result
 
             # Each result carries the SAME id Claude gave its request.
             tool_results.append({
