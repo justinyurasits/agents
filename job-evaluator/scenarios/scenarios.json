@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1,
+    "name": "Clean run",
+    "group": "normal",
+    "behavior": "Complete posting: Claude asks for evaluate_job once, gets a rating, and finishes.",
+    "posting": "Northwind Labs — AI Agent Architect\nLocation: Remote (US)\nCompensation: $200,000–$240,000 base\n\nNorthwind Labs builds workflow software used by mid-size operations teams. We're adding agentic features across the product and need an AI Agent Architect to lead the work.\n\nYou'll design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining its tools, writing evaluation sets, and reviewing traces when it gets something wrong. You'll prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production.\n\nWhat you'll do:\n- Design agent workflows with clear tool boundaries and human-in-the-loop checkpoints\n- Build working prototypes yourself before anything goes to engineering\n- Own evaluation: golden sets, failure review, and the quality bar for release\n- Partner with enterprise customers to understand where agents save real time\n\nWhat you bring:\n- 8+ years in product, with at least two shipping AI or ML features\n- Hands-on experience building with LLM APIs and tool use\n- Clear written communication; you document decisions\n\nFully remote within the US. Base salary $200,000–$240,000 plus equity.",
+    "expected_tools": ["evaluate_job"],
+    "expected_outcome": "STRONG: remote, base above $180K, and the role is hands-on agent building.",
+    "company_facts": null,
+    "fault": null
+  },
+  {
+    "id": 2,
+    "name": "Missing info",
+    "group": "normal",
+    "behavior": "No compensation anywhere: Claude picks flag_for_review instead of evaluate_job.",
+    "posting": "Wrenfield Health — Senior Product Manager, Clinical AI Assistants\nLocation: Remote (US)\n\nWrenfield Health makes scheduling and intake software for outpatient clinics. We're building AI assistants that help front-desk staff handle patient intake, insurance questions, and appointment changes.\n\nAs Senior PM for Clinical AI Assistants, you'll own the assistant experience from first prototype to rollout across our clinic network. You'll work closely with clinicians and compliance to decide where an assistant can act on its own and where a person must approve.\n\nWhat you'll do:\n- Define the assistant's tasks, tools, and escalation rules\n- Prototype new flows hands-on and test them with clinic staff\n- Set up evaluation and review of assistant conversations\n- Track adoption and time saved per clinic\n\nWhat you bring:\n- 6+ years in product management, including AI or automation products\n- Comfort building prototypes with LLM APIs\n- Experience in healthcare or another regulated industry\n\nThis is a fully remote role open to candidates anywhere in the US. Competitive salary and benefits.",
+    "expected_tools": ["flag_for_review"],
+    "expected_outcome": "Flagged for review: compensation is not listed.",
+    "company_facts": null,
+    "fault": null
+  },
+  {
+    "id": 3,
+    "name": "Multi-tool",
+    "group": "normal",
+    "behavior": "No compensation listed, so Claude researches the company first, then rates the job using what it found.",
+    "posting": "Marrowstone Logistics — Principal Product Manager, Agentic Operations\nLocation: Remote (US)\n\nMarrowstone Logistics runs freight brokerage and carrier operations for regional shippers. Our operations team handles thousands of load updates, carrier emails, and billing exceptions every day, and we're building agents to take on the repetitive work.\n\nAs Principal PM for Agentic Operations, you'll decide which operations tasks agents should own, design how they hand off to people, and build the first versions yourself before scaling them with engineering.\n\nWhat you'll do:\n- Map operations workflows and pick the highest-value tasks for agents\n- Prototype agents hands-on: tools, prompts, structured outputs, retries\n- Define autonomy levels and approval rules with operations leaders\n- Build evaluation and monitoring so the team can trust agent output\n\nWhat you bring:\n- 10+ years in product, including hands-on AI or automation work\n- Experience shipping agents or LLM features to real users\n- Comfort reading traces and diagnosing failures\n\nRemote within the US, with occasional visits to our operations centers.",
+    "expected_tools": ["research_company", "evaluate_job"],
+    "expected_outcome": "STRONG: research shows a $200K–$235K base for this level; remote; hands-on agent building.",
+    "company_facts": {
+      "company": "Marrowstone Logistics",
+      "size": "About 600 employees",
+      "stage": "Series C, profitable operations business",
+      "typical_base_for_level": "$200,000–$235,000 base for Principal Product Manager",
+      "source_note": "Stored demo data, written for this scenario. Not a real company."
+    },
+    "fault": null
+  },
+  {
+    "id": 4,
+    "name": "Two tools at once",
+    "group": "normal",
+    "behavior": "Two postings at once: Claude asks for evaluate_job and flag_for_review in the same reply, and both results go back together.",
+    "posting": [
+      "Quillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.",
+      "Fernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+    ],
+    "expected_tools": ["evaluate_job", "flag_for_review"],
+    "expected_outcome": "Quillmark rated STRONG; Fernhollow flagged because compensation is not listed. Both tool results go back in one message.",
+    "company_facts": null,
+    "fault": null
+  },
+  {
+    "id": 5,
+    "name": "Hard screen in code",
+    "group": "normal",
+    "behavior": "Base pay is below the floor, so a rule in code rejects the posting before Claude is ever asked.",
+    "posting": "Tallowmere Robotics — AI Product Manager\nLocation: Remote (US)\nCompensation: $140,000–$165,000 base\n\nTallowmere Robotics makes inspection robots for warehouses and distribution centers. We're adding AI features that let site managers ask questions about inspection results in plain language and get suggested maintenance actions.\n\nAs AI Product Manager, you'll own the natural-language assistant from prototype to launch. You'll work with our robotics and data teams to decide what the assistant can answer, how it explains its sources, and when it should hand off to a technician.\n\nWhat you'll do:\n- Define assistant use cases with site managers\n- Prototype question-answering flows with LLM APIs\n- Set accuracy targets and run evaluation before each release\n\nWhat you bring:\n- 5+ years in product management\n- Hands-on experience with LLM APIs or search products\n- Interest in industrial or hardware products\n\nFully remote in the US. Base salary $140,000–$165,000 plus equity.",
+    "expected_tools": [],
+    "expected_outcome": "Rejected by a hard screen in code: base pay is below the $180K floor. No API call is made.",
+    "company_facts": null,
+    "fault": null
+  },
+  {
+    "id": 6,
+    "name": "A tool fails",
+    "group": "break",
+    "behavior": "The grader inside evaluate_job returns broken JSON (injected). The error goes back to Claude, which decides how to recover.",
+    "posting": "Veltrane Software — Staff Product Manager, AI Platform\nLocation: Remote (US)\nCompensation: $205,000–$240,000 base\n\nVeltrane Software makes developer tools for data teams. Our AI platform group builds the shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing.\n\nAs Staff PM for the AI Platform, you'll own the roadmap for those shared services and treat internal product teams as your customers. You'll prototype new platform capabilities hands-on and measure success by how quickly teams ship reliable AI features.\n\nWhat you'll do:\n- Turn one-off AI integrations into reusable platform services\n- Prototype platform features yourself with LLM APIs\n- Define quality and cost metrics for AI features across the company\n- Run design reviews with engineering leads\n\nWhat you bring:\n- 9+ years in product, including platform or developer products\n- Hands-on experience building with LLM APIs\n- Comfort with APIs, observability, and cost tradeoffs\n\nRemote within the US. Base salary $205,000–$240,000 plus equity.",
+    "expected_tools": ["evaluate_job"],
+    "expected_outcome": "evaluate_job fails (injected broken JSON); the error goes to Claude marked is_error; Claude retries or explains the failure; the run still finishes.",
+    "company_facts": null,
+    "fault": "tool_fails"
+  },
+  {
+    "id": 7,
+    "name": "Unknown tool",
+    "group": "break",
+    "behavior": "Claude's tool request names a tool that doesn't exist (injected). Python replies with an error listing the real tools.",
+    "posting": "Corvalis Payments — Principal Product Manager, Applied AI\nLocation: Remote (US)\nCompensation: $210,000–$245,000 base\n\nCorvalis Payments processes payments for small online merchants. Our Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes.\n\nAs Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk.\n\nWhat you'll do:\n- Prototype AI features hands-on with LLM APIs and tool use\n- Define evaluation sets and release criteria with the risk team\n- Decide where AI drafts and where a person must approve\n- Measure time saved per merchant\n\nWhat you bring:\n- 10+ years in product, with AI features shipped to paying customers\n- Hands-on building experience\n- Payments or fintech experience preferred\n\nRemote within the US. Base salary $210,000–$245,000 plus equity.",
+    "expected_tools": ["(unknown tool, injected)", "evaluate_job"],
+    "expected_outcome": "Python returns an is_error result naming the real tools; Claude then calls evaluate_job and the posting rates STRONG.",
+    "company_facts": null,
+    "fault": "unknown_tool"
+  },
+  {
+    "id": 8,
+    "name": "Runaway loop stopped",
+    "group": "break",
+    "behavior": "The tool fails on every attempt (injected). Claude keeps retrying until the loop cap stops the run.",
+    "posting": "Lumen & Pine Media — Senior Product Manager, Generative AI Tools\nLocation: Remote (US)\nCompensation: $185,000–$215,000 base\n\nLumen & Pine Media publishes regional news and lifestyle sites. Our newsroom tools team builds software for editors and reporters, and we're adding AI tools for headline testing, summaries, and research help.\n\nAs Senior PM for Generative AI Tools, you'll work with editors to decide where AI helps and where it doesn't belong, prototype tools hands-on, and set clear rules for review before anything is published.\n\nWhat you'll do:\n- Prototype editorial AI tools with LLM APIs\n- Define review rules so nothing AI-written publishes unchecked\n- Run evaluation on summaries and headline suggestions\n- Train newsroom staff on the tools you ship\n\nWhat you bring:\n- 6+ years in product management, including AI or content tools\n- Hands-on prototyping experience\n- Respect for editorial standards\n\nRemote within the US. Base salary $185,000–$215,000.",
+    "expected_tools": ["evaluate_job (repeated, always fails)"],
+    "expected_outcome": "Every attempt fails; the run stops at 10 passes and returns \"Stopped after 10 passes without finishing.\"",
+    "company_facts": null,
+    "fault": "runaway_loop"
+  },
+  {
+    "id": 9,
+    "name": "Reply cut off",
+    "group": "break",
+    "behavior": "Claude's reply runs out of room (injected low token limit). The cut-off is detected and the run stops with a clear message.",
+    "posting": "Tidewick Civic Tech — Head of AI Product\nLocation: Remote (US)\nCompensation: $220,000–$260,000 base\n\nTidewick Civic Tech builds software that state and local governments use to run public services: permit applications, benefits enrollment, and resident support lines. Our products are used by more than 200 agencies, and most of the people they serve are trying to get something done quickly, often on a phone, often in a second language.\n\nWe're hiring our first Head of AI Product to lead how AI shows up across our products. The work starts with resident support: an assistant that answers questions about permits and benefits, helps people fill out forms correctly, and hands off to agency staff when a question needs a person. It extends to tools for agency staff: summarizing case histories, drafting responses, and finding the right policy section in long regulations.\n\nThis is a hands-on leadership role. You'll build early prototypes yourself, then lead a team of three product managers and work closely with engineering, design, accessibility, and our public-sector policy team. Government work raises the bar on trust: answers must cite the policy they come from, every automated action must be logged, and residents must always be able to reach a person.\n\nWhat you'll do:\n- Set the AI product strategy across resident and staff products\n- Prototype assistants hands-on with LLM APIs, tool use, and retrieval\n- Define when the assistant answers, when it asks, and when it hands off\n- Build evaluation and review processes that agency partners can audit\n- Make accessibility and plain language requirements, not afterthoughts\n- Lead and grow a team of product managers\n- Represent the product with agency leaders and procurement teams\n\nWhat you bring:\n- 10+ years in product, including AI products shipped to real users\n- Hands-on experience building with LLM APIs, including retrieval and tool use\n- Experience leading product managers\n- Comfort working in regulated or public-sector environments\n- Clear writing; you can explain an AI system's limits to a non-technical audience\n\nWe're fully remote within the US, with travel two to four times a year to meet agency partners. Base salary $220,000–$260,000 plus benefits.",
+    "expected_tools": [],
+    "expected_outcome": "The reply is cut off by the injected token limit; the run stops with \"Claude's reply was cut off (hit the max_tokens limit of …).\"",
+    "company_facts": null,
+    "fault": "reply_cut_off"
+  }
+]
