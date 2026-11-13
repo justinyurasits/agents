@@ -30,7 +30,9 @@ python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env               # then add your Anthropic API key
-python agent.py
+python agent.py                     # the built-in sample posting
+python agent.py --scenario 6        # a scenario from scenarios/scenarios.json
+python agent.py --fault tool_fails  # force one failure on purpose (see faults.py)
 ```
 
 The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) (e.g. `[send_to_claude]`), so you can follow a run in the terminal. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).

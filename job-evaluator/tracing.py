@@ -122,6 +122,14 @@ class Recorder:
         self._refs = {}
         self._call = None             # event id of the tool_call in progress
         self._tool_exists = None
+        # Injected faults (faults.py, #46). A tool fault opens a short scope:
+        # its effects (caught guard, error result, results_back) are marked
+        # injected; Claude's later reactions are real and are not. A limit
+        # fault marks every event made under the lowered limit.
+        self.fault = None
+        self._inject_scope = False
+        self._inject_tokens = False
+        self._inject_passes = False
 
     # --- building events ----------------------------------------------
 
@@ -131,7 +139,8 @@ class Recorder:
         return self._refs[step_id]
 
     def event(self, step_id, actor, kind=None, frm=None, to=None, payload=None,
-              before=None, after=None, tokens=None, guard=None, parent=None):
+              before=None, after=None, tokens=None, guard=None, parent=None,
+              injected=False):
         """Add one event. Data is converted to JSON immediately, so later
         changes to `messages` can't alter an event already recorded."""
         seq = len(self.events) + 1
@@ -149,20 +158,46 @@ class Recorder:
             "parent": parent,
             "tokens": tokens,
             "guard": guard,
-            "injected": False,
+            "injected": bool(injected or self._inject_scope),
         }
         self.events.append(event)
         return event["id"]
 
     # --- one method per kind of step (called from run_agent) ------------
 
-    def start(self, job_text, model, max_tokens, max_passes, system, tools):
+    def start(self, job_text, model, max_tokens, max_passes, system, tools, fault=None):
+        self.fault = fault
         self.run = {"model": model, "max_tokens": max_tokens,
                     "max_passes": max_passes, "system": system, "tools": tools}
         return self.event("agent_starts", "python", payload={"job_text": job_text})
 
     def messages_changed(self, step_id, before, after):
-        return self.event(step_id, "python", before=before, after=after)
+        event_id = self.event(step_id, "python", before=before, after=after)
+        if step_id == "results_back":
+            self._inject_scope = False    # the fault's error is now in the conversation
+        return event_id
+
+    # --- injected faults (faults.py, #46) ----------------------------------
+
+    def fault_injected(self, step_id, change):
+        """Record that the run's fault just changed something, and what.
+        Opens the injected scope for a tool fault."""
+        self._inject_scope = True
+        return self.event(step_id, "python", payload={"fault": self.fault, **change},
+                          parent=self._call, injected=True)
+
+    def limits_injected(self, normal_passes, passes, normal_tokens, tokens):
+        """At the start of a run: record any limit the fault lowered."""
+        if passes != normal_passes:
+            self._inject_passes = True
+            self.event("send_to_claude", "python", injected=True,
+                       payload={"fault": self.fault,
+                                "max_passes": {"normal": normal_passes, "injected": passes}})
+        if tokens != normal_tokens:
+            self._inject_tokens = True
+            self.event("send_to_claude", "python", injected=True,
+                       payload={"fault": self.fault,
+                                "max_tokens": {"normal": normal_tokens, "injected": tokens}})
 
     def api_request(self, messages):
         payload = {"model": self.run["model"], "max_tokens": self.run["max_tokens"],
@@ -170,20 +205,21 @@ class Recorder:
                    "tools": [t["name"] for t in self.run["tools"]],
                    "messages": messages}
         return self.event("send_to_claude", "python", "api_request", "python", "claude",
-                          payload=payload)
+                          payload=payload, injected=self._inject_tokens)
 
     def api_response(self, response):
         # The call returned a reply, so the API-call guard didn't catch
         # anything. (A failed call is recorded by end("api_error").)
         self.guard("send_to_claude", "api_call_succeeded",
-                   "client.messages.create returned a reply", None, False)
+                   "client.messages.create returned a reply", None, False,
+                   injected=self._inject_tokens)
         usage = getattr(response, "usage", None)
         tokens = ({"input": usage.input_tokens, "output": usage.output_tokens}
                   if usage is not None else None)
         return self.event("claude_decides", "claude", "api_response", "claude", "python",
                           payload={"stop_reason": response.stop_reason,
                                    "content": response.content},
-                          tokens=tokens)
+                          tokens=tokens, injected=self._inject_tokens)
 
     # --- guards -----------------------------------------------------------
     # Every check the loop or a tool makes records a guard event, whether or
@@ -191,8 +227,8 @@ class Recorder:
     # wrong; then the event uses the error-case step (STEPS.md, E1–E5).
 
     def guard(self, step_id, name, checked, value, caught,
-              action=None, message=None, parent=None):
-        return self.event(step_id, "python", parent=parent,
+              action=None, message=None, parent=None, injected=False):
+        return self.event(step_id, "python", parent=parent, injected=injected,
                           guard={"name": name, "checked": checked, "value": value,
                                  "caught": caught, "action": action, "message": message})
 
@@ -200,7 +236,7 @@ class Recorder:
         self.pass_number = number
         limit = self.run["max_passes"]
         return self.guard("send_to_claude", "pass_count", f"pass <= MAX_PASSES ({limit})",
-                          number, False)
+                          number, False, injected=self._inject_passes)
 
     def reply_checked(self, stop_reason):
         """The stop_reason check, and the max_tokens check when the code
@@ -210,10 +246,10 @@ class Recorder:
         finished = stop_reason == "end_turn"
         self.guard("claude_done" if finished else "check_reply", "stop_reason",
                    'stop_reason == "end_turn"', stop_reason, False,
-                   action="finish" if finished else None)
+                   action="finish" if finished else None, injected=self._inject_tokens)
         if not finished and stop_reason != "max_tokens":
             self.guard("check_reply", "max_tokens", 'stop_reason == "max_tokens"',
-                       stop_reason, False)
+                       stop_reason, False, injected=self._inject_tokens)
 
     def tool_checked(self, tool_block):
         """Before dispatch: does the tool exist? If so, record the call.
@@ -298,14 +334,19 @@ class Recorder:
                        message=text if missing else None)
         elif ended_by == "max_tokens":
             self.guard("reply_cut_off", "max_tokens", 'stop_reason == "max_tokens"',
-                       "max_tokens", True, action="run_stopped", message=text)
+                       "max_tokens", True, action="run_stopped", message=text,
+                       injected=self._inject_tokens)
         elif ended_by == "pass_cap":
             limit = self.run["max_passes"]
             self.guard("pass_cap", "pass_count", f"pass <= MAX_PASSES ({limit})",
-                       limit + 1, True, action="run_stopped", message=text)
+                       limit + 1, True, action="run_stopped", message=text,
+                       injected=self._inject_passes)
+        caused_by_fault = ((ended_by == "max_tokens" and self._inject_tokens)
+                           or (ended_by == "pass_cap" and self._inject_passes))
         self.result = {"ended_by": ended_by, "text": text}
         activate(NullRecorder())
-        return self.event(END_STEPS[ended_by], "python", payload=self.result)
+        return self.event(END_STEPS[ended_by], "python", payload=self.result,
+                          injected=caused_by_fault)
 
     # --- output -----------------------------------------------------------
 
@@ -319,6 +360,7 @@ class Recorder:
             "model": self.run.get("model"),
             "limits": {"max_passes": self.run.get("max_passes"),
                        "max_tokens": self.run.get("max_tokens")},
+            "fault": self.fault,
             "tools": to_json(self.run.get("tools")),
             "events": self.events,
             "result": self.result,
