@@ -61,14 +61,20 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   updating STEPS.md. A marker goes on the line directly above the code.
 - Never write line numbers in STEPS.md. `code_refs.py` looks them up
   from the markers when a run is recorded.
-- Every guard (a check that stops a crash, a hang, or bad data) gets
-  its own step in STEPS.md and a marker on its code.
+- Every guard (a check that catches a failure: a crash, a hang, or bad
+  data) gets its own E-step under "When something goes wrong" in
+  STEPS.md and a marker on its code.
+- Every rule (a check that applies one of Justin's decisions, like the
+  $180K floor) is a normal step in the flow, not an E-step: a rule
+  rejecting a posting is the agent working as intended. It gets a marker
+  too.
 - agent.py is annotated as a guided tour for Justin; keep it that way in
   every PR that touches it:
   - tag every `print` `# (terminal only)` and every `rec.` / `tracing.`
     line `# (trace only)`;
   - put `# GUARD (E<n> <step_id>): <what it protects against>` above each
-    guard's marker, matching STEPS.md;
+    guard's marker, matching STEPS.md, and `# RULE (<step_id>): <what it
+    decides>` above each rule's marker;
   - start terminal output with the step id in brackets, e.g. `[run_tools]`;
   - update the map in the module docstring and above `run_agent`, and the
     "what this looks like" examples, when the loop or a data shape changes;

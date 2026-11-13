@@ -1,8 +1,9 @@
 """Tests that agent.py's annotations stay accurate (issue #44).
 
 agent.py tags every print as (terminal only) and every recording call as
-(trace only), labels each guard with its error step from STEPS.md, and its
-terminal output uses step ids. These tests keep that true as the code
+(trace only), labels each guard with its error step from STEPS.md and each
+rule with its normal step (#26: guards catch failures, rules apply
+decisions), and its terminal output uses step ids. These tests keep that true as the code
 changes. They read source text only: no API calls, agent.py isn't imported.
 Run from job-evaluator/:  python -m unittest discover -s tests -v
 """
@@ -84,6 +85,32 @@ class GuardLabelsTest(unittest.TestCase):
     def test_no_guard_label_for_a_step_that_isnt_an_error_step(self):
         for number, step_id in re.findall(r"GUARD \((E\d+) ([a-z0-9_]+)\)", SOURCE):
             self.assertEqual(ERROR_STEPS.get(number), step_id)
+
+
+class RuleLabelsTest(unittest.TestCase):
+    """A rule (e.g. the $180K floor) applies one of Justin's decisions. When it
+    rejects a posting the agent is working as intended, so a rule is a normal
+    step, never an E-step, and is labelled RULE, not GUARD (#26)."""
+
+    RULES = re.findall(r"RULE \(([a-z0-9_]+)\)", SOURCE)
+
+    def test_there_is_at_least_one_rule(self):
+        self.assertIn("hard_screen", self.RULES)
+
+    def test_every_rule_is_a_normal_step(self):
+        for step_id in self.RULES:
+            with self.subTest(step_id):
+                self.assertIn(step_id, STEP_IDS)
+                self.assertNotIn(step_id, ERROR_STEPS.values())
+
+    def test_every_rule_label_is_just_above_its_marker(self):
+        markers = code_refs.find_markers(SOURCE)
+        for step_id in self.RULES:
+            with self.subTest(step_id):
+                marker = markers[step_id]
+                above = LINES[max(0, marker - 9):marker - 1]       # up to 8 lines above
+                self.assertTrue(any(f"RULE ({step_id})" in line for line in above),
+                                f"no 'RULE ({step_id})' comment just above '# STEP: {step_id}'")
 
 
 class TerminalOutputTest(unittest.TestCase):

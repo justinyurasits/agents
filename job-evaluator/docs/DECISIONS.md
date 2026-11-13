@@ -47,7 +47,7 @@ One entry per decision. Newest at the bottom. Format: decision, options consider
 ## D6 — Hard rules currently live in the prompt (open)
 
 **Date:** 2026-11-11
-**Status:** open — issue #6. Closed by D28 (#26), once approved. ("#6" was a PR, not an issue; #26 is the issue.)
+**Status:** closed by D28 (issue #26). ("#6" was a PR, not an issue; #26 is the issue.)
 **Context:** the $180K floor and remote requirement are deterministic but sit in `RUBRIC`. A model can misapply a rule that code can't.
 
 ## D8 — Primary audience: people evaluating my work
@@ -366,7 +366,7 @@ would make the lowered cap unnecessary or need to be higher.
 
 ## D28 — Hard screens in code; the grader answers one yes/no question
 
-**Status:** **Proposed** (issue #26)
+**Status:** **Approved** (issue #26, PR #51)
 **Date:** 2026-11-13
 **Options:** screen in `run_agent` before Claude is called · screen inside
 `evaluate_job` after Claude #1 extracts the details · keep the rules in the
@@ -381,14 +381,19 @@ experience?" as `{"answer": "yes"|"no", "reasons": [...]}`, and code maps it
 (yes → STRONG, no → WORTH REVIEWING); other keys aren't passed on. The grader
 no longer gets the Location / Remote / Compensation lines, since the screens
 already used them.
-**Trace:** each screen is a guard (`remote`, `comp_floor`) with the
-`evaluate_job` tool call as its parent. Passed or skipped: step `run_tools`,
-`caught: false`; skipped adds `action: "screen_skipped"` and records the raw
-value it couldn't read (e.g. `"competitive"`), keeping D25's rule that only a
-caught guard has a message. Failed: step `hard_screen` (E9),
-`action: "ignore_returned"`. It's listed under "When something goes wrong"
-because CLAUDE.md and `test_annotations.py` tie every guard to an E-step,
-though a screened-out posting is the agent working, not failing.
+**Guards vs rules** (Justin's review of PR #51): a **guard** catches a
+failure (a crash, a hang, bad data) and gets an E-step under "When something
+goes wrong". A **rule** applies one of Justin's decisions; a posting that
+fails one is the agent working as intended, so a rule is a **normal step**.
+The hard screens are a rule: step `hard_screen` (STEPS.md 7a, "Code checks
+your hard rules"), labelled `RULE (hard_screen)` in agent.py, not `GUARD`.
+CLAUDE.md and `test_annotations.py` now enforce both labels.
+**Trace:** each rule (`remote`, `comp_floor`) records one normal event at
+step `hard_screen`, with the `evaluate_job` tool call as its parent and
+`{rule, checked, value, outcome, note}` as its payload (`outcome`: passed,
+failed or skipped). Never a guard event, so `caught: true` still means only
+that something went wrong (D25). A skipped rule's `value` is the text it
+couldn't read (e.g. `"competitive"`).
 **Reasoning:** CLAUDE.md: deterministic rules belong in code. Reading pay in
 code is a heuristic (SPEC, Known limits), so it errs toward skipping:
 wrongly rejecting a good posting is worse than sending one more posting to the

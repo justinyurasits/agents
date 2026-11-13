@@ -60,13 +60,12 @@ class InnerCallTest(TraceTestCase):
         _, rec = self.record(outer=one_tool_then_done("toolu_1", "evaluate_job", EVAL_INPUT),
                              inner=[fakes.reply(fakes.text(GRADE))])
         parented = {(e["step_id"], kind(e)) for e in rec.events if e["parent"]}
-        # The grader's call and checks, and the hard screens that run before it.
+        # The hard rules, and the grader's call and checks after them.
         self.assertEqual(parented, {("inner_grader", "inner_api_request"),
                                     ("inner_grader", "inner_api_response"),
                                     ("inner_grader", ("guard", "max_tokens")),
                                     ("inner_grader", ("guard", "grade_valid")),
-                                    ("run_tools", ("guard", "remote")),
-                                    ("run_tools", ("guard", "comp_floor"))})
+                                    ("hard_screen", None)})
 
     def test_evaluate_job_outside_a_run_records_nothing(self):
         _, rec = self.record(outer=[fakes.reply(fakes.text(FINAL))])
@@ -180,7 +179,7 @@ class AllGuardsTest(TraceTestCase):
 
     def test_guard_shape_and_meaning_of_caught(self):
         error_steps = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap", "grader_cut_off",
-                       "api_call_failed", "no_final_answer", "invalid_grade", "hard_screen"}
+                       "api_call_failed", "no_final_answer", "invalid_grade"}
         for name, rec in self.runs():
             for g in guards(rec):
                 with self.subTest(name, guard=g["id"]):

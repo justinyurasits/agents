@@ -20,9 +20,14 @@ agent does; the other two are tagged so you can skip them:
                             the agent does
 
 `# STEP: <step_id>` marks the code each step in docs/STEPS.md points to
-(the page looks the line up from the marker). `GUARD (E<n> <step_id>)`
-labels a check that stops a crash, a hang, or bad data; E1–E9 are the
-"When something goes wrong" steps in STEPS.md.
+(the page looks the line up from the marker). Two kinds of check are
+labelled above their marker:
+
+    GUARD (E<n> <step_id>)  catches a failure: a crash, a hang, or bad data.
+                            E1–E8 are the "When something goes wrong" steps.
+    RULE (<step_id>)        applies one of Justin's decisions, like the $180K
+                            floor. When it rejects a posting, that's the agent
+                            working as intended, so it's a normal step.
 
 THE WHOLE THING IN BRIEF
 ------------------------
@@ -36,7 +41,7 @@ THE WHOLE THING IN BRIEF
    Inside evaluate_job, code checks the hard rules first (remote, the $180K
    floor); only a posting that passes them goes to the grader, a second
    Claude that answers one yes/no question.
-4. Guards stop the run cleanly if something goes wrong (E1–E9).
+4. Guards stop the run cleanly if something goes wrong (E1–E8).
 5. Faults (faults.py) make one thing go wrong on purpose, so the guards can
    be shown working. They're off unless you ask for one, and every change a
    fault makes is labelled `injected` in the trace.
@@ -163,34 +168,34 @@ def hard_screens(remote, compensation):
 
     Returns one dict per screen, e.g. for remote=False, compensation="$200K":
         [{"name": "remote", "checked": "remote is not false", "value": False,
-          "caught": True, "skipped": False, "note": "not remote"},
+          "outcome": "failed", "note": "not remote"},
          {"name": "comp_floor", "checked": "lowest base >= MIN_BASE (180000)",
-          "value": 200000, "caught": False, "skipped": False, "note": "..."}]
+          "value": 200000, "outcome": "passed", "note": "base $200,000 meets ..."}]
+    `outcome` is "passed", "failed" or "skipped".
     A screen that can't be checked (no remote status, pay that isn't a number)
     is skipped, never failed: the posting goes on to the rating call.
     """
     if not REQUIRE_REMOTE:
-        remote_screen = {"caught": False, "skipped": True, "note": "remote not required"}
+        remote_screen = {"outcome": "skipped", "note": "remote not required"}
     elif remote is False:
-        remote_screen = {"caught": True, "skipped": False, "note": "not remote"}
+        remote_screen = {"outcome": "failed", "note": "not remote"}
     elif remote is True:
-        remote_screen = {"caught": False, "skipped": False, "note": "remote"}
+        remote_screen = {"outcome": "passed", "note": "remote"}
     else:
-        remote_screen = {"caught": False, "skipped": True,
+        remote_screen = {"outcome": "skipped",
                          "note": f"remote status {remote!r} isn't true or false; "
                                  "remote screen skipped"}
 
     base = lowest_base(compensation)
     floor = f"${MIN_BASE // 1000}K floor"
     if base is None:
-        comp_screen = {"caught": False, "skipped": True,
+        comp_screen = {"outcome": "skipped",
                        "note": f"couldn't read a yearly base salary from "
                                f"{compensation!r}; comp screen skipped"}
     elif base < MIN_BASE:
-        comp_screen = {"caught": True, "skipped": False, "note": f"base below {floor}"}
+        comp_screen = {"outcome": "failed", "note": f"base below {floor}"}
     else:
-        comp_screen = {"caught": False, "skipped": False,
-                       "note": f"base ${base:,} meets the {floor}"}
+        comp_screen = {"outcome": "passed", "note": f"base ${base:,} meets the {floor}"}
 
     # {**a, **b} builds one dict from both: the fixed fields, then the outcome.
     return [{"name": "remote", "checked": "remote is not false", "value": remote,
@@ -274,10 +279,11 @@ def evaluate_job(company, role_title, job_description,
     screens = hard_screens(remote, compensation)
     for screen in screens:
         print(f"  [hard_screen] {screen['name']}: {screen['note']}")  # (terminal only)
-        rec.screen_checked(screen)  # (trace only)
-    failed = [s["note"] for s in screens if s["caught"]]
-    # GUARD (E9 hard_screen): the posting breaks a fixed rule (not remote, or
-    # base below MIN_BASE). Return IGNORE straight away; no rating call.
+        rec.rule_checked(screen)  # (trace only)
+    failed = [s["note"] for s in screens if s["outcome"] == "failed"]
+    # RULE (hard_screen): the posting breaks one of Justin's fixed rules (not
+    # remote, or base below MIN_BASE), so it's IGNORE, decided here; the
+    # grader is never asked.
     # STEP: hard_screen
     if failed:
         return {"rating": "IGNORE", "reasons": failed}
@@ -361,7 +367,7 @@ def flag_for_review(company, role_title, missing_info):
 #       for each tool request in the reply:                 run_tools
 #           unknown tool?         → error result            GUARD E2
 #           evaluate_job: fails a hard rule? → IGNORE,
-#                         no rating call                    GUARD E9
+#                         no rating call                    RULE hard_screen
 #           tool raised?          → error result            GUARD E1
 #       messages += all the results, in one message         results_back
 #   ran out of passes             → stop                    GUARD E4

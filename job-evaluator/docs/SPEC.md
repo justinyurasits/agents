@@ -145,9 +145,8 @@ Every check in `agent.py` that exists to keep a run from crashing, hanging, or a
 | **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
 | **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
 | **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't an answer: not an object, `answer` missing or not yes / no (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid answer becomes `{"rating", "reasons"}`; other keys aren't passed on. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42), [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
-| **Hard screens** (`hard_screens` + `if failed: return` in `evaluate_job`) | A posting Claude marked `remote: false`, or whose lowest base is below `MIN_BASE` ($180K) | Returns `{"rating": "IGNORE", "reasons": ["not remote" and/or "base below $180K floor"]}` before the rating call, so the grader is never asked. Unknown remote status or unreadable pay skips that screen instead of failing it. | [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_hard_screens.py`](../tests/test_hard_screens.py) |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31, #32 and #26 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31 and #32 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -168,6 +167,13 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 | Which tool names exist | Code (`tools` + the dispatch) | Code | |
 
 The floor and remote rules were moved into code by [#26](https://github.com/justinyurasits/agents/issues/26) (D28), which closes D6.
+
+**Rules are not guards.** A guard (section 5) catches a failure: a crash, a hang, or bad data. A rule applies one of Justin's decisions, and a posting that fails one is the agent working as intended. So the hard screens are a normal step, `hard_screen` (STEPS.md 7a), not an E-step; agent.py labels them `RULE (hard_screen)`, not `GUARD`; and the trace records them as rule events, never as caught guards (section 7).
+
+| Rule | Fails when | Then | Can't be checked when | Test |
+|---|---|---|---|---|
+| **Remote** (`REQUIRE_REMOTE`) | Claude #1 sent `remote: false` | `evaluate_job` returns `{"rating": "IGNORE", "reasons": ["not remote"]}` with no grader call | `remote` wasn't sent, or isn't true/false: skipped | [`test_hard_screens.py`](../tests/test_hard_screens.py) |
+| **Base floor** (`MIN_BASE`) | the lowest base in the range is under $180,000 | same, with `"base below $180K floor"`; both reasons when both fail | the pay isn't a readable yearly salary ("competitive", "$90/hr"): skipped | [`test_hard_screens.py`](../tests/test_hard_screens.py) |
 
 ---
 
@@ -218,7 +224,7 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 "guard": {"name": "…", "checked": "…", "value": …, "caught": false, "action": null, "message": null}
 ```
 
-**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E9) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
+**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E8) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
 
 | Guard | When it's recorded | Step (not caught → caught) | `value` | When caught: `action`, `message` |
 |---|---|---|---|---|
@@ -231,10 +237,15 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 | `tool_succeeded` | Every tool that ran | `run_tools` → `tool_failed` | exception type when caught | `error_sent_to_claude`, `"<Type>: <message>"` |
 | `final_text_present` | Every `end_turn` reply | `answer_returned` → `no_final_answer` | `"text"`, or `null` when caught | `run_stopped`, the no-answer message |
 | `grade_valid` | Every parsed grader reply, with `parent` | `inner_grader` → `invalid_grade` | the problem when caught | `error_raised`, the problem text |
-| `remote` | Every `evaluate_job` call, before the rating call, with `parent` | `run_tools` → `hard_screen` | the `remote` value Claude sent | `ignore_returned`, `"not remote"` |
-| `comp_floor` | Every `evaluate_job` call, before the rating call, with `parent` | `run_tools` → `hard_screen` | the lowest base, or the text it couldn't read | `ignore_returned`, `"base below $180K floor"` |
 
-A screen that can't be checked isn't caught: it records `action: "screen_skipped"` (and no message), so the trace shows it was skipped (#26, D28).
+**Rule events** (#26, D28). A hard rule isn't a guard, so it's never a caught guard: each rule records one normal event at step `hard_screen`, `actor` = `python`, `guard` = `null`, `parent` = the `evaluate_job` tool call, with the outcome in the payload:
+
+```json
+"payload": {"rule": "comp_floor", "checked": "lowest base >= MIN_BASE (180000)",
+            "value": 140000, "outcome": "failed", "note": "base below $180K floor"}
+```
+
+`rule` is `remote` or `comp_floor`; `outcome` is `passed`, `failed` or `skipped`. A skipped rule's `value` is what it couldn't read (e.g. `"competitive"`), and its `note` says it was skipped. When a rule fails, no `inner_grader` events follow.
 
 So a grader that's cut off shows two caught guards in order: `max_tokens` (`grader_cut_off`), then `tool_succeeded` (`tool_failed`) with the same text. An unknown tool shows only `tool_exists`, because no tool ran. A run that hits a guarded stop ends with the caught guard, then the final event.
 

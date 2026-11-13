@@ -69,12 +69,21 @@ Step id: `run_tools`
 
 Python finds each tool request in Claude's reply and runs the matching
 function with the details Claude filled in. Claude can ask for more than
-one tool at once; Python runs them one after another. evaluate_job first
-checks the hard rules in code (remote, the $180K floor); a posting that
-breaks one stops there (E9).
+one tool at once; Python runs them one after another.
 Code: `# STEP: run_tools` in agent.py (`for tool_block in ...` and the dispatch)
 
-#### 7a. Inside evaluate_job: a second Claude grades the job
+#### 7a. Inside evaluate_job: code checks your hard rules
+
+Step id: `hard_screen`
+
+Before any rating call, code checks the fixed rules: the role must be remote,
+and its lowest base salary must be at least $180K. A posting that breaks one
+is rated IGNORE right here and the grader is never asked; a rule that can't
+be checked (no salary given, say) is skipped, not failed. This is a rule
+working as intended, not an error.
+Code: `# STEP: hard_screen` in agent.py (`if failed:`)
+
+#### 7b. Inside evaluate_job: a second Claude grades the job
 
 Step id: `inner_grader`
 
@@ -185,12 +194,3 @@ The grader's reply was valid JSON but not a real answer: an answer that
 isn't yes or no, missing reasons, or the wrong shape. The tool reports exactly
 what was wrong, and the error goes back to Claude like any tool failure (E1).
 Code: `# STEP: invalid_grade` in agent.py (`if problem:`)
-
-### E9. The posting breaks a hard rule
-
-Step id: `hard_screen`
-
-Inside evaluate_job, before any rating call, code checks the fixed rules:
-the role must be remote and its lowest base salary at least $180K. A posting
-that breaks one is rated IGNORE right there, and the grader is never asked.
-Code: `# STEP: hard_screen` in agent.py (`if failed:`)

@@ -42,8 +42,8 @@ CLEAN_SEQUENCE = [
     (1, "save_turn", None),
     (1, "run_tools", ("guard", "tool_exists")),
     (1, "run_tools", "tool_call"),
-    (1, "run_tools", ("guard", "remote")),
-    (1, "run_tools", ("guard", "comp_floor")),
+    (1, "hard_screen", None),            # rule: remote (passed)
+    (1, "hard_screen", None),            # rule: comp_floor (passed)
     (1, "inner_grader", "inner_api_request"),
     (1, "inner_grader", "inner_api_response"),
     (1, "inner_grader", ("guard", "max_tokens")),
@@ -107,7 +107,7 @@ class CleanRunTest(TraceTestCase):
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
         not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
                             "grader_cut_off", "api_call_failed", "no_final_answer",
-                            "invalid_grade", "hard_screen"}
+                            "invalid_grade"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
 
     def test_seq_and_ids(self):
