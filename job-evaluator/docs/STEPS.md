@@ -69,15 +69,18 @@ Step id: `run_tools`
 
 Python finds each tool request in Claude's reply and runs the matching
 function with the details Claude filled in. Claude can ask for more than
-one tool at once; Python runs them one after another.
+one tool at once; Python runs them one after another. evaluate_job first
+checks the hard rules in code (remote, the $180K floor); a posting that
+breaks one stops there (E9).
 Code: `# STEP: run_tools` in agent.py (`for tool_block in ...` and the dispatch)
 
 #### 7a. Inside evaluate_job: a second Claude grades the job
 
 Step id: `inner_grader`
 
-This tool asks a separate Claude call to grade the job against the
-candidate's criteria and return a structured rating. It's a one-off
+This tool asks a separate Claude call one question that needs judgment:
+does this role build hands-on AI experience? It answers yes or no, and code
+turns that into the rating (yes: STRONG, no: WORTH REVIEWING). It's a one-off
 question with no tools and no loop.
 Code: `# STEP: inner_grader` in agent.py (`eval_response = client.messages.create(...)`)
 
@@ -178,7 +181,16 @@ Code: `# STEP: no_final_answer` in agent.py (`if answer is None:`)
 
 Step id: `invalid_grade`
 
-The grader's reply was valid JSON but not a real rating: a rating that
-doesn't exist, missing reasons, or the wrong shape. The tool reports exactly
+The grader's reply was valid JSON but not a real answer: an answer that
+isn't yes or no, missing reasons, or the wrong shape. The tool reports exactly
 what was wrong, and the error goes back to Claude like any tool failure (E1).
 Code: `# STEP: invalid_grade` in agent.py (`if problem:`)
+
+### E9. The posting breaks a hard rule
+
+Step id: `hard_screen`
+
+Inside evaluate_job, before any rating call, code checks the fixed rules:
+the role must be remote and its lowest base salary at least $180K. A posting
+that breaks one is rated IGNORE right there, and the grader is never asked.
+Code: `# STEP: hard_screen` in agent.py (`if failed:`)

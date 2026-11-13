@@ -47,7 +47,7 @@ One entry per decision. Newest at the bottom. Format: decision, options consider
 ## D6 — Hard rules currently live in the prompt (open)
 
 **Date:** 2026-11-11
-**Status:** open — issue #6.
+**Status:** open — issue #6. Closed by D28 (#26), once approved. ("#6" was a PR, not an issue; #26 is the issue.)
 **Context:** the $180K floor and remote requirement are deterministic but sit in `RUBRIC`. A model can misapply a rule that code can't.
 
 ## D8 — Primary audience: people evaluating my work
@@ -363,3 +363,36 @@ might still not reach 10. Lowering the cap keeps every Claude decision real
 and the cap demo reliable.
 **What would change it:** Claude starting to retry more than once, which
 would make the lowered cap unnecessary or need to be higher.
+
+## D28 — Hard screens in code; the grader answers one yes/no question
+
+**Status:** **Proposed** (issue #26)
+**Date:** 2026-11-13
+**Options:** screen in `run_agent` before Claude is called · screen inside
+`evaluate_job` after Claude #1 extracts the details · keep the rules in the
+prompt
+**Decision:** screen inside `evaluate_job`, before the rating call (as #26
+asks). `remote: false` fails the remote screen; a lowest base below
+`MIN_BASE` fails the comp screen. A screen that can't be checked (remote not
+given; pay that isn't a readable yearly salary) is **skipped, never failed**,
+so missing data never rejects a posting. Every failed screen is listed in
+`reasons`. The grader answers only "does this role build hands-on AI
+experience?" as `{"answer": "yes"|"no", "reasons": [...]}`, and code maps it
+(yes → STRONG, no → WORTH REVIEWING); other keys aren't passed on. The grader
+no longer gets the Location / Remote / Compensation lines, since the screens
+already used them.
+**Trace:** each screen is a guard (`remote`, `comp_floor`) with the
+`evaluate_job` tool call as its parent. Passed or skipped: step `run_tools`,
+`caught: false`; skipped adds `action: "screen_skipped"` and records the raw
+value it couldn't read (e.g. `"competitive"`), keeping D25's rule that only a
+caught guard has a message. Failed: step `hard_screen` (E9),
+`action: "ignore_returned"`. It's listed under "When something goes wrong"
+because CLAUDE.md and `test_annotations.py` tie every guard to an E-step,
+though a screened-out posting is the agent working, not failing.
+**Reasoning:** CLAUDE.md: deterministic rules belong in code. Reading pay in
+code is a heuristic (SPEC, Known limits), so it errs toward skipping:
+wrongly rejecting a good posting is worse than sending one more posting to the
+grader.
+**What would change it:** postings whose pay `lowest_base` misreads (other
+currencies, unusual formats); then extract a number in Claude #1's tool input
+instead of parsing text.

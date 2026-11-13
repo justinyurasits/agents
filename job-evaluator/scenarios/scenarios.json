@@ -56,10 +56,10 @@
     "id": 5,
     "name": "Hard screen in code",
     "group": "normal",
-    "behavior": "Base pay is below the floor, so a rule in code rejects the posting before Claude is ever asked.",
+    "behavior": "Base pay is below the floor, so a rule in code rejects the posting before the grader is ever asked.",
     "posting": "Tallowmere Robotics — AI Product Manager\nLocation: Remote (US)\nCompensation: $140,000–$165,000 base\n\nTallowmere Robotics makes inspection robots for warehouses and distribution centers. We're adding AI features that let site managers ask questions about inspection results in plain language and get suggested maintenance actions.\n\nAs AI Product Manager, you'll own the natural-language assistant from prototype to launch. You'll work with our robotics and data teams to decide what the assistant can answer, how it explains its sources, and when it should hand off to a technician.\n\nWhat you'll do:\n- Define assistant use cases with site managers\n- Prototype question-answering flows with LLM APIs\n- Set accuracy targets and run evaluation before each release\n\nWhat you bring:\n- 5+ years in product management\n- Hands-on experience with LLM APIs or search products\n- Interest in industrial or hardware products\n\nFully remote in the US. Base salary $140,000–$165,000 plus equity.",
-    "expected_tools": [],
-    "expected_outcome": "Rejected by a hard screen in code: base pay is below the $180K floor. No API call is made.",
+    "expected_tools": ["evaluate_job (stops at the hard screen)"],
+    "expected_outcome": "Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.",
     "company_facts": null,
     "fault": null
   },

@@ -22,9 +22,10 @@ import tracing    # noqa: E402
 
 JOB = "Northwind Labs — AI Agent Architect\nRemote (US)\n$200,000–$240,000 base"
 EVAL_INPUT = {"company": "Northwind Labs", "role_title": "AI Agent Architect",
-              "job_description": "Design agentic workflows."}
+              "job_description": "Design agentic workflows.",
+              "remote": True, "compensation": "$200,000–$240,000 base"}   # passes both hard screens
 FLAG_INPUT = {"company": "Fabrikam", "role_title": "Analyst", "missing_info": "compensation"}
-GRADE = '{"rating": "WORTH REVIEWING", "reasons": ["remote", "pay"]}'
+GRADE = '{"answer": "no", "reasons": ["Platform design, little hands-on AI"]}'   # → WORTH REVIEWING
 FINAL = "Northwind Labs: worth reviewing."
 
 # A clean run, as STEPS.md describes it: (pass, step_id, crossing kind).
@@ -41,6 +42,8 @@ CLEAN_SEQUENCE = [
     (1, "save_turn", None),
     (1, "run_tools", ("guard", "tool_exists")),
     (1, "run_tools", "tool_call"),
+    (1, "run_tools", ("guard", "remote")),
+    (1, "run_tools", ("guard", "comp_floor")),
     (1, "inner_grader", "inner_api_request"),
     (1, "inner_grader", "inner_api_response"),
     (1, "inner_grader", ("guard", "max_tokens")),
@@ -104,7 +107,7 @@ class CleanRunTest(TraceTestCase):
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
         not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
                             "grader_cut_off", "api_call_failed", "no_final_answer",
-                            "invalid_grade"}
+                            "invalid_grade", "hard_screen"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
 
     def test_seq_and_ids(self):

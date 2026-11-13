@@ -21,7 +21,7 @@ agent does; the other two are tagged so you can skip them:
 
 `# STEP: <step_id>` marks the code each step in docs/STEPS.md points to
 (the page looks the line up from the marker). `GUARD (E<n> <step_id>)`
-labels a check that stops a crash, a hang, or bad data; E1–E8 are the
+labels a check that stops a crash, a hang, or bad data; E1–E9 are the
 "When something goes wrong" steps in STEPS.md.
 
 THE WHOLE THING IN BRIEF
@@ -33,7 +33,10 @@ THE WHOLE THING IN BRIEF
      reply says "done"?                   → return its text
      reply asks for tools?                → run each one, add the results
                                             to messages, go round again
-4. Guards stop the run cleanly if something goes wrong (E1–E8).
+   Inside evaluate_job, code checks the hard rules first (remote, the $180K
+   floor); only a posting that passes them goes to the grader, a second
+   Claude that answers one yes/no question.
+4. Guards stop the run cleanly if something goes wrong (E1–E9).
 5. Faults (faults.py) make one thing go wrong on purpose, so the guards can
    be shown working. They're off unless you ask for one, and every change a
    fault makes is labelled `injected` in the trace.
@@ -109,39 +112,126 @@ tools = [
 # TOOL FUNCTIONS — real Python. Claude never sees these.
 # ---------------------------------------------------------------------------
 
-# System prompt for the GRADER: a second Claude, called from inside
-# evaluate_job. The agent (Claude #1) never sees this text.
-RUBRIC = """You rate job postings for Justin.
-STRONG: remote, $180K+ base, and builds his AI consulting practice.
-WORTH REVIEWING: meets two of the three.
-IGNORE: meets one or none.
-Respond with JSON only: {"rating": "...", "reasons": ["...", "..."]}"""
+# HARD SCREENS: Justin's fixed rules, checked in code before any rating call
+# (#26). Rules belong in code, where they can't be misapplied; judgment
+# belongs in the prompt (CLAUDE.md).
+MIN_BASE = 180_000     # lowest base salary in the range must be at least this
+REQUIRE_REMOTE = True  # a role Claude marked remote: false is screened out
 
-# The only ratings the grader may give. A fixed rule, so it's checked in code
-# (CLAUDE.md), not left to the prompt.
-RATINGS = ("STRONG", "WORTH REVIEWING", "IGNORE")
+
+# Amounts in a compensation string: "140,000", "185K", "1.2M". The groups
+# are the number and an optional K or M.
+_AMOUNT = re.compile(r"(\d+(?:,\d{3})*(?:\.\d+)?)\s*([km])?(?![a-z])", re.IGNORECASE)
+# "-", "–", "—" or "to" between the two ends of a range, as in "180–220K".
+_RANGE_DASH = re.compile(r"\s*(?:-|–|—|to)\s*\$?\s*", re.IGNORECASE)
+# Pay that isn't a yearly salary ("$90/hr", "$15,000 per month"); not compared.
+_NOT_YEARLY = re.compile(r"/\s*(?:hr|hour|day|week|wk|month|mo)\b|\bper\s+(?:hour|day|week|month)"
+                         r"|\b(?:hourly|daily|weekly|monthly)\b", re.IGNORECASE)
+_SCALE = {"": 1, "k": 1_000, "m": 1_000_000}
+
+
+def lowest_base(compensation):
+    """The lowest yearly base salary in Claude's compensation text, in
+    dollars, or None if no salary can be read from it. Pure function.
+
+        "$140,000–$165,000 base" → 140000      "$185K–$215K" → 185000
+        "180-220k"               → 180000      "competitive" → None
+        "$90/hr"                 → None (not a yearly salary)
+    """
+    if not isinstance(compensation, str) or _NOT_YEARLY.search(compensation):
+        return None
+    # finditer gives each match with its position, so we can see the text
+    # between two amounts.
+    matches = list(_AMOUNT.finditer(compensation))
+    amounts = []
+    for i, m in enumerate(matches):
+        number, suffix = float(m.group(1).replace(",", "")), (m.group(2) or "").lower()
+        # In "180-220K" the first number borrows the second one's K.
+        if not suffix and number < 1_000 and i + 1 < len(matches):
+            after = matches[i + 1]
+            between = compensation[m.end():after.start()]
+            if after.group(2) and _RANGE_DASH.fullmatch(between):
+                suffix = after.group(2).lower()
+        value = number * _SCALE[suffix]
+        if value >= 10_000:          # skip small numbers: "15% bonus", "2 weeks"
+            amounts.append(int(value))
+    return min(amounts) if amounts else None
+
+
+def hard_screens(remote, compensation):
+    """Check the hard rules in code. Pure function, no API call.
+
+    Returns one dict per screen, e.g. for remote=False, compensation="$200K":
+        [{"name": "remote", "checked": "remote is not false", "value": False,
+          "caught": True, "skipped": False, "note": "not remote"},
+         {"name": "comp_floor", "checked": "lowest base >= MIN_BASE (180000)",
+          "value": 200000, "caught": False, "skipped": False, "note": "..."}]
+    A screen that can't be checked (no remote status, pay that isn't a number)
+    is skipped, never failed: the posting goes on to the rating call.
+    """
+    if not REQUIRE_REMOTE:
+        remote_screen = {"caught": False, "skipped": True, "note": "remote not required"}
+    elif remote is False:
+        remote_screen = {"caught": True, "skipped": False, "note": "not remote"}
+    elif remote is True:
+        remote_screen = {"caught": False, "skipped": False, "note": "remote"}
+    else:
+        remote_screen = {"caught": False, "skipped": True,
+                         "note": f"remote status {remote!r} isn't true or false; "
+                                 "remote screen skipped"}
+
+    base = lowest_base(compensation)
+    floor = f"${MIN_BASE // 1000}K floor"
+    if base is None:
+        comp_screen = {"caught": False, "skipped": True,
+                       "note": f"couldn't read a yearly base salary from "
+                               f"{compensation!r}; comp screen skipped"}
+    elif base < MIN_BASE:
+        comp_screen = {"caught": True, "skipped": False, "note": f"base below {floor}"}
+    else:
+        comp_screen = {"caught": False, "skipped": False,
+                       "note": f"base ${base:,} meets the {floor}"}
+
+    # {**a, **b} builds one dict from both: the fixed fields, then the outcome.
+    return [{"name": "remote", "checked": "remote is not false", "value": remote,
+             **remote_screen},
+            # A skipped comp screen records the text it couldn't read instead.
+            {"name": "comp_floor", "checked": f"lowest base >= MIN_BASE ({MIN_BASE})",
+             "value": compensation if base is None else base, **comp_screen}]
+
+
+# System prompt for the GRADER: a second Claude, called from inside
+# evaluate_job. The agent (Claude #1) never sees this text. It asks only the
+# question that needs judgment; the hard rules are checked in code (above).
+RUBRIC = """You judge one thing about a job posting for Justin:
+does this role build hands-on AI experience?
+Answer only that question.
+Respond with JSON only: {"answer": "yes" or "no", "reasons": ["...", "..."]}"""
+
+# Code, not the grader, turns the answer into the rating. (A posting that
+# failed a hard screen never reaches the grader: it's IGNORE.)
+RATING_FOR_ANSWER = {"yes": "STRONG", "no": "WORTH REVIEWING"}
 
 
 def grade_problem(grade):
     """What's wrong with the grader's parsed JSON, or None if it's valid.
 
-    Valid means: an object with `rating` (one of RATINGS, in any case) and
+    Valid means: an object with `answer` ("yes" or "no", in any case) and
     `reasons` (a list of strings). Other keys are allowed. Pure function, no
     API call.
 
     A valid grade looks like:
-        {"rating": "WORTH REVIEWING", "reasons": ["Remote (US)", "Pay is $200K+"]}
+        {"answer": "yes", "reasons": ["Builds LLM agents hands-on"]}
     """
     # isinstance(x, dict) asks "is x a dict?" (a JSON object becomes a dict).
     if not isinstance(grade, dict):
         return f"The grader's reply is a JSON {type(grade).__name__}, not an object."
-    if "rating" not in grade:
-        return "The grader's reply has no 'rating'."
-    rating = grade["rating"]
-    # .upper() makes the check case-insensitive: "strong" counts as STRONG.
-    if not isinstance(rating, str) or rating.upper() not in RATINGS:
-        return (f"The grader's rating {grade['rating']!r} isn't one of "
-                f"{', '.join(RATINGS)}.")
+    if "answer" not in grade:
+        return "The grader's reply has no 'answer'."
+    answer = grade["answer"]
+    # .strip().lower() makes the check forgiving: " Yes" counts as "yes".
+    if not isinstance(answer, str) or answer.strip().lower() not in RATING_FOR_ANSWER:
+        return f"The grader's answer {answer!r} isn't yes or no."
     if "reasons" not in grade:
         return "The grader's reply has no 'reasons'."
     reasons = grade["reasons"]
@@ -169,22 +259,36 @@ def strip_json_fences(text):
 
 def evaluate_job(company, role_title, job_description,
                  location="Unknown", remote="Unknown", compensation="Unknown"):
-    """Tool: ask a second Claude (the grader) to rate the job.
+    """Tool: check the hard rules in code, then ask a second Claude (the
+    grader) the one question that needs judgment.
 
     The arguments are exactly what Claude #1 filled in from the tool's
     input_schema. Optional ones it left out arrive as "Unknown".
     Returns {"rating": ..., "reasons": [...]}, or raises an error, which
     run_agent sends back to Claude #1 as a failed tool result (E1).
     """
-    job_summary = (
-        f"Company: {company}\nRole: {role_title}\nLocation: {location}\n"
-        f"Remote: {remote}\nCompensation: {compensation}\n\n{job_description}"
-    )
+    rec = tracing.active()            # the run's recorder, if any (trace only)
+
+    # Hard screens first, in code. A posting that fails one is IGNORE, and
+    # the rating call is never made.
+    screens = hard_screens(remote, compensation)
+    for screen in screens:
+        print(f"  [hard_screen] {screen['name']}: {screen['note']}")  # (terminal only)
+        rec.screen_checked(screen)  # (trace only)
+    failed = [s["note"] for s in screens if s["caught"]]
+    # GUARD (E9 hard_screen): the posting breaks a fixed rule (not remote, or
+    # base below MIN_BASE). Return IGNORE straight away; no rating call.
+    # STEP: hard_screen
+    if failed:
+        return {"rating": "IGNORE", "reasons": failed}
+
+    # The grader sees only the posting: remote status and pay were already
+    # handled by the screens above, so they aren't passed on separately.
+    job_summary = f"Company: {company}\nRole: {role_title}\n\n{job_description}"
 
     # A separate, one-off Claude call. No tools, no loop.
     # The outer `messages` list is not touched: the grader gets its own
     # one-message conversation, which is thrown away when this returns.
-    rec = tracing.active()            # the run's recorder, if any (trace only)
     grader_messages = [{"role": "user", "content": job_summary}]
     print("  [inner_grader] evaluate_job → the grader's own Claude call")  # (terminal only)
     rec.inner_api_request(RUBRIC, grader_messages)  # (trace only)
@@ -224,17 +328,16 @@ def evaluate_job(company, role_title, job_description,
     grade = json.loads(strip_json_fences(raw))
 
     # GUARD (E8 invalid_grade): valid JSON isn't enough; check it's a real
-    # rating before passing it on. A problem goes back to Claude as a tool
+    # yes/no answer before using it. A problem goes back to Claude as a tool
     # error, like any other (#8).
     problem = grade_problem(grade)
     rec.grade_checked(problem)  # (trace only)
     # STEP: invalid_grade
     if problem:
         raise ValueError(problem)
-    # Any case is accepted; pass it on in uppercase so the three ratings are
-    # always spelled the same.
-    grade["rating"] = grade["rating"].upper()
-    return grade
+    # Code turns the answer into the rating: yes → STRONG, no → WORTH REVIEWING.
+    rating = RATING_FOR_ANSWER[grade["answer"].strip().lower()]
+    return {"rating": rating, "reasons": grade["reasons"]}
 
 
 def flag_for_review(company, role_title, missing_info):
@@ -257,6 +360,8 @@ def flag_for_review(company, role_title, missing_info):
 #       messages += Claude's reply                          save_turn
 #       for each tool request in the reply:                 run_tools
 #           unknown tool?         → error result            GUARD E2
+#           evaluate_job: fails a hard rule? → IGNORE,
+#                         no rating call                    GUARD E9
 #           tool raised?          → error result            GUARD E1
 #       messages += all the results, in one message         results_back
 #   ran out of passes             → stop                    GUARD E4

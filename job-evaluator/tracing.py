@@ -224,7 +224,7 @@ class Recorder:
     # --- guards -----------------------------------------------------------
     # Every check the loop or a tool makes records a guard event, whether or
     # not it caught anything. `caught` is true only when something went
-    # wrong; then the event uses the error-case step (STEPS.md, E1–E5).
+    # wrong; then the event uses the error-case step (STEPS.md, E1–E9).
 
     def guard(self, step_id, name, checked, value, caught,
               action=None, message=None, parent=None, injected=False):
@@ -300,6 +300,19 @@ class Recorder:
                           payload={"stop_reason": response.stop_reason,
                                    "content": response.content},
                           tokens=tokens, parent=self._call)
+
+    def screen_checked(self, screen):
+        """One hard screen in evaluate_job, before the rating call (#26).
+        Caught: recorded at step hard_screen (E9). A screen that couldn't be
+        checked says so with action "screen_skipped"; its value is what it
+        couldn't read (e.g. "competitive")."""
+        caught = screen["caught"]
+        action = ("ignore_returned" if caught
+                  else "screen_skipped" if screen["skipped"] else None)
+        return self.guard("hard_screen" if caught else "run_tools", screen["name"],
+                          screen["checked"], screen["value"], caught, action=action,
+                          message=screen["note"] if caught else None,
+                          parent=self._call)
 
     def grader_checked(self, stop_reason):
         caught = stop_reason == "max_tokens"

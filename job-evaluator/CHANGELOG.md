@@ -26,6 +26,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Add fault injection (`faults.py`; `python agent.py --fault <name>` or `--scenario <id>`): tool_fails, unknown_tool, runaway_loop (pass cap lowered to 2) and reply_cut_off, each recorded as `fault_injected` with `injected: true` on its effects; cut-off and cap messages now give the limit actually used (#46).
 - Restore compensation in the sample job. Used a fictional company.
 - Scenario 8's visitor text now says the cap was lowered only for the demo, and that in real runs Claude usually stops retrying on its own (#49).
+- Move the $180K floor and the remote rule from the grader's prompt into code: `evaluate_job` screens first and returns IGNORE without a rating call; the grader now answers only "does this role build hands-on AI experience?" (yes → STRONG, no → WORTH REVIEWING). New guard step E9 `hard_screen` (#26).
 
 ## 0.1.0 — 2026-11-11
 

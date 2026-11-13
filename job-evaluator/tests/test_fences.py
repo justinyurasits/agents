@@ -18,13 +18,14 @@ with mock.patch("dotenv.load_dotenv"), \
     import agent
 
 
-EXPECTED = {"rating": "STRONG", "reasons": ["remote"]}
+EXPECTED = {"answer": "yes", "reasons": ["builds agents"]}          # the parsed JSON
+RATED = {"rating": "STRONG", "reasons": ["builds agents"]}            # what evaluate_job returns
 
 # The three reply shapes from issue #2.
 REPLIES = {
-    "json_fence":  '```json\n{"rating": "STRONG", "reasons": ["remote"]}\n```',
-    "bare_fence":  '```{"rating": "STRONG", "reasons": ["remote"]}\n```',
-    "plain_json":  '{"rating": "STRONG", "reasons": ["remote"]}',
+    "json_fence":  '```json\n{"answer": "yes", "reasons": ["builds agents"]}\n```',
+    "bare_fence":  '```{"answer": "yes", "reasons": ["builds agents"]}\n```',
+    "plain_json":  '{"answer": "yes", "reasons": ["builds agents"]}',
 }
 
 
@@ -77,7 +78,7 @@ class EvaluateJobTest(unittest.TestCase):
                 agent.client = SimpleNamespace(messages=fake)
                 with mock.patch("builtins.print"):  # keep test output clean
                     result = agent.evaluate_job("Acme", "Architect", "desc")
-                self.assertEqual(result, EXPECTED)
+                self.assertEqual(result, RATED)
                 self.assertEqual(fake.calls, 1)
 
 

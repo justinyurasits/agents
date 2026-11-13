@@ -1,4 +1,4 @@
-"""Tests for checking the grader's JSON before it's returned (issue #32).
+"""Tests for checking the grader's JSON before it's used (issues #32, #26).
 
 Fake Claude replies built from real SDK types (tests/fakes.py). No API calls.
 Run from job-evaluator/:  python -m unittest discover -s tests -v
@@ -16,32 +16,38 @@ except ImportError:  # when run as tests.test_grade_validation
 
 agent = fakes.agent
 
-# Grader replies that parse as JSON but aren't a valid rating, and what the
-# tool must say about each.
+# Grader replies that parse as JSON but aren't a valid answer, and what the
+# tool must say about each. (The grader answers yes or no since #26.)
 BAD = {
-    "missing rating":     ('{"reasons": ["remote"]}',
-                           "The grader's reply has no 'rating'."),
-    "unknown rating":     ('{"rating": "EXCELLENT", "reasons": ["remote"]}',
-                           "The grader's rating 'EXCELLENT' isn't one of "
-                           "STRONG, WORTH REVIEWING, IGNORE."),
-    "non-string rating":  ('{"rating": 5, "reasons": ["remote"]}',
-                           "The grader's rating 5 isn't one of "
-                           "STRONG, WORTH REVIEWING, IGNORE."),
-    "missing reasons":    ('{"rating": "STRONG"}',
+    "missing answer":     ('{"reasons": ["builds agents"]}',
+                           "The grader's reply has no 'answer'."),
+    "unknown answer":     ('{"answer": "maybe", "reasons": ["builds agents"]}',
+                           "The grader's answer 'maybe' isn't yes or no."),
+    "a rating, not an answer": ('{"answer": "STRONG", "reasons": ["builds agents"]}',
+                           "The grader's answer 'STRONG' isn't yes or no."),
+    "non-string answer":  ('{"answer": true, "reasons": ["builds agents"]}',
+                           "The grader's answer True isn't yes or no."),
+    "missing reasons":    ('{"answer": "yes"}',
                            "The grader's reply has no 'reasons'."),
-    "reasons not a list": ('{"rating": "STRONG", "reasons": "remote"}',
+    "reasons not a list": ('{"answer": "yes", "reasons": "builds agents"}',
                            "The grader's 'reasons' isn't a list of strings."),
-    "reasons not strings": ('{"rating": "STRONG", "reasons": ["remote", 3]}',
+    "reasons not strings": ('{"answer": "yes", "reasons": ["builds agents", 3]}',
                             "The grader's 'reasons' isn't a list of strings."),
-    "a list":             ('["STRONG", "remote"]',
+    "a list":             ('["yes", "builds agents"]',
                            "The grader's reply is a JSON list, not an object."),
-    "a string":           ('"STRONG"',
+    "a string":           ('"yes"',
                            "The grader's reply is a JSON str, not an object."),
 }
 
+# Valid answers and the result evaluate_job returns for each.
 VALID = {
-    "plain": {"rating": "WORTH REVIEWING", "reasons": ["remote", "pay"]},
-    "extra keys kept": {"rating": "IGNORE", "reasons": [], "confidence": "high"},
+    "yes": ({"answer": "yes", "reasons": ["builds agents"]},
+            {"rating": "STRONG", "reasons": ["builds agents"]}),
+    "no": ({"answer": "no", "reasons": ["manages a sales team"]},
+           {"rating": "WORTH REVIEWING", "reasons": ["manages a sales team"]}),
+    "extra keys allowed, not passed on": (
+        {"answer": "no", "reasons": [], "confidence": "high"},
+        {"rating": "WORTH REVIEWING", "reasons": []}),
 }
 
 
@@ -61,15 +67,15 @@ class GradeProblemTest(unittest.TestCase):
                 self.assertEqual(agent.grade_problem(json.loads(reply)), problem)
 
     def test_valid_grades_have_no_problem(self):
-        for label, grade in VALID.items():
+        for label, (grade, _) in VALID.items():
             with self.subTest(label):
                 self.assertIsNone(agent.grade_problem(grade))
 
-    def test_every_rating_in_the_rubric_is_accepted(self):
-        for rating in ("STRONG", "WORTH REVIEWING", "IGNORE"):
-            with self.subTest(rating):
-                self.assertIn(rating, agent.RUBRIC)
-                self.assertIsNone(agent.grade_problem({"rating": rating, "reasons": []}))
+    def test_the_rubric_asks_for_the_answers_code_maps(self):
+        for answer in agent.RATING_FOR_ANSWER:
+            with self.subTest(answer):
+                self.assertIn(f'"{answer}"', agent.RUBRIC)
+        self.assertEqual(agent.RATING_FOR_ANSWER, {"yes": "STRONG", "no": "WORTH REVIEWING"})
 
 
 class ThroughTheAgentTest(TraceTestCase):
@@ -83,16 +89,16 @@ class ThroughTheAgentTest(TraceTestCase):
                 self.assertIs(result["payload"]["is_error"], True)
                 self.assertEqual(result["payload"]["content"], f"ValueError: {problem}")
 
-    def test_valid_grade_is_returned_unchanged(self):
-        for label, grade in VALID.items():
+    def test_valid_answer_becomes_the_rating(self):
+        for label, (grade, rated) in VALID.items():
             with self.subTest(label):
                 _, rec = self.record(**evaluate_then_finish(json.dumps(grade)))
                 result = next(e for e in rec.events if kind(e) == "tool_result")
                 self.assertIs(result["payload"]["is_error"], False)
-                self.assertEqual(json.loads(result["payload"]["content"]), grade)
+                self.assertEqual(json.loads(result["payload"]["content"]), rated)
 
     def test_evaluate_job_called_directly_raises_the_problem(self):
-        reply, problem = BAD["unknown rating"]
+        reply, problem = BAD["unknown answer"]
         fakes.use_fake(outer=[], inner=[fakes.reply(fakes.text(reply))])
         with self.assertRaises(ValueError) as caught:
             agent.evaluate_job(**EVAL_INPUT)
@@ -118,7 +124,7 @@ class TraceTest(TraceTestCase):
         self.assertLess(guard["seq"], failed["seq"])
 
     def test_valid_grade_records_the_check_uncaught(self):
-        _, rec = self.record(**evaluate_then_finish(json.dumps(VALID["plain"])))
+        _, rec = self.record(**evaluate_then_finish(json.dumps(VALID["yes"][0])))
         guard = next(e for e in rec.events if e["guard"] and e["guard"]["name"] == "grade_valid")
         self.assertEqual(guard["step_id"], "inner_grader")
         self.assertIs(guard["guard"]["caught"], False)
@@ -127,30 +133,29 @@ class TraceTest(TraceTestCase):
 
 
 class AnyCaseTest(TraceTestCase):
-    """Issue #42: ratings are accepted in any case and returned in uppercase."""
+    """Issue #42, for the yes/no answer (#26): any case is accepted."""
 
-    CASES = {"strong": "STRONG", "Strong": "STRONG", "worth reviewing": "WORTH REVIEWING",
-             "Worth Reviewing": "WORTH REVIEWING", "ignore": "IGNORE", "STRONG": "STRONG"}
+    CASES = {"yes": "STRONG", "Yes": "STRONG", "YES": "STRONG", " yes ": "STRONG",
+             "no": "WORTH REVIEWING", "No": "WORTH REVIEWING", "NO": "WORTH REVIEWING"}
 
     def test_grade_problem_accepts_any_case(self):
         for given in self.CASES:
             with self.subTest(given):
-                self.assertIsNone(agent.grade_problem({"rating": given, "reasons": ["x"]}))
+                self.assertIsNone(agent.grade_problem({"answer": given, "reasons": ["x"]}))
 
-    def test_rating_comes_back_uppercase_everything_else_unchanged(self):
+    def test_any_case_answer_gives_the_rating(self):
         for given, expected in self.CASES.items():
             with self.subTest(given):
-                grade = {"rating": given, "reasons": ["remote"], "confidence": "high"}
+                grade = {"answer": given, "reasons": ["builds agents"]}
                 _, rec = self.record(**evaluate_then_finish(json.dumps(grade)))
                 result = next(e for e in rec.events if kind(e) == "tool_result")
                 self.assertIs(result["payload"]["is_error"], False)
                 self.assertEqual(json.loads(result["payload"]["content"]),
-                                 {**grade, "rating": expected})
+                                 {"rating": expected, "reasons": ["builds agents"]})
 
-    def test_unknown_rating_in_lowercase_is_still_rejected(self):
-        problem = agent.grade_problem({"rating": "excellent", "reasons": []})
-        self.assertEqual(problem, "The grader's rating 'excellent' isn't one of "
-                                  "STRONG, WORTH REVIEWING, IGNORE.")
+    def test_unknown_answer_in_any_case_is_still_rejected(self):
+        self.assertEqual(agent.grade_problem({"answer": "Maybe", "reasons": []}),
+                         "The grader's answer 'Maybe' isn't yes or no.")
 
 
 if __name__ == "__main__":

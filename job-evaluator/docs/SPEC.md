@@ -13,13 +13,15 @@ Given one job posting as text, the agent returns a short written verdict:
 - a **rating** (STRONG / WORTH REVIEWING / IGNORE) with reasons, when the posting has enough information, or
 - a **flag for manual review**, when key information (compensation, remote status) is missing or unclear.
 
-Rating criteria, as written in the grader's prompt (`RUBRIC`):
+How a posting is rated (#26). Fixed rules are checked in code, and only the one question that needs judgment goes to the grader:
 
-| Rating | Meaning |
-|---|---|
-| STRONG | remote, $180K+ base, **and** builds Justin's AI consulting practice |
-| WORTH REVIEWING | meets two of the three |
-| IGNORE | meets one or none |
+| Rating | Meaning | Decided by |
+|---|---|---|
+| IGNORE | not remote, **or** lowest base below $180K | code (`hard_screens`), before any rating call |
+| STRONG | passes both, and the grader answers **yes** to "does this role build hands-on AI experience?" | the grader's answer, mapped in code |
+| WORTH REVIEWING | passes both, and the grader answers **no** | the grader's answer, mapped in code |
+
+A screen that can't be checked (remote status not given, or pay that isn't a readable yearly salary, like "competitive") is skipped, never failed, and the trace says so.
 
 It's a small, deliberately visible agent. It was built to learn and demonstrate the agent loop, so every step prints a line to the terminal.
 
@@ -27,7 +29,7 @@ It's a small, deliberately visible agent. It was built to learn and demonstrate 
 
 Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `scenarios/scenarios.json` (its posting, and its fault if it has one), and `python agent.py --fault <name>` forces one failure on purpose (see [Faults injected on purpose](#faults-injected-on-purpose)).
 
-**Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call).
+**Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call) or screened out by a hard rule (no grader call).
 
 **What `run_agent` can return.** It always returns a string. There are three kinds, and callers can only tell them apart by the text:
 
@@ -53,10 +55,13 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `MAX_PASSES = 10` | Most outer API calls per run. See the loop cap guard. |
 | `MAX_TOKENS = 2000` | Longest reply Claude may write. Used by **both** API calls. |
 | `tools` | The two tool definitions (name, description, input schema) sent to Claude on every outer call. The descriptions are how Claude decides which tool to use. |
-| `RUBRIC` | System prompt for the grader call inside `evaluate_job`: the criteria above plus "Respond with JSON only". |
+| `MIN_BASE = 180_000`, `REQUIRE_REMOTE = True` | The hard rules, as named constants. |
+| `lowest_base(text)`, `hard_screens(remote, compensation)` | Pure functions. `lowest_base` reads the lowest yearly base from Claude's compensation text (`"$140,000–$165,000"` → 140000; `"180-220k"` → 180000; `"competitive"`, `"$90/hr"` → `None`). `hard_screens` returns one result per rule: caught, skipped, or passed. |
+| `RUBRIC` | System prompt for the grader call inside `evaluate_job`: the one judgment question, plus "Respond with JSON only: `{"answer": "yes" or "no", "reasons": [...]}`". It doesn't mention pay or location. |
+| `RATING_FOR_ANSWER` | `{"yes": "STRONG", "no": "WORTH REVIEWING"}`: code, not the grader, turns the answer into the rating. |
 | `strip_json_fences(text)` | Removes a surrounding ```` ``` ```` / ```` ```json ```` fence from the grader's reply. Pure string function. |
-| `RATINGS`, `grade_problem(grade)` | The three valid ratings, and a pure function that says what's wrong with the grader's parsed JSON (or `None`). A rule in code, not the prompt. |
-| `evaluate_job(...)` | Tool. Makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns it as a dict (or raises `ValueError` naming the problem). |
+| `grade_problem(grade)` | A pure function that says what's wrong with the grader's parsed JSON (or `None`). A rule in code, not the prompt. |
+| `evaluate_job(...)` | Tool. Runs the hard screens first; if one fails, returns `{"rating": "IGNORE", "reasons": [...]}` with no API call. Otherwise makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns `{"rating", "reasons"}` (or raises `ValueError` naming the problem). |
 | `flag_for_review(...)` | Tool. Plain Python, no API call. Returns `{"status": "flagged", "company", "role_title", "missing_info"}`. |
 | `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
 | `run_agent(job_text, recorder=None, fault=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). With a `Fault`, it fails on purpose in one way. |
@@ -68,7 +73,7 @@ Next to it, [`code_refs.py`](../code_refs.py) finds the code each step points to
 There are two Claude roles, and they never mix:
 
 - **Claude #1, the agent** (outer calls in `run_agent`): sees the posting and the tools, and decides what to do.
-- **Claude #2, the grader** (inner call in `evaluate_job`): sees one job summary and the rubric, and returns a rating. Its conversation is thrown away when the tool returns.
+- **Claude #2, the grader** (inner call in `evaluate_job`): sees one job summary and the rubric, and answers yes or no. Only postings that pass the hard screens get this far. Its conversation is thrown away when the tool returns.
 
 Tests live in [`tests/`](../tests/) (standard-library `unittest`, D17). Run them from `job-evaluator/` with `python -m unittest discover -s tests -v`. They use a fake Claude client, so they make no API calls and need no key.
 
@@ -100,9 +105,9 @@ Tools run in order, not in parallel. The dispatch is an `if / elif` on the tool 
 
 | | Claude #1: agent (outer call) | Claude #2: grader (inside `evaluate_job`) |
 |---|---|---|
-| **System prompt** | `"You help Justin triage job postings. Use the tools provided."` | `RUBRIC` (criteria + "Respond with JSON only: `{"rating": "...", "reasons": [...]}`") |
+| **System prompt** | `"You help Justin triage job postings. Use the tools provided."` | `RUBRIC` (the one question + "Respond with JSON only: `{"answer": "yes" or "no", "reasons": [...]}`") |
 | **Tools** | `evaluate_job`, `flag_for_review` (names, descriptions, input schemas) | none |
-| **Messages** | The posting, then every assistant turn and tool result so far | One user message: `Company / Role / Location / Remote / Compensation` lines, then the description. Fields Claude #1 didn't fill in are sent as `Unknown`. |
+| **Messages** | The posting, then every assistant turn and tool result so far | One user message: `Company / Role` lines, then the description. Remote status and pay aren't sent separately: the hard screens already used them (#26). |
 | **Limit** | `max_tokens = MAX_TOKENS` (2000) | `max_tokens = MAX_TOKENS` (2000) |
 
 Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the outer conversation.
@@ -139,9 +144,10 @@ Every check in `agent.py` that exists to keep a run from crashing, hanging, or a
 | **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
 | **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
 | **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
-| **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't a rating: not an object, `rating` missing or not STRONG / WORTH REVIEWING / IGNORE (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid grade, extra keys included, is returned with its rating in uppercase and otherwise unchanged. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
+| **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't an answer: not an object, `answer` missing or not yes / no (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid answer becomes `{"rating", "reasons"}`; other keys aren't passed on. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42), [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
+| **Hard screens** (`hard_screens` + `if failed: return` in `evaluate_job`) | A posting Claude marked `remote: false`, or whose lowest base is below `MIN_BASE` ($180K) | Returns `{"rating": "IGNORE", "reasons": ["not remote" and/or "base below $180K floor"]}` before the rating call, so the grader is never asked. Unknown remote status or unreadable pay skips that screen instead of failing it. | [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_hard_screens.py`](../tests/test_hard_screens.py) |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31 and #32 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31, #32 and #26 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -151,16 +157,17 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 
 | Rule | Lives in | Should live in | Notes |
 |---|---|---|---|
-| $180K base floor | Prompt (`RUBRIC`) | **Code** | Breaks the repo rule today. See below. |
-| Must be remote | Prompt (`RUBRIC`) | **Code** | Same. |
-| Builds the consulting practice | Prompt (`RUBRIC`) | Prompt | Needs judgment. |
+| $180K base floor | Code (`MIN_BASE`, `hard_screens`) | Code | Moved from the prompt in #26. |
+| Must be remote | Code (`REQUIRE_REMOTE`, `hard_screens`) | Code | Moved from the prompt in #26. Claude #1 still reads remote status from the posting; code applies the rule. |
+| Builds hands-on AI experience | Prompt (`RUBRIC`) | Prompt | Needs judgment. The grader answers yes or no. |
+| Answer → rating (yes: STRONG, no: WORTH REVIEWING) | Code (`RATING_FOR_ANSWER`) | Code | #26. |
 | Rate vs flag (is enough info present?) | Tool descriptions, decided by Claude #1 | Prompt | Judgment about an unstructured posting. |
 | Grader reply format (JSON) | Prompt (`RUBRIC`), parsed and checked in code | Both | The prompt asks for JSON; code strips fences, parses it, and checks the rating and reasons (`grade_problem`, #32). |
-| The three rating values | Prompt (`RUBRIC`) **and** code (`RATINGS`) | Both | The prompt tells the grader what to answer; the code rejects anything else. |
+| The yes/no answer values | Prompt (`RUBRIC`) **and** code (`RATING_FOR_ANSWER`) | Both | The prompt tells the grader what to answer; the code rejects anything else. |
 | Max passes, max tokens | Code (`MAX_PASSES`, `MAX_TOKENS`) | Code | |
 | Which tool names exist | Code (`tools` + the dispatch) | Code | |
 
-**The floor and remote rules are tracked as D6** ("Hard rules currently live in the prompt (open)"). D6, and the previous version of this doc, point to "issue #6". **But #6 is a pull request (the #4 fix), not an issue.** No open issue currently tracks moving these rules into code.
+The floor and remote rules were moved into code by [#26](https://github.com/justinyurasits/agents/issues/26) (D28), which closes D6.
 
 ---
 
@@ -211,7 +218,7 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 "guard": {"name": "…", "checked": "…", "value": …, "caught": false, "action": null, "message": null}
 ```
 
-**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E5) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
+**`caught` is `true` only when something went wrong.** A caught guard always uses its error-case step from STEPS.md (E1–E9) and says what happened next (`action`) and the message. An uncaught guard uses the step where the check runs.
 
 | Guard | When it's recorded | Step (not caught → caught) | `value` | When caught: `action`, `message` |
 |---|---|---|---|---|
@@ -224,6 +231,10 @@ Every check the loop or a tool makes records a **guard event**, whether or not i
 | `tool_succeeded` | Every tool that ran | `run_tools` → `tool_failed` | exception type when caught | `error_sent_to_claude`, `"<Type>: <message>"` |
 | `final_text_present` | Every `end_turn` reply | `answer_returned` → `no_final_answer` | `"text"`, or `null` when caught | `run_stopped`, the no-answer message |
 | `grade_valid` | Every parsed grader reply, with `parent` | `inner_grader` → `invalid_grade` | the problem when caught | `error_raised`, the problem text |
+| `remote` | Every `evaluate_job` call, before the rating call, with `parent` | `run_tools` → `hard_screen` | the `remote` value Claude sent | `ignore_returned`, `"not remote"` |
+| `comp_floor` | Every `evaluate_job` call, before the rating call, with `parent` | `run_tools` → `hard_screen` | the lowest base, or the text it couldn't read | `ignore_returned`, `"base below $180K floor"` |
+
+A screen that can't be checked isn't caught: it records `action: "screen_skipped"` (and no message), so the trace shows it was skipped (#26, D28).
 
 So a grader that's cut off shows two caught guards in order: `max_tokens` (`grader_cut_off`), then `tool_succeeded` (`tool_failed`) with the same text. An unknown tool shows only `tool_exists`, because no tool ran. A run that hits a guarded stop ends with the caught guard, then the final event.
 
@@ -274,7 +285,8 @@ The `print` lines are still there for following a run live, one line per event. 
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
 - **Unexpected `stop_reason`** (e.g. `refusal`). Anything other than `end_turn` or `max_tokens` goes to the tool dispatch. With no tool requests in the reply, an empty user message is sent; the API will most likely reject it, and the run fails with an API error. This comes from reading the code; it hasn't been reproduced live. → [#21](https://github.com/justinyurasits/agents/issues/21)
-- **Hard rules live in the prompt** ($180K floor, remote). See [section 6](#6-rules-in-code-vs-prompt). No issue yet.
+- **Reading pay is a heuristic** (`lowest_base`, #26). It assumes US dollars and a yearly salary; it skips hourly, daily, weekly and monthly pay rather than compare it, and ignores numbers under 10,000 (bonus percentages, weeks of leave). A posting quoted in another currency would be compared as if it were dollars.
+- **Remote status comes from Claude #1.** The remote screen trusts the `remote` boolean Claude fills in; if Claude leaves it out, the screen is skipped.
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
 - **The cap is fixed in code**, not configurable from outside, and it counts passes, not tokens or dollars. Out of scope for #15.
 - **Return values are plain strings.** A caller can only tell "finished", "cut off", and "stopped at the cap" apart by comparing the text (see [Overview](#1-overview)).
