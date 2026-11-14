@@ -80,3 +80,34 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   - Fix going forward: Claude Code always works in its own git worktree
     (`../agents-worktrees/<branch>`), never in the main repo folder. Added to
     CLAUDE.md in the #32 PR.
+
+**Built: page v0 (#57, PR #60)**
+
+- First time the whole idea works end to end: the recorded run of scenario 6
+  plays in the browser, step by step, from `recordings/scenario-06.json`.
+- First version stepped through all 47 events. Watching it, too many were
+  passing checks ("Check: pass count"), and a dashed "next" arrow made the
+  pass count check look like it sent the request.
+- Review changes:
+  - Passing checks flash their badge with a one-line explanation, written
+    in STEPS.md.
+  - Arrows show only what's crossing now.
+  - evaluate_job's own Claude call is drawn Tools → Python → Claude, only
+    while it happens.
+  - Each tab has a one-line description.
+  - Each request says what it carries.
+  - The four cards are plain sentences.
+- Kept 22 steps instead of folding to ~15, then made "Claude says it's done"
+  a step too (23). It was hidden as a passing check, but it's routing: the
+  reason the loop ends.
+- Fonts ship with the page, since it may load nothing but its own files.
+
+**Learned** _(draft, rewrite in your own words)_
+
+- A mockup is one frame. Making it real meant deciding everything between
+  frames.
+- If a picture can be misread, it will be: the "next" arrow looked like cause
+  and effect.
+- What the trace records and what a person needs to see are different lists.
+  Choosing the steps is a teaching decision, not a data one.
+
