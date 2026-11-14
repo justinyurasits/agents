@@ -348,7 +348,7 @@ The `print` lines are still there for following a run live, one line per event. 
 
 ## 8. The page (site/)
 
-Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one recorded run, `recordings/scenario-06.json`, in the Execution Explorer layout (D15). It's plain HTML, CSS and JavaScript in [`site/`](../site/): no framework, no build step, no API calls, no key. The design reference is [`design/explorer-d1-mockup.html`](../design/explorer-d1-mockup.html).
+Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a recorded run in the Execution Explorer layout (D15). Since [#71](https://github.com/justinyurasits/agents/issues/71) a visitor can pick any of the nine scenarios. It's plain HTML, CSS and JavaScript in [`site/`](../site/): no framework, no build step, no API calls, no key. The design reference is [`design/explorer-d1-mockup.html`](../design/explorer-d1-mockup.html).
 
 **Run it:** from `job-evaluator/`, `python -m http.server 8000`, then open `localhost:8000/site/`. It has to be served (browsers won't `fetch` from a `file://` page), and it's served from `job-evaluator/` so the page can read `../recordings/` and `../scenarios/` without copies.
 
@@ -356,12 +356,26 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one 
 
 | File | Used for |
 |---|---|
-| `recordings/scenario-06.json` | Every event: the map, the four questions, the timeline, the inspector |
+| `recordings/scenario-0N.json` | The chosen scenario's events: the map, the four questions, the timeline, the inspector. Fetched when the scenario is picked |
 | `site/steps.json` | Each step's title and explanation, and each guard check's one-line explanation, generated from [STEPS.md](STEPS.md) by [`build_steps.py`](../build_steps.py) |
-| `scenarios/scenarios.json` | The scenario's name in the header |
+| `scenarios/scenarios.json` | The chooser: each scenario's id, name and group |
 | `site/fonts/` | Inter and JetBrains Mono (SIL Open Font License; the licenses are next to the files) |
 
 **steps.json has one source.** `python build_steps.py` reads STEPS.md and writes `steps` (per step id: `{number, title, text, error}`, the text being the paragraph(s) between `Step id:` and `Code:`) and `checks` (per guard name: the line from STEPS.md's "Checks" section). Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step or guard in the code or a recording has no explanation.
+
+**Choosing a scenario** (#71, D35). A drop-down in the header lists all nine by name, in two groups (D21): the five normal runs, then the four break-the-agent runs. Picking one fetches its recording, rebuilds the steps, timeline and guard badges, and starts paused at step 1, with no page reload. The URL carries the choice: `?scenario=3` opens scenario 3, and no `scenario` opens scenario 1. Each pick adds a browser history entry, so Back and Forward step through the scenarios you picked. An id that isn't in `scenarios.json` (`?scenario=42`), or a scenario whose recording is missing, shows a one-line message in place of the run; the chooser stays usable.
+
+| Scenario | Page steps |
+|---|---|
+| 1. Clean run | 14 |
+| 2. Missing info | 19 |
+| 3. Multi-tool | 21 |
+| 4. Two tools at once | 23 |
+| 5. Hard screen in code | 13 |
+| 6. A tool fails | 23 |
+| 7. Unknown tool | 21 |
+| 8. Runaway loop stopped | 23 |
+| 9. Reply cut off | 7 |
 
 **Events become page steps.** A run has more events than a visitor should step through (47 in scenario 6), so the page groups them (23 steps for scenario 6):
 
@@ -373,15 +387,15 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one 
 
 **How each part is driven by the recording:**
 
-- **Execution map.** The box for the step's `actor` is highlighted. The four arrows show only what crosses at this step: the request (message count; on hover, what it carries), Claude's reply (stop reason, tool ID and name), the tool call (tool and first argument), and the tool's result (`result · <rating>`, or the error type in red). evaluate_job's own call is drawn only during that call, dashed purple, from Tools through Python to Claude (the call goes out through Python's client), labelled as a separate conversation; its reply tag turns red, labelled "Simulated failure", when a fault replaced the grader's reply. The header counts API calls so far, main and inner.
+- **Execution map.** The box for the step's `actor` is highlighted. The four arrows show only what crosses at this step: the request (message count; on hover, what it carries), Claude's reply (stop reason, tool ID and name), the tool call (tool and first argument), and the tool's result (`result · ` and evaluate_job's rating, flag_for_review's status, or whether research_company found the company; or the error type in red). evaluate_job's own call is drawn only during that call, dashed purple, from Tools through Python to Claude (the call goes out through Python's client), labelled as a separate conversation; its reply tag turns red, labelled "Simulated failure", when a fault replaced the grader's reply. The header counts API calls so far, main and inner.
 - **Guard badges** in the Python box: one per guard the run checks. The checks that passed at this step flash, with their one-line explanations; a caught guard stays lit red for the rest of its pass.
-- **The four questions** are plain sentences, never code: Executing (the component), Has (what it holds, e.g. "1 message to send"), Because (what the step before did), Next (the next step's title, or where a tool's result goes).
+- **The four questions** are plain sentences, never code: Executing (the component), Has (what it holds, e.g. "1 message to send", "the stored facts for Marrowstone Logistics", "the 2 results, to add to the conversation in one message"), Because (what the step before did), Next (the next step's title, or where a tool's result goes).
 - **Timeline:** every page step, grouped by pass (`START` = pass 0); steps inside a tool are indented; injected ones are tagged "simulated". Click any one to jump.
 - **Explanation:** `steps[step_id]` from steps.json, labelled "Written for this page · not Claude's output". On a step that calls Claude, a line built from the request's payload follows it, labelled "from the recording": "This request carries: the system prompt, 2 tools (evaluate_job, flag_for_review), 1 message."
 - **Inspector tabs**, each with a one-line description under the tab bar: State change (the messages list before and after; new messages highlighted), Code (the step's `code` and the commit it ran at), Payload (each event's payload, guard and tokens, and the checks that passed), Claude's response.
 - **Claude's own words** (text and thinking blocks, the final answer, the grader's real reply) appear only under Claude's response. In Payload they're replaced with a pointer to that tab. Tool requests (names, IDs, arguments) are data and show in both.
 
-**Playback:** starts paused at the first step; Play / Pause, Back, Next, and 1× / 2× (2.5 s per step at 1×). Arrow keys step, space plays or pauses.
+**Playback:** starts paused at the first step, and again whenever a scenario is picked; Play / Pause, Back, Next, and 1× / 2× (2.5 s per step at 1×). Arrow keys step, space plays or pauses.
 
 ## 9. Known limits
 

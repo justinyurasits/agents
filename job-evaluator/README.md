@@ -50,7 +50,7 @@ python build_steps.py               # after editing docs/STEPS.md: rebuild site/
 python -m http.server 8000          # then open localhost:8000/site/
 ```
 
-The page (`site/`) replays the recorded run of scenario 6 step by step: who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
+The page (`site/`) replays any of the nine recorded scenarios step by step (pick one from the list, or open `/site/?scenario=3`): who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
 
 ## Test it
 
@@ -64,4 +64,4 @@ The tests use a fake Claude client, so they make no API calls and need no `.env`
 
 ## Status
 
-Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: scenario 6 is recorded so far (`recordings/scenario-06.json`), and page v0 replays it. Next is the full page (D33). Known gaps are in [docs/SPEC.md](docs/SPEC.md#9-known-limits) and open issues on the board.
+Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: all nine are recorded (`recordings/`), and page v0 replays any of them. Next is the full page (D33). Known gaps are in [docs/SPEC.md](docs/SPEC.md#9-known-limits) and open issues on the board.
