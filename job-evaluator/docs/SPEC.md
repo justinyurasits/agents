@@ -6,6 +6,21 @@ Issue links point to [the repo's issues](https://github.com/justinyurasits/agent
 
 ---
 
+## Design principles
+
+The six principles the page demonstrates (D33), and where each one shows in the code or a run:
+
+| Principle | Shown in the code | Watch it |
+|---|---|---|
+| **The model for judgment, code for rules** | `hard_screens` with `MIN_BASE` and `REQUIRE_REMOTE`, and `RATING_FOR_ANSWER`, in [`agent.py`](../agent.py); the grader's `RUBRIC` asks only the one question that needs judgment (section 6, D28) | Scenario 5: a rule in code rejects the posting before the grader is asked |
+| **A guard turns a crash into information the model can act on** | The `try / except` around each tool in `run_agent` (`# STEP: tool_failed`, E1) sends the error back as an `is_error` tool result (section 5, D18) | Scenario 6: the grader's reply is broken, the error goes back to Claude, and Claude retries |
+| **Claude decides; Python executes** | `run_agent`: Python calls Claude, reads `stop_reason`, and runs the tools; step 4 (`claude_decides`) has no code because it happens on Anthropic's servers (section 3, [STEPS.md](STEPS.md)) | Any run |
+| **The conversation is the memory** | `messages` in `run_agent`: sent whole on every call (`send_to_claude`), and appended at `save_turn` and `results_back` (section 3) | Scenario 1: messages grows from 1 to 3 between the two calls |
+| **Tool descriptions steer the agent** | The `description` of each tool in `tools`, sent to Claude #1 on every call (section 4) | Scenario 2: no compensation, so Claude picks `flag_for_review` |
+| **Show what happened; label everything else** | `tracing.py` records real runs; `faults.py` marks what it injected (`injected: true`); the page labels its own text "Written for this page" and shows Claude's words only under "Claude's response" (section 7 and 8, D27, D31) | The page itself |
+
+---
+
 ## 1. Overview
 
 Given one job posting as text, the agent returns a short written verdict:
@@ -31,7 +46,7 @@ Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `sc
 
 **Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call) or screened out by a hard rule (no grader call).
 
-**What `run_agent` can return.** It always returns a string. There are three kinds, and callers can only tell them apart by the text:
+**What `run_agent` can return.** It always returns a string, one of the six kinds below, and callers can only tell them apart by the text:
 
 | Case | Returned string |
 |---|---|
@@ -40,8 +55,9 @@ Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `sc
 | Claude's reply hit the token limit | `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` |
 | 10 passes without finishing | `"Stopped after 10 passes without finishing."` |
 | The call to Claude itself failed (network, rate limit, overloaded, bad key) | `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` (no status for network errors) |
+| Claude stopped for a reason the agent doesn't handle (e.g. `refusal`) | `"Claude stopped for a reason this agent doesn't handle (stop_reason 'refusal'). The run stopped."` |
 
-The cases where it raises an exception instead of returning are in [Known limits](#9-known-limits).
+What it doesn't handle is in [Known limits](#9-known-limits).
 
 ---
 
@@ -56,7 +72,7 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `MAX_TOKENS = 2000` | Longest reply Claude may write. Used by **both** API calls. |
 | `tools` | The two tool definitions (name, description, input schema) sent to Claude on every outer call. The descriptions are how Claude decides which tool to use. |
 | `MIN_BASE = 180_000`, `REQUIRE_REMOTE = True` | The hard rules, as named constants. |
-| `lowest_base(text)`, `hard_screens(remote, compensation)` | Pure functions. `lowest_base` reads the lowest yearly base from Claude's compensation text (`"$140,000–$165,000"` → 140000; `"180-220k"` → 180000; `"competitive"`, `"$90/hr"` → `None`). `hard_screens` returns one result per rule: caught, skipped, or passed. |
+| `lowest_base(text)`, `hard_screens(remote, compensation)` | Pure functions. `lowest_base` reads the lowest yearly base from Claude's compensation text (`"$140,000–$165,000"` → 140000; `"180-220k"` → 180000; `"competitive"`, `"$90/hr"` → `None`). `hard_screens` returns one result per rule: passed, failed, or skipped. |
 | `RUBRIC` | System prompt for the grader call inside `evaluate_job`: the one judgment question, plus "Respond with JSON only: `{"answer": "yes" or "no", "reasons": [...]}`". It doesn't mention pay or location. |
 | `RATING_FOR_ANSWER` | `{"yes": "STRONG", "no": "WORTH REVIEWING"}`: code, not the grader, turns the answer into the rating. |
 | `strip_json_fences(text)` | Removes a surrounding ```` ``` ```` / ```` ```json ```` fence from the grader's reply. Pure string function. |
@@ -90,7 +106,8 @@ The step-by-step walkthrough, written for someone who has never seen an agent, i
 2. Read the reply's `stop_reason`:
    - `end_turn` → return the reply's first **text** block (found by type, because a thinking block can come first), or the no-answer message if it has none. **Done.**
    - `max_tokens` → return the cut-off message. Nothing in the reply is acted on. **Done.**
-   - anything else → treated as a tool request. [Known limits](#9-known-limits) covers what that means for unexpected stop reasons.
+   - `tool_use` → go on to step 3.
+   - anything else (`refusal`, `pause_turn`, …) → return the unhandled-stop message. Nothing in the reply is acted on (D29). **Done.**
 3. Append Claude's full reply to `messages` as the assistant turn.
 4. Run **every** `tool_use` block in the reply, in order, each inside its own `try / except`.
 5. Append **one** user message holding one `tool_result` per request, each carrying that request's `tool_use_id`.
@@ -131,24 +148,31 @@ What Claude does after an error (retry, switch tools, or explain the failure) is
 
 ## 5. Guards and error handling
 
-Every check in `agent.py` that exists to keep a run from crashing, hanging, or acting on bad data:
+A **guard** catches a failure: a crash, a hang, or bad data. Each one is labelled `GUARD (E<n> <step_id>)` in agent.py and has an error step in STEPS.md (E1–E9). In order of their error steps:
 
-| Guard | Catches | Does | Issue | Test |
+| Guard | Step (`GUARD` label in agent.py) | Catches | Does | Issue | Test |
+|---|---|---|---|---|---|
+| **Tool errors** (`try / except Exception` around each tool) | E1 `tool_failed` | Any exception from a tool: bad JSON from the grader, bad arguments, the grader's own API call failing | Sends `"<Type>: <message>"` back as a `tool_result` with `is_error: true`; the run continues. Ctrl-C still stops the script. | [#8](https://github.com/justinyurasits/agents/issues/8), D18 | [`test_tool_errors.py`](../tests/test_tool_errors.py): `ToolErrorTest` |
+| **Unknown tool** (`else` branch of the dispatch) | E2 `unknown_tool` | Claude asks for a tool name that isn't defined | Raises `ValueError("Unknown tool '<name>'. Available tools: …")`, which the tool-errors guard (E1) turns into `is_error`. The list comes from `tools`, so it stays in sync. | [#11](https://github.com/justinyurasits/agents/issues/11), D19 | [`test_tool_errors.py`](../tests/test_tool_errors.py): `UnknownToolTest` |
+| **Cut-off reply, main loop** (`stop_reason == "max_tokens"` in `run_agent`) | E3 `reply_cut_off` | Claude #1's reply hit `MAX_TOKENS` | Returns `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` Nothing in the reply runs, not even a tool request. | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_main_loop_reply_*` |
+| **Loop cap** (`for … in range(1, MAX_PASSES + 1)`) | E4 `pass_cap` | Claude never says `end_turn`, e.g. it keeps retrying a tool that keeps failing | Stops after 10 outer calls and returns `"Stopped after 10 passes without finishing."` The grader's call doesn't count toward the 10. | [#15](https://github.com/justinyurasits/agents/issues/15) | [`test_loop_cap.py`](../tests/test_loop_cap.py): `LoopCapTest` |
+| **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | E5 `grader_cut_off` | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
+| **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | E6 `api_call_failed` | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
+| **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | E7 `no_final_answer` | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
+| **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | E8 `invalid_grade` | Grader JSON that parses but isn't an answer: not an object, `answer` missing or not yes / no (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid answer becomes `{"rating", "reasons"}`; other keys aren't passed on. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42), [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
+| **Unhandled stop reason** (`if response.stop_reason != "tool_use"` in `run_agent`, after the cut-off check) | E9 `unexpected_stop` | A reply whose `stop_reason` isn't `end_turn`, `max_tokens` or `tool_use`: `refusal`, `stop_sequence`, `pause_turn`, `model_context_window_exceeded` | Returns `"Claude stopped for a reason this agent doesn't handle (stop_reason 'refusal'). The run stopped."` Nothing in the reply runs, not even a tool request, and no further request is sent. Before this, the reply went on to the dispatch, which sent a user message with empty `content` that the API rejects. | [#21](https://github.com/justinyurasits/agents/issues/21), D29 | [`test_unexpected_stop.py`](../tests/test_unexpected_stop.py) |
+
+### Defensive handling (always on, not guards)
+
+These never catch a failure; they prevent one. They run on every reply, the same way whether or not anything was wrong, so they have no `GUARD` label, no error step, and no guard event in the trace.
+
+| Handling | Prevents | Does | Issue | Test |
 |---|---|---|---|---|
-| **Fence stripping** (`strip_json_fences`, in `evaluate_job`) | Grader wraps its JSON in ```` ``` ```` or ```` ```json ```` fences | Strips the fence before `json.loads` | [#2](https://github.com/justinyurasits/agents/issues/2) | [`test_fences.py`](../tests/test_fences.py): `StripJsonFencesTest`, `EvaluateJobTest` |
-| **Find text by type** (`evaluate_job` and the `end_turn` return) | A thinking block before the text block | Picks the first block with `type == "text"`, never `content[0]` | [#4](https://github.com/justinyurasits/agents/issues/4) (exit check). The `evaluate_job` fix came earlier, before issues were used (commit `3fbd8e6`). | [`test_fences.py`](../tests/test_fences.py): `test_each_reply_shape_with_thinking_block_first`. The fake replies in the other test files also put a thinking block first, so every test that checks `run_agent`'s final answer covers the exit check too. |
-| **Tool errors** (`try / except Exception` around each tool) | Any exception from a tool: bad JSON from the grader, bad arguments, the grader's own API call failing | Sends `"<Type>: <message>"` back as a `tool_result` with `is_error: true`; the run continues. Ctrl-C still stops the script. | [#8](https://github.com/justinyurasits/agents/issues/8), D18 | [`test_tool_errors.py`](../tests/test_tool_errors.py): `ToolErrorTest` |
-| **Unknown tool** (`else` branch of the dispatch) | Claude asks for a tool name that isn't defined | Raises `ValueError("Unknown tool '<name>'. Available tools: …")`, which the tool-errors guard turns into `is_error`. The list comes from `tools`, so it stays in sync. | [#11](https://github.com/justinyurasits/agents/issues/11), D19 | [`test_tool_errors.py`](../tests/test_tool_errors.py): `UnknownToolTest` |
-| **Every tool request answered** (loop over `tool_use` blocks) | Several tool requests in one reply | Runs each one and returns all results in **one** user message with matching `tool_use_id`s. The API rejects the next call if any request goes unanswered. | [#7](https://github.com/justinyurasits/agents/issues/7), D20 | [`test_multiple_tools.py`](../tests/test_multiple_tools.py): `MultipleToolUseTest` |
-| **Loop cap** (`for … in range(1, MAX_PASSES + 1)`) | Claude never says `end_turn`, e.g. it keeps retrying a tool that keeps failing | Stops after 10 outer calls and returns `"Stopped after 10 passes without finishing."` The grader's call doesn't count toward the 10. | [#15](https://github.com/justinyurasits/agents/issues/15) | [`test_loop_cap.py`](../tests/test_loop_cap.py): `LoopCapTest` |
-| **Cut-off reply, main loop** (`stop_reason == "max_tokens"` in `run_agent`) | Claude #1's reply hit `MAX_TOKENS` | Returns `"Claude's reply was cut off (hit the max_tokens limit of 2000)."` Nothing in the reply runs, not even a tool request. | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_main_loop_reply_*` |
-| **Cut-off reply, grader** (`stop_reason == "max_tokens"` in `evaluate_job`) | The grader's reply hit `MAX_TOKENS` | Raises `RuntimeError("The grader's reply was cut off …")` **before** parsing, so Claude gets "cut off" as an `is_error` result, not "invalid JSON". | [#18](https://github.com/justinyurasits/agents/issues/18), D22 | [`test_max_tokens.py`](../tests/test_max_tokens.py): `test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json` |
-| **Outer API call fails** (`try / except anthropic.APIError` around the call in `run_agent`) | Network error, timeout, rate limit (429), overloaded (529), server error, bad key (401) on Claude #1's call | Returns `"Couldn't get a reply from Claude: <ErrorType> (status <code>). The run stopped."` Only the error's type and status go in the message, never the error text, request, or headers. (The grader's own API errors are already tool errors, #8.) | [#30](https://github.com/justinyurasits/agents/issues/30), D26 | [`test_api_errors.py`](../tests/test_api_errors.py): `OuterApiErrorTest`, `TraceOfApiErrorTest` |
-| **No final answer** (`if answer is None` after `end_turn` in `run_agent`) | Claude says `end_turn` but the reply has no text block (only thinking, or empty) | Returns `"Claude finished without writing a final answer."` instead of crashing with `StopIteration`. Several text blocks still return the first. | [#31](https://github.com/justinyurasits/agents/issues/31) | [`test_final_text.py`](../tests/test_final_text.py): `NoTextBlockTest`, `TraceTest` |
-| **Unhandled stop reason** (`if response.stop_reason != "tool_use"` in `run_agent`, after the cut-off check) | A reply whose `stop_reason` isn't `end_turn`, `max_tokens` or `tool_use`: `refusal`, `stop_sequence`, `pause_turn`, `model_context_window_exceeded` | Returns `"Claude stopped for a reason this agent doesn't handle (stop_reason 'refusal'). The run stopped."` Nothing in the reply runs, not even a tool request, and no further request is sent. Before this, the reply went on to the dispatch, which sent a user message with empty `content` that the API rejects. | [#21](https://github.com/justinyurasits/agents/issues/21), D29 | [`test_unexpected_stop.py`](../tests/test_unexpected_stop.py) |
-| **Grade check** (`grade_problem` + `if problem: raise` in `evaluate_job`) | Grader JSON that parses but isn't an answer: not an object, `answer` missing or not yes / no (any case is accepted), `reasons` missing or not a list of strings | Raises `ValueError` naming exactly what's wrong, which goes back to Claude as an `is_error` tool result (#8). A valid answer becomes `{"rating", "reasons"}`; other keys aren't passed on. | [#32](https://github.com/justinyurasits/agents/issues/32), [#42](https://github.com/justinyurasits/agents/issues/42), [#26](https://github.com/justinyurasits/agents/issues/26) | [`test_grade_validation.py`](../tests/test_grade_validation.py) |
+| **Fence stripping** (`strip_json_fences`, in `evaluate_job`) | A `JSONDecodeError` when the grader wraps its JSON in ```` ``` ```` or ```` ```json ```` fences | Strips the fence before `json.loads` | [#2](https://github.com/justinyurasits/agents/issues/2) | [`test_fences.py`](../tests/test_fences.py): `StripJsonFencesTest`, `EvaluateJobTest` |
+| **Find text by type** (`evaluate_job` and the `end_turn` return) | A crash when a thinking block comes before the text block | Picks the first block with `type == "text"`, never `content[0]` | [#4](https://github.com/justinyurasits/agents/issues/4) (exit check). The `evaluate_job` fix came earlier, before issues were used (commit `3fbd8e6`). | [`test_fences.py`](../tests/test_fences.py): `test_each_reply_shape_with_thinking_block_first`. The fake replies in the other test files also put a thinking block first, so every test that checks `run_agent`'s final answer covers the exit check too. |
+| **Every tool request answered** (loop over `tool_use` blocks) | The API rejecting the next call when Claude asks for several tools in one reply and one goes unanswered | Runs each one and returns all results in **one** user message with matching `tool_use_id`s. The API rejects the next call if any request goes unanswered. | [#7](https://github.com/justinyurasits/agents/issues/7), D20 | [`test_multiple_tools.py`](../tests/test_multiple_tools.py): `MultipleToolUseTest` |
 
-The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31, #32 and #21 were each also run against the code from before the guard existed, to confirm they fail without it. The PRs that added them show that run.
+The tests for fence stripping (#5) and for #7, #8, #11, #15, #18, #30, #31, #32 and #21 were each also run against the code from before the guard or handling existed, to confirm they fail without it. The PRs that added them show that run.
 
 ---
 
@@ -308,10 +332,11 @@ The `print` lines are still there for following a run live, one line per event. 
 | `[claude_done] end_turn → done. Outer calls: N …` | Normal finish |
 | `[save_turn] appended assistant turn …` | Before dispatch |
 | `[run_tools] dispatching <tool>(**{…})` | Each tool |
+| `  [hard_screen] <rule>: <note>` (indented) | Each hard rule, inside `evaluate_job` |
 | `[tool_failed] <tool> raised → <Type>: <message>` | A tool failed (E1) |
 | `  [inner_grader] …` (indented) | Inside `evaluate_job`'s grader call |
 | `[results_back] appended N tool_result(s) (ids: …[ is_error]) …` | After the tools run |
-| `[reply_cut_off] …` / `[pass_cap] …` / `[api_call_failed] …` | Guarded stops (E3, E4, E6) |
+| `[reply_cut_off] …` / `[pass_cap] …` / `[api_call_failed] …` / `[unexpected_stop] …` | Guarded stops (E3, E4, E6, E9). E7 (no final answer) prints no line of its own. |
 
 ---
 

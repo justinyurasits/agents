@@ -6,17 +6,24 @@ One page. Every milestone and issue should trace back to a line here. If it does
 
 A learning and demonstration tool: an interface where you watch a simple agent work, step by step.
 
-It runs seven prepared scenarios, each chosen to show a different agent behavior:
+It runs nine prepared scenarios in two groups, each chosen to show a different agent behavior (D21; the list is `scenarios/scenarios.json`, shown in [SCENARIOS.md](SCENARIOS.md)):
+
+**Normal runs**
 
 1. **Clean run** — complete posting, one tool, done.
 2. **Missing info** — no comp listed; Claude picks a different tool.
 3. **Multi-tool** — a tool's result changes what the agent does next.
-4. **Tool fails, agent recovers** — the error goes back to Claude, and the agent recovers.
-5. **Two tools at once** — Claude asks for two tools in one reply; both results go back together.
-6. **Hard screen in code** — code rejects the posting before Claude is ever asked.
-7. **Runaway loop stopped** — a tool keeps failing and the loop cap stops the run.
+4. **Two tools at once** — Claude asks for two tools in one reply; both results go back together.
+5. **Hard screen in code** — code rejects the posting before the grader is ever asked.
 
-Scenario 4 is built end to end first (D16), then the rest.
+**Break the agent** (a fault is injected on purpose and labeled on the page)
+
+6. **A tool fails** — the error goes back to Claude, and the agent recovers.
+7. **Unknown tool** — Claude asks for a tool that doesn't exist; Python answers with the real ones.
+8. **Runaway loop stopped** — a tool keeps failing and the loop cap stops the run.
+9. **Reply cut off** — Claude's reply runs out of room; the run stops with a clear message.
+
+Scenario 6, a tool fails (numbered 4 when D16 was written), was built end to end first (D16, page v0 #57), then the rest.
 
 Each run plays out at a readable pace, with a short pause between major steps. Every step shows what's happening in plain English, the line of code running, and the data at that moment.
 
@@ -34,12 +41,36 @@ When I walk someone through it — in an interview, a client conversation, or a 
 
 ## What's on the page
 
-1. **Hero** — one sentence on what this is; pick a scenario and press Run.
-2. **The run (Execution Explorer, D15)** — an execution map that stays visible: Claude | Python | Tools, with the data that crosses each arrow and a tool's own Claude call drawn as a separate path. Below it: the four questions, a timeline grouped by pass, the step explanation, and an inspector with State change (messages[] before and after), Code, Payload, and Claude's response. Controls to pause, step, and change speed.
-3. **How it works** — the anatomy: trigger → loop → Claude decides → tools → results go back → error handling → stop. Each part links to its code and to the issue or decision behind it.
-4. **How it was built** — the board, issues, PRs, and decision log. Built with Claude Code, issue by issue.
+One long page. A header bar jumps to each section. Every claim the page makes
+can be watched: principles and guardrails each have a "Watch it" button that
+loads the matching scenario into the run view and plays it.
 
-## Design principle
+1. **Hero + the run** — one sentence on what this is, my name, and the
+   Execution Explorer directly below: scenario chooser in two groups (Normal
+   runs / Break the agent), playback that starts paused. When a run finishes,
+   a short summary card says what happened, labeled "Written for this page",
+   with links to watch another scenario or read how it works.
+2. **How it works** — the mechanics, briefly: the loop, tools, and the
+   conversation as memory.
+3. **Design principles** — six, each one sentence with a Watch it button:
+   1. The model for judgment, code for rules (scenario 5)
+   2. A guard turns a crash into information the model can act on (scenario 6)
+   3. Claude decides; Python executes (any run)
+   4. The conversation is the memory (scenario 1)
+   5. Tool descriptions steer the agent (scenario 2)
+   6. Show what happened; label everything else (the page itself)
+4. **Guardrails** — every failure the agent handles: what goes wrong, what
+   catches it, what happens next, and a Watch it button. Guards with no
+   scenario are marked "tested, not shown" and link to their test.
+5. **How it was built** — the process (brief → decisions → issues with
+   acceptance criteria → built by Claude Code → reviewed by me → tested),
+   real counts linked to GitHub, three key decisions, and three or four
+   learnings about building with an AI coding agent, linking to
+   LEARNINGS.md. Claude Code wrote the code; I wrote the specs and reviewed
+   every change.
+6. **Footer** — name, one line, links to the repo, LinkedIn, and my site.
+
+## The four questions (page design rule)
 
 At every step, a viewer can answer four questions: Who is executing? What information do they have? What caused this? What happens next?
 
@@ -77,7 +108,24 @@ The page shows what actually happened and labels everything else.
 ## Decided
 
 - Recorded runs only; static page (D12).
-- Seven scenarios; failures forced with labeled switches (D13).
+- Seven scenarios; failures forced with labeled switches (D13, superseded by D21).
 - research_company uses stored company data (D14).
 - Run view: Execution Explorer, linear map (D15).
-- Scenario 4 first (D16).
+- Scenario 4 first (D16); now scenario 6, after renumbering.
+- Tests use the standard library's unittest (D17).
+- A tool's exception goes back to Claude as an `is_error` tool result (D18).
+- An unknown tool name gets an error listing the real tools (D19).
+- Several tool requests in one reply run in order, with one result message (D20).
+- Nine scenarios: 5 normal runs + 4 break-the-agent runs (D21).
+- A cut-off reply is never acted on (D22).
+- Code references come from `# STEP:` markers, never hand-written line numbers (D23).
+- Trace format: one flat event per step, every key always present (D24).
+- Every guard check is recorded; "caught" means something went wrong (D25).
+- A failed call to Claude stops the run, naming only the error type (D26).
+- Faults are injected into real runs and labeled; the cap is lowered for the runaway demo (D27).
+- Hard rules in code; the grader answers one yes/no question (D28).
+- A stop reason the agent doesn't handle stops the run (D29).
+- Recordings are checked against each scenario's `expect` (D30).
+- Page v0 lives in `job-evaluator/site/`, ships its fonts, and shows Claude's words only under "Claude's response" (D31).
+- Page steps: passing checks aren't steps; caught checks and "Claude says it's done" are (D32).
+- One page, six sections, a "Watch it" button on every claim (D33).

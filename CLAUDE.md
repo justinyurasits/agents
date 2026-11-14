@@ -6,7 +6,7 @@ Rules for working in this repo. Read this before doing anything.
 
 Small agents built to learn and show how agent loops work. One folder per agent.
 Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
-(SPEC.md, STEPS.md, DECISIONS.md, BUILD_LOG.md).
+(BRIEF.md, SPEC.md, STEPS.md, SCENARIOS.md, DECISIONS.md, BUILD_LOG.md).
 
 ## How work happens
 

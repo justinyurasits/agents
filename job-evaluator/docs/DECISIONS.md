@@ -232,7 +232,7 @@ each break scenario maps to a guard already built (#8, #11, loop cap, max_tokens
 
 ## D22 — A cut-off reply is never acted on
 
-**Status:** **Proposed** (issue #18)
+**Status:** **Approved** (issue #18, PR #22)
 **Date:** 2026-11-12
 **Options:** dispatch any complete-looking tool requests in a cut-off reply ·
 stop and act on nothing
@@ -250,7 +250,7 @@ Running a tool on half-written input is worse than stopping. Checking
 
 ## D23 — Code references come from step markers, found with `ast`
 
-**Status:** **Proposed** (issue #27)
+**Status:** **Approved** (issue #27, PR #34)
 **Date:** 2026-11-13
 **Options:** hand-written line numbers in STEPS.md · a start and end marker
 around each block · one marker above the code, with the code's extent found
@@ -272,7 +272,7 @@ or at code spread over several places. Then add an explicit end marker.
 
 ## D24 — Trace format: one flat event per step, every key always present
 
-**Status:** **Proposed** (issue #28)
+**Status:** **Approved** (issue #28, PRs #35 and #37)
 **Date:** 2026-11-13
 **Options:** nested events (a pass containing its steps) · flat list of events
 · only the keys that apply on each event · every key on every event
@@ -295,7 +295,7 @@ each message once and refer to it by index.
 
 ## D25 — Guard events: every check recorded, "caught" means something went wrong
 
-**Status:** **Proposed** (issue #29)
+**Status:** **Approved** (issue #29, PRs #36 and #37)
 **Date:** 2026-11-13
 **Options:** record only guards that catch something · record every check
 **Decision:** every check records a guard event,
@@ -341,7 +341,7 @@ which is a separate decision.
 
 ## D27 — Fault injection: real responses kept, injected effects labelled, cap lowered for the runaway demo
 
-**Status:** **Proposed** (issue #46)
+**Status:** **Approved** (issue #46, PR #47)
 **Date:** 2026-11-13
 **Options:** fake the failures in a test client · inject them into real runs ·
 for the runaway loop: keep the cap at 10, nudge Claude with "temporary,
@@ -499,3 +499,18 @@ showing it. Putting the check lines in STEPS.md keeps one source for every
 explanation the page shows.
 **What would change it:** other scenarios playing too long, or another guard
 event that is really routing (it would join step 9 as an always-shown step).
+
+## D33 — Page structure: one page, six sections, a "Watch it" button on every claim
+
+**Status:** **Approved** (issue #62)
+**Date:** 2026-11-13
+**Decision:** one page with a header bar linking to six sections: Hero + run,
+How it works, Design principles, Guardrails, How it was built, Footer.
+Principles and guardrails each have a "Watch it" button that loads and plays
+the matching scenario. Each run ends with a labeled summary card. I'm named
+in the hero and footer.
+**Reasoning:** learners want to watch; people evaluating my work want to see
+how I think. One page serves the learner first and rewards the reader who
+scrolls. "Watch it" turns every claim into something provable by pressing Play.
+**What would change it:** the first-visitor test shows people never scroll
+past the run view.

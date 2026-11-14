@@ -63,4 +63,4 @@ The tests use a fake Claude client, so they make no API calls and need no `.env`
 
 ## Status
 
-v0.1 — runs end to end on one test posting. Known gaps are open issues on the board.
+Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: scenario 6 is recorded so far (`recordings/scenario-06.json`), and page v0 replays it. Next is the full page (D33). Known gaps are in [docs/SPEC.md](docs/SPEC.md#9-known-limits) and open issues on the board.
