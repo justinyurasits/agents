@@ -38,7 +38,7 @@ EXPECTED = {
     "api_call_failed":    ("except anthropic.APIError as e:", "return answer", 9),
     "invalid_grade":      ("if problem:", "raise ValueError(problem)", 2),
     "unexpected_stop":    ('if response.stop_reason != "tool_use":', "return answer", 6),
-    "research_company":   ("if name is None:", 'result["levels_on_file"] = list(levels)', 15),
+    "research_company":   ("if name is None:", 'result["levels_on_file"] = list(levels)', 16),
     "hard_screen":        ("if failed:", 'return {"rating": "IGNORE", "reasons": failed + notes}', 2),
     "grader_cut_off":     ('if eval_response.stop_reason == "max_tokens":', 'of {MAX_TOKENS}).")', 3),
     "pass_cap":           ('answer = f"Stopped after {max_passes} passes without finishing."',
