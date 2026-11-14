@@ -38,6 +38,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Record all nine scenarios with `record.py --all`; every scenario prints PASS, and docs/SCENARIOS.md is regenerated (#67).
 - The page plays any of the nine scenarios: a grouped chooser in the header, `?scenario=N` in the URL, Back and Forward between picks, and a short message for an unknown id or a missing recording (#71).
 - The page shows each scenario's setup and what to watch for above the run, and a summary card on the last step; `setup`, `watch_for` and `summary` text added to scenarios.json for all nine (#75).
+- Browser tests for the page (`tests/test_browser.py`, Playwright for Python, in `requirements-dev.txt`): Claude's words stay in their tab, all nine scenarios play to the end with no console errors, and `?scenario=` and Back work. Skipped when Playwright or Chromium isn't installed (#84).
 
 ## 0.1.0 — 2026-11-11
 

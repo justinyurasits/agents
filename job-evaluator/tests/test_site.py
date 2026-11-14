@@ -1,7 +1,7 @@
 """Tests for the page's data and files (#57): steps.json and site/.
 
-No browser here: these check what the page loads. The page's behavior
-(playback, the map, the tabs) was checked in a real browser; see the PR.
+No browser here: these check what the page loads. The page's behavior in a
+real browser is tested in test_browser.py (#84).
 Run from job-evaluator/:  python -m unittest discover -s tests -v
 """
 

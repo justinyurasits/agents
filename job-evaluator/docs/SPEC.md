@@ -93,7 +93,7 @@ There are two Claude roles, and they never mix:
 - **Claude #1, the agent** (outer calls in `run_agent`): sees the posting and the tools, and decides what to do.
 - **Claude #2, the grader** (inner call in `evaluate_job`): sees one job summary and the rubric, and answers yes or no. Only postings that pass the hard screens get this far. Its conversation is thrown away when the tool returns.
 
-Tests live in [`tests/`](../tests/) (standard-library `unittest`, D17). Run them from `job-evaluator/` with `python -m unittest discover -s tests -v`. They use a fake Claude client, so they make no API calls and need no key.
+Tests live in [`tests/`](../tests/) (standard-library `unittest`, D17). Run them from `job-evaluator/` with `python -m unittest discover -s tests -v`. They use a fake Claude client, so they make no API calls and need no key. The page's browser tests ([`test_browser.py`](../tests/test_browser.py), #84, D38) also need Playwright and Chromium (`requirements-dev.txt`); without them they're skipped.
 
 ---
 

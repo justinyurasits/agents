@@ -581,3 +581,30 @@ that goes stale when a scenario is re-recorded with a different path.
 **What would change it:** the scenario cards (#79) show `setup` on each
 card; then the intro panel may shrink to just "Watch for". Or a re-recording of scenario 6 that
 explains the failure instead of retrying, which would need a new summary.
+
+## D38 — Browser tests: Playwright in a dev requirements file, skipped when missing
+
+**Status:** **Proposed** (issue #84)
+**Date:** 2026-11-14
+**Options:** add Playwright to `requirements.txt` · a separate
+`requirements-dev.txt` · check every tab in the "Claude's words" test, or only
+what the page shows by default
+**Decision:**
+- Playwright (pinned, 1.65.2) goes in a new `requirements-dev.txt`, which
+  includes `requirements.txt`. Someone who only runs the agent doesn't need a
+  browser.
+- `tests/test_browser.py` is plain `unittest`. It starts its own local server
+  and skips with a one-line reason when Playwright or Chromium is missing.
+- The "Claude's words" check (D31) searches everything visible at each step
+  with the inspector on its default tab, State change, the same scope as the
+  check run by hand on #83. The Payload tab shows tool results as data. The
+  grader's reasons travel inside evaluate_job's result, so they would match
+  there by design.
+- The tests read the page's state through `window.explorer`, which the page
+  already exposes for checking by hand.
+**Reasoning:** the page's rules (D31, every scenario plays) were checked by
+hand on each PR and a gap slipped through (#76). A dev file keeps the agent's
+install small; skipping keeps a fresh checkout's tests green while CLAUDE.md
+makes a skipped suite not count for a `site/` PR.
+**What would change it:** a CI runner with Chromium (then the suite always
+runs), or the Payload tab rendering Claude's text that isn't tool data.
