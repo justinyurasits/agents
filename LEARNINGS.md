@@ -33,6 +33,9 @@ Newest at the bottom of each section.
 - **Events aren't steps.** The trace records 47 events for scenario 6; a visitor steps through 23. Checks that pass flash their badge with one line instead of being steps, and the events of one action (the hard rules, the grader call) are grouped. Saving the turn and adding results back stay, because they're what make "the conversation is the memory" visible. _(PR #60, D32)_
 - **Routing isn't a check, even when it's recorded like one.** "Claude says it's done" is logged as a passing `stop_reason` check, but it's one of Claude's two decisions in the run and the reason the loop ends. The page shows it as a step. _(PR #60 review)_
 - **One source for every explanation.** Step text and the one-line check explanations live only in STEPS.md, and a script builds the page's copy. A test fails if they drift. _(#57, build_steps.py)_
+- **A page built on one example only covers that example.** Page v0 was built and checked on scenario 6. Playing the other eight turned up four kinds of step it had no words for: "Has · nothing new", "rating: undefined". _(#71, PR #72)_
+- **Set up the run without giving away the ending.** A first-time visitor needs to know what's different about this input and what to watch for, and the scenario's `behavior` line told them how it ends. So the page has an intro before the run (setup, watch for) and a summary card after it. _(#75, PR #77)_
+- **A summary says what the recording shows, not why Claude did it.** "Claude asked for research_company first" is in the data. "Claude realised it needed pay" is a guess presented as fact. _(#75)_
 
 ## Testing an agent
 
@@ -40,6 +43,8 @@ Newest at the bottom of each section.
 - **Break it on purpose.** Fault injection makes a tool fail, invents an unknown tool, forces a runaway loop, or cuts a reply off, so every guard is seen working in a real run instead of trusted. _(#48, faults.py)_
 - **A description change is a code change.** Any PR that adds a tool or changes a description, prompt or rubric re-runs every scenario. That's the only reason the scenario 2 and 4 shift was caught. _(#69)_
 - **Don't edit the expectation to make it pass.** A mismatch is information. Change the expected path only when you've decided the new path is right. _(#69)_
+- **A check only finds what it looks for.** The browser scripts for #71 searched every step for "undefined" and "nothing new" and passed. A screenshot for #75 then showed Claude's whole final answer in the "Has" box, which breaks D31, because no script checked where Claude's words appear. Each rule needs its own check. _(#76)_
+- **Tie written text to the recorded data.** The summary card's text is tested against what `record.actual()` reads from each recording (tools and outcome), and the intros are tested for outcome words. If a re-recording takes a different path, the stale summary fails the test instead of misleading visitors. _(#75, PR #77)_
 - **One PASS isn't proof.** The model varies run to run. Reliability means pass rates over many runs, which is next. _(open)_
 
 ## Building with an AI coding agent
