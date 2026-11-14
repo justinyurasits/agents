@@ -222,6 +222,9 @@ pre .ln { color: var(--faint); user-select: none; display: inline-block; min-wid
   .map { padding: 18px 16px; }
   .map-row { flex-direction: column; }
   .box { min-height: 0; }
+  /* Stacked in a column, a box's flex-basis would become its height, and the
+     passed checks would spill out of the Python box (#76). Size to content. */
+  .map-row .box { flex: 0 0 auto; }
   .gap { padding: 10px 0; flex: none; }
   .inner-svg { display: none; }
   .inner { margin-top: 0; }
