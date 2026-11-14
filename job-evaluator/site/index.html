@@ -48,6 +48,7 @@
       <div class="box-role">the agent loop</div>
       <div class="box-desc">Calls Claude, runs tools, holds the messages.</div>
       <div class="guards" id="guards" aria-label="Guards"></div>
+      <div class="checks" id="checks" aria-live="polite"></div>
     </div>
 
     <div class="gap">
@@ -62,12 +63,11 @@
     </div>
   </div>
 
-  <div class="inner" id="inner">
-    <div class="inner-heads"><span class="inner-head"></span><span></span></div>
-    <div class="inner-path"></div>
+  <div class="inner" id="inner" hidden>
+    <svg class="inner-svg" id="inner-svg" preserveAspectRatio="none" aria-hidden="true"></svg>
     <div class="inner-tags">
-      <span class="tag inner-desc">evaluate_job's own API call · rubric + job · no tools · separate conversation</span>
-      <span class="tag" id="inner-tag" hidden></span>
+      <span class="tag inner-desc" id="inner-req">evaluate_job's own API call · goes out through Python · rubric + job · no tools · separate conversation</span>
+      <span class="tag" id="inner-res" hidden></span>
     </div>
   </div>
 
@@ -95,16 +95,22 @@
       </div>
       <h2 id="step-title"></h2>
       <p id="step-text"></p>
+      <div class="carries" id="carries" hidden><span id="carries-text"></span><span class="carries-src">from the recording</span></div>
       <div class="explain-foot"><span>Written for this page · not Claude's output</span><span>from docs/STEPS.md</span></div>
     </div>
 
     <div class="card tabs-card">
       <div role="tablist" class="tabs" id="tabs">
-        <button type="button" role="tab" data-tab="state" aria-selected="true">State change</button>
-        <button type="button" role="tab" data-tab="code" aria-selected="false">Code</button>
-        <button type="button" role="tab" data-tab="payload" aria-selected="false">Payload</button>
-        <button type="button" role="tab" data-tab="claude" aria-selected="false">Claude's response</button>
+        <button type="button" role="tab" data-tab="state" aria-selected="true"
+          data-desc="The messages list before and after this step. This list is everything Claude will see on its next call.">State change</button>
+        <button type="button" role="tab" data-tab="code" aria-selected="false"
+          data-desc="The Python that ran at this step.">Code</button>
+        <button type="button" role="tab" data-tab="payload" aria-selected="false"
+          data-desc="The exact data that crossed between components.">Payload</button>
+        <button type="button" role="tab" data-tab="claude" aria-selected="false"
+          data-desc="Claude's own output, unedited.">Claude's response</button>
       </div>
+      <p class="tab-desc" id="tab-desc"></p>
       <div class="tab-body" id="tab-body" role="tabpanel"></div>
     </div>
   </section>

@@ -447,30 +447,53 @@ retries), or postings that must be evaluated in separate runs.
 
 ## D31 — Page v0: how the page is served, and what it shows where
 
-**Status:** **Proposed** (issue #57)
+**Status:** **Approved** (issue #57, PR #60 review)
 **Date:** 2026-11-13
 **Options:** put the page at the repo root or in `job-evaluator/site/` · copy
 the recording into `site/` or read it where it is · load Inter and JetBrains
 Mono from Google Fonts, ship the font files, or use them only when installed ·
-show every event in the timeline or only the crossings · show Claude's words
-wherever they occur, or only under "Claude's response"
+show Claude's words wherever they occur, or only under "Claude's response"
 **Decision:** the page lives in `job-evaluator/site/` and is served from
 `job-evaluator/`, so it reads `../recordings/` and `../scenarios/` directly,
-with no copies to keep in sync. Fonts are used when installed and fall back to
-system fonts; nothing is downloaded. The timeline lists every event (47 in
-scenario 6), so Play visibly steps through all of them. Claude's prose (text,
+with no copies to keep in sync; it also loads `scenarios/scenarios.json` for the
+scenario's name. The fonts ship with the page in `site/fonts/` (woff2, Latin,
+the weights the design uses, with their OFL licenses). Claude's prose (text,
 thinking, final answer, the grader's reply) appears only under "Claude's
 response"; in Payload it's replaced with a pointer to that tab. Tool requests
 (names, IDs, arguments) count as data and show in both. The map caption and the
 three box descriptions from the mockup are kept as fixed text, labelled
-"Written for this page"; step explanations come only from steps.json.
+"Written for this page"; step explanations come only from steps.json. The first
+version listed every event in the timeline; the review replaced that with page
+steps (D32).
 **Reasoning:** the issue requires no requests except the page's own files,
-which rules out Google Fonts; shipping font files would add assets nobody asked
-for. A timeline that skipped guard and rule events would hide the steps the
-page exists to show. Keeping Claude's words in one place makes it plain what
-Claude wrote and what the page wrote.
+which rules out Google Fonts; shipping the files keeps the design's fonts
+without breaking that. Keeping Claude's words in one place makes it plain what
+Claude wrote and what the page wrote. All approved in review on PR #60.
 **What would change it:** GitHub Pages (M5) serving only `site/` (then the
-recording is copied in at publish time), the fonts mattering enough to ship
-them, or the timeline being too long once the other scenarios are added (then
-group the checks under each step).
+recording is copied in at publish time).
 
+## D32 — What counts as a step on the page
+
+**Status:** **Proposed** (issue #57, PR #60 review)
+**Date:** 2026-11-13
+**Options:** one step per event · hide passing guard checks · also group
+events that belong together (the rules of one hard screen; evaluate_job's own
+call) · also fold whole STEPS.md steps together (e.g. save the turn into
+Claude's decision) to reach ~15
+**Decision:** a passing guard check isn't a step: it's attached to the step
+after it, or, inside a tool, to the tool's step before it, and while that step
+is shown its badge flashes with a one-line explanation. The lines live in a new
+"Checks" section of STEPS.md, built into steps.json with the step explanations.
+A caught check stays a step. One hard screen's rule events are one step, and
+evaluate_job's own call to Claude (request, reply, any simulated failure) is
+one step. Scenario 6 has 22 steps. The "This request carries" line is shown for
+evaluate_job's own call too, not only the main loop's request.
+**Reasoning:** the review set a target of about 15. Hiding passing checks and
+grouping gets from 47 to 22; going lower means merging distinct STEPS.md steps
+(saving Claude's turn, adding results back, the hard rules), which are the
+things the page teaches, or hiding the caught check, which the review kept as a
+step. Putting the check lines in STEPS.md keeps one source for every
+explanation the page shows.
+**What would change it:** watching it play and finding 22 too many: then the
+next candidates to fold are "Python saves Claude's turn" into the reply before
+it and the hard rules into the tool call (17 steps).

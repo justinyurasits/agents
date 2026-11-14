@@ -58,6 +58,20 @@ class StepsJsonTest(unittest.TestCase):
             needed |= {e["step_id"] for e in json.loads(read(path))["events"]}
         self.assertEqual(needed - set(steps), set())
 
+    def test_every_guard_has_a_one_line_check(self):
+        # A passing check isn't a step: the page shows this line instead (#57 review).
+        checks = build_steps.parse_checks(read(build_steps.STEPS_MD))
+        names = set(re.findall(r'self\.guard\("[a-z_]+", "([a-z_]+)"', read(os.path.join(HERE, "tracing.py"))))
+        for path in glob.glob(os.path.join(HERE, "recordings", "*.json")):
+            names |= {e["guard"]["name"] for e in json.loads(read(path))["events"] if e["guard"]}
+        self.assertGreaterEqual(len(names), 9)
+        self.assertEqual(names - set(checks), set())
+        self.assertEqual(checks["pass_count"], "Checks this run hasn't hit the 10-pass limit.")
+
+    def test_the_checks_section_is_not_read_as_a_step(self):
+        steps = build_steps.parse_steps(read(build_steps.STEPS_MD))
+        self.assertNotIn("pass_count", steps["unexpected_stop"]["text"])
+
     def test_a_repeated_step_id_is_an_error(self):
         md = "## X\n\n### 1. A\n\nStep id: `a`\n\nText.\nCode: x\n\n### 2. B\n\nStep id: `a`\n\nMore.\nCode: y\n"
         with self.assertRaises(ValueError):
@@ -79,6 +93,9 @@ class SiteFilesTest(unittest.TestCase):
         for ref in re.findall(r'(?:src|href)="([^"]+)"', html):
             if ref.startswith("data:"):
                 continue
+            with self.subTest(ref):
+                self.assertTrue(os.path.exists(os.path.join(SITE, ref)))
+        for ref in re.findall(r'url\("([^"]+)"\)', read(os.path.join(SITE, "style.css"))):
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.join(SITE, ref)))
         app = read(os.path.join(SITE, "app.js"))

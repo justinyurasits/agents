@@ -321,27 +321,35 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one 
 
 **Run it:** from `job-evaluator/`, `python -m http.server 8000`, then open `localhost:8000/site/`. It has to be served (browsers won't `fetch` from a `file://` page), and it's served from `job-evaluator/` so the page can read `../recordings/` and `../scenarios/` without copies.
 
-**What it loads, and nothing else** (no fonts or scripts from other sites; a test checks the source has no URLs):
+**What it loads, and nothing else** (a test checks the source has no URLs):
 
 | File | Used for |
 |---|---|
 | `recordings/scenario-06.json` | Every event: the map, the four questions, the timeline, the inspector |
-| `site/steps.json` | Each step's title and explanation, generated from [STEPS.md](STEPS.md) by [`build_steps.py`](../build_steps.py) |
+| `site/steps.json` | Each step's title and explanation, and each guard check's one-line explanation, generated from [STEPS.md](STEPS.md) by [`build_steps.py`](../build_steps.py) |
 | `scenarios/scenarios.json` | The scenario's name in the header |
+| `site/fonts/` | Inter and JetBrains Mono (SIL Open Font License; the licenses are next to the files) |
 
-**steps.json has one source.** `python build_steps.py` reads STEPS.md and writes, per step id, `{number, title, text, error}`: the text is the paragraph(s) between `Step id:` and `Code:`. Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step in the code or a recording has no explanation.
+**steps.json has one source.** `python build_steps.py` reads STEPS.md and writes `steps` (per step id: `{number, title, text, error}`, the text being the paragraph(s) between `Step id:` and `Code:`) and `checks` (per guard name: the line from STEPS.md's "Checks" section). Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step or guard in the code or a recording has no explanation.
+
+**Events become page steps.** A run has more events than a visitor should step through (47 in scenario 6), so the page groups them (22 steps for scenario 6):
+
+- A guard check that **passes** isn't a step. It's attached to the step after it (the pass count to the request, the reply checks to saving the turn), or, for a check inside a tool, to the tool's step before it (the grader's checks to the grader call). While that step is shown, the guard's badge flashes and its line from `checks` appears in the Python box.
+- A guard check that **catches** something is a step of its own, with its E-step explanation.
+- One hard screen's rule events are one step, and evaluate_job's own call to Claude (request, reply, and a simulated failure if there is one) is one step.
+- Everything else is one step per event.
 
 **How each part is driven by the recording:**
 
-- **Execution map.** The box for the event's `actor` is highlighted. The four arrows show the latest crossing of each kind in the current pass: request (message count), Claude's reply (stop reason, tool ID and name), the tool call (tool and first argument), and the tool's result (`result · <rating>`, or the error type in red). The next event's crossing is drawn dashed, labelled `next ·`. The dashed path underneath is `evaluate_job`'s own call (`inner_api_*` crossings); it turns red, labelled "Simulated failure", once a `fault_injected` payload replaces the grader's reply. The header counts API calls so far, main and inner.
-- **Guard badges** in the Python box: one per guard the run checks. The guard checked at this event is lit green; a caught guard is lit red and stays lit for the rest of its pass.
-- **The four questions:** Executing (the actor), Has (what the event holds), Because (a caught guard's message, the fault, or the step before), Next (the next event).
-- **Timeline:** every event, grouped by pass (`START` = pass 0); events with a `parent` are indented; `injected` events are tagged "simulated". Click any one to jump.
-- **Explanation:** `steps.json[step_id]`, labelled "Written for this page · not Claude's output".
-- **Inspector tabs:** State change (`messages_before` → `messages_after`, new messages highlighted; at other steps the conversation as it stands), Code (the event's `code` and the commit it ran at), Payload, Claude's response.
+- **Execution map.** The box for the step's `actor` is highlighted. The four arrows show only what crosses at this step: the request (message count; on hover, what it carries), Claude's reply (stop reason, tool ID and name), the tool call (tool and first argument), and the tool's result (`result · <rating>`, or the error type in red). evaluate_job's own call is drawn only during that call, dashed purple, from Tools through Python to Claude (the call goes out through Python's client), labelled as a separate conversation; its reply tag turns red, labelled "Simulated failure", when a fault replaced the grader's reply. The header counts API calls so far, main and inner.
+- **Guard badges** in the Python box: one per guard the run checks. The checks that passed at this step flash, with their one-line explanations; a caught guard stays lit red for the rest of its pass.
+- **The four questions** are plain sentences, never code: Executing (the component), Has (what it holds, e.g. "1 message to send"), Because (what the step before did), Next (the next step's title, or where a tool's result goes).
+- **Timeline:** every page step, grouped by pass (`START` = pass 0); steps inside a tool are indented; injected ones are tagged "simulated". Click any one to jump.
+- **Explanation:** `steps[step_id]` from steps.json, labelled "Written for this page · not Claude's output". On a step that calls Claude, a line built from the request's payload follows it, labelled "from the recording": "This request carries: the system prompt, 2 tools (evaluate_job, flag_for_review), 1 message."
+- **Inspector tabs**, each with a one-line description under the tab bar: State change (the messages list before and after; new messages highlighted), Code (the step's `code` and the commit it ran at), Payload (each event's payload, guard and tokens, and the checks that passed), Claude's response.
 - **Claude's own words** (text and thinking blocks, the final answer, the grader's real reply) appear only under Claude's response. In Payload they're replaced with a pointer to that tab. Tool requests (names, IDs, arguments) are data and show in both.
 
-**Playback:** starts paused at the first event; Play / Pause, Back, Next, and 1× / 2× (2.5 s per step at 1×). Arrow keys step, space plays or pauses.
+**Playback:** starts paused at the first step; Play / Pause, Back, Next, and 1× / 2× (2.5 s per step at 1×). Arrow keys step, space plays or pauses.
 
 ## 9. Known limits
 

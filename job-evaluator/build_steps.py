@@ -25,6 +25,14 @@ What it writes:
                       "text": "Python finds each tool request ...", "error": false}, ...}}
 
 "error" is true for the steps under "When something goes wrong" (E1, E2, ...).
+
+It also reads the one-line explanation of each guard's check, from the
+"Checks" section at the end of STEPS.md:
+
+    - `pass_count`: Checks this run hasn't hit the 10-pass limit.
+
+and writes them as "checks": {"pass_count": "Checks this run ..."}. The page
+shows that line when a check passes (a passing check isn't a step).
 """
 
 import json
@@ -39,6 +47,8 @@ STEPS_JSON = os.path.join(HERE, "site", "steps.json")
 HEADING = re.compile(r"^#{3,4} ([0-9A-Za-z]+)\. (.+?)\s*$")
 STEP_ID = re.compile(r"^Step id: `([a-z][a-z0-9_]*)`\s*$")
 SECTION = re.compile(r"^## (.+?)\s*$")
+# "- `pass_count`: Checks this run hasn't hit the 10-pass limit."
+CHECK = re.compile(r"^- `([a-z][a-z0-9_]*)`: (.+?)\s*$")
 
 
 def parse_steps(markdown):
@@ -84,11 +94,27 @@ def parse_steps(markdown):
     return steps
 
 
+def parse_checks(markdown):
+    """Each guard's one-line explanation, from the "Checks" section:
+    {guard_name: line}."""
+    checks = {}
+    in_checks = False
+    for line in markdown.splitlines():
+        if (m := SECTION.match(line)):
+            in_checks = m.group(1).upper().startswith("CHECKS")
+        elif in_checks and (m := CHECK.match(line)):
+            if m.group(1) in checks:
+                raise ValueError(f"check {m.group(1)!r} appears twice in STEPS.md")
+            checks[m.group(1)] = m.group(2)
+    return checks
+
+
 def build(markdown):
     """The steps.json document for this STEPS.md text."""
     return {"source": "docs/STEPS.md",
             "generated_by": "build_steps.py: edit docs/STEPS.md, then rerun it",
-            "steps": parse_steps(markdown)}
+            "steps": parse_steps(markdown),
+            "checks": parse_checks(markdown)}
 
 
 def render(markdown):
@@ -101,8 +127,9 @@ def main(src=STEPS_MD, dest=STEPS_JSON):
         text = render(f.read())
     with open(dest, "w", encoding="utf-8") as f:
         f.write(text)
-    count = len(json.loads(text)["steps"])
-    print(f"Wrote {os.path.relpath(dest, HERE)}: {count} steps from {os.path.relpath(src, HERE)}")
+    data = json.loads(text)
+    print(f"Wrote {os.path.relpath(dest, HERE)}: {len(data['steps'])} steps and "
+          f"{len(data['checks'])} checks from {os.path.relpath(src, HERE)}")
 
 
 if __name__ == "__main__":
