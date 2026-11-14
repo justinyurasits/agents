@@ -70,7 +70,7 @@ loads the matching scenario into the run view and plays it.
    every change.
 6. **Footer** — name, one line, links to the repo, LinkedIn, and my site.
 
-## Design principle
+## The four questions (page design rule)
 
 At every step, a viewer can answer four questions: Who is executing? What information do they have? What caused this? What happens next?
 

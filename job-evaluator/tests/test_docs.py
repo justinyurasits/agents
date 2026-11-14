@@ -32,6 +32,19 @@ class GuardTableTest(unittest.TestCase):
         self.assertGreaterEqual(len(in_code), 9)
         self.assertEqual(in_spec, in_code)
 
+    def test_guard_table_holds_only_guards(self):
+        # Checks that prevent a failure rather than catch one are "defensive
+        # handling", in their own table with no E-step (#62 review).
+        section = SPEC[SPEC.index("## 5. Guards"):SPEC.index("## 6.")]
+        guards = section[:section.index("### Defensive handling")]
+        rows = [line for line in guards.splitlines() if line.startswith("| **")]
+        self.assertEqual(len(rows), len(re.findall(r"# GUARD \(E\d+", AGENT)))
+        for row in rows:
+            self.assertRegex(row, r"\| E\d+ `[a-z_]+` \|")
+        defensive = section[section.index("### Defensive handling"):]
+        for name in ("Fence stripping", "Find text by type", "Every tool request answered"):
+            self.assertIn(f"| **{name}**", defensive)
+
 
 class BriefTest(unittest.TestCase):
 
@@ -44,6 +57,10 @@ class BriefTest(unittest.TestCase):
         listed = {int(n) for n in re.findall(r"\bD(\d+)\b", decided)}
         self.assertGreaterEqual(len(approved), 15)
         self.assertEqual(approved - listed, set())
+
+    def test_brief_four_questions_heading_is_distinct_from_design_principles(self):
+        self.assertIn("## The four questions (page design rule)", BRIEF)
+        self.assertNotIn("## Design principle\n", BRIEF)
 
     def test_brief_lists_every_scenario_by_name(self):
         scenarios = json.loads(read("scenarios", "scenarios.json"))
