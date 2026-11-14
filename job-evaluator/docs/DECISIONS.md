@@ -444,3 +444,58 @@ exact count would mismatch on Claude's choice rather than on a wrong path.
 Scenario 6 promises "retries or explains", so both are a PASS.
 **What would change it:** the page needing a finer check (e.g. the number of
 retries), or postings that must be evaluated in separate runs.
+
+## D31 — Page v0: how the page is served, and what it shows where
+
+**Status:** **Approved** (issue #57, PR #60 review)
+**Date:** 2026-11-13
+**Options:** put the page at the repo root or in `job-evaluator/site/` · copy
+the recording into `site/` or read it where it is · load Inter and JetBrains
+Mono from Google Fonts, ship the font files, or use them only when installed ·
+show Claude's words wherever they occur, or only under "Claude's response"
+**Decision:** the page lives in `job-evaluator/site/` and is served from
+`job-evaluator/`, so it reads `../recordings/` and `../scenarios/` directly,
+with no copies to keep in sync; it also loads `scenarios/scenarios.json` for the
+scenario's name. The fonts ship with the page in `site/fonts/` (woff2, Latin,
+the weights the design uses, with their OFL licenses). Claude's prose (text,
+thinking, final answer, the grader's reply) appears only under "Claude's
+response"; in Payload it's replaced with a pointer to that tab. Tool requests
+(names, IDs, arguments) count as data and show in both. The map caption and the
+three box descriptions from the mockup are kept as fixed text, labelled
+"Written for this page"; step explanations come only from steps.json. The first
+version listed every event in the timeline; the review replaced that with page
+steps (D32).
+**Reasoning:** the issue requires no requests except the page's own files,
+which rules out Google Fonts; shipping the files keeps the design's fonts
+without breaking that. Keeping Claude's words in one place makes it plain what
+Claude wrote and what the page wrote. All approved in review on PR #60.
+**What would change it:** GitHub Pages (M5) serving only `site/` (then the
+recording is copied in at publish time).
+
+## D32 — What counts as a step on the page
+
+**Status:** **Approved** (issue #57, PR #60 review)
+**Date:** 2026-11-13
+**Options:** one step per event · hide passing guard checks · also group
+events that belong together (the rules of one hard screen; evaluate_job's own
+call) · also fold whole STEPS.md steps together (e.g. save the turn into
+Claude's decision) to reach ~15
+**Decision:** a passing guard check isn't a step: it's attached to the step
+after it, or, inside a tool, to the tool's step before it, and while that step
+is shown its badge flashes with a one-line explanation. The lines live in a new
+"Checks" section of STEPS.md, built into steps.json with the step explanations.
+A caught check stays a step. So does step 9, "Claude says it's done", though
+it's recorded as a passing `stop_reason` check: it's routing, not a check. One
+hard screen's rule events are one step, and evaluate_job's own call to Claude
+(request, reply, any simulated failure) is one step. No further folding:
+scenario 6 has 23 steps. The "This request carries" line is shown for
+evaluate_job's own call too, not only the main loop's request. Justin chose
+no fold, and step 9 as a step, in review.
+**Reasoning:** saving the turn and adding results back are what make "the
+conversation is the memory" visible, and the hard rules step is scenario 5's
+principle, so none of them is folded away. Step 9 is one of Claude's two
+decisions in the run and the reason the loop ends; the run can't finish without
+showing it. Putting the check lines in STEPS.md keeps one source for every
+explanation the page shows.
+**What would change it:** other scenarios playing too long, or another guard
+event that is really routing (it would join step 9 as an always-shown step).

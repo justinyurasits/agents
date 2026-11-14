@@ -203,3 +203,20 @@ Claude's reply carries a label this agent has no plan for, for example
 "refusal" (Claude declined to answer). Python won't guess what to do with it,
 so it stops the run and says which label it was.
 Code: `# STEP: unexpected_stop` in agent.py (`if response.stop_reason != "tool_use":`)
+
+## CHECKS (shown in the Python box when they pass)
+
+Each guard above runs its check every time, not only when something goes
+wrong. A check that passes isn't a step on the page: it lights its badge in
+the Python box for a moment, with the line below. A check that catches
+something is shown as its E-step instead.
+
+- `pass_count`: Checks this run hasn't hit the 10-pass limit.
+- `api_call_succeeded`: Checks the call to Claude came back with a reply.
+- `stop_reason`: Reads the label on Claude's reply: run a tool, or done.
+- `max_tokens`: Checks the reply wasn't cut off by the length limit.
+- `stop_reason_known`: Checks the label is one this agent knows how to handle.
+- `tool_exists`: Checks the tool Claude asked for is a real one.
+- `tool_succeeded`: Checks the tool finished without an error.
+- `grade_valid`: Checks the grader answered yes or no, with reasons.
+- `final_text_present`: Checks Claude's last reply has text to hand back.

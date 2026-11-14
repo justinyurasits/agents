@@ -41,6 +41,16 @@ python record.py --all              # record every scenario
 
 The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) (e.g. `[send_to_claude]`), so you can follow a run in the terminal. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
 
+## See a run on the page
+
+```bash
+cd job-evaluator
+python build_steps.py               # after editing docs/STEPS.md: rebuild site/steps.json
+python -m http.server 8000          # then open localhost:8000/site/
+```
+
+The page (`site/`) replays the recorded run of scenario 6 step by step: who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
+
 ## Test it
 
 ```bash
