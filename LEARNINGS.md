@@ -19,6 +19,8 @@ Newest at the bottom of each section.
 - **Guards, rules and routing are different things.** Guards catch failures. Rules apply decisions already made. Routing decides where the loop goes next. Treating them as one confuses both the code and anyone reading it. _(stop_reason discussion, #51 review)_
 - **Fail closed on the unknown.** The loop handles the stop reasons it knows and stops on anything else, rather than listing known bad ones. A stop reason the API adds later is caught automatically. _(#21, D29)_
 - **Guards catch failures; defensive handling prevents them.** Fence stripping, finding text by type and answering every tool request never "catch" anything: they handle every input correctly so nothing fails. Keeping them out of the guard list keeps "guard" meaning one thing. *(#63)*
+- **Choosing a tool is intent classification.** Each tool description is a definition Claude matches the input against. Adding `research_company`, whose description overlapped `flag_for_review` on "no pay listed," moved scenarios 2 and 4 to a new path with no code change. Where two tools overlap, the model picks the order unless the descriptions state precedence. _(#65, PR #66)_
+- **Adding a tool can change behavior you didn't touch.** A new description competes with every existing one. _(PR #66)_
 
 ## Showing how an agent works
 
@@ -31,6 +33,14 @@ Newest at the bottom of each section.
 - **Events aren't steps.** The trace records 47 events for scenario 6; a visitor steps through 23. Checks that pass flash their badge with one line instead of being steps, and the events of one action (the hard rules, the grader call) are grouped. Saving the turn and adding results back stay, because they're what make "the conversation is the memory" visible. _(PR #60, D32)_
 - **Routing isn't a check, even when it's recorded like one.** "Claude says it's done" is logged as a passing `stop_reason` check, but it's one of Claude's two decisions in the run and the reason the loop ends. The page shows it as a step. _(PR #60 review)_
 - **One source for every explanation.** Step text and the one-line check explanations live only in STEPS.md, and a script builds the page's copy. A test fails if they drift. _(#57, build_steps.py)_
+
+## Testing an agent
+
+- **Test the code and the behavior separately.** Unit tests with a fake client prove the Python works, with no API calls and the same result every time. Recorded scenarios prove what Claude actually does on known inputs. Neither replaces the other. _(tests/, record.py)_
+- **Break it on purpose.** Fault injection makes a tool fail, invents an unknown tool, forces a runaway loop, or cuts a reply off, so every guard is seen working in a real run instead of trusted. _(#48, faults.py)_
+- **A description change is a code change.** Any PR that adds a tool or changes a description, prompt or rubric re-runs every scenario. That's the only reason the scenario 2 and 4 shift was caught. _(#69)_
+- **Don't edit the expectation to make it pass.** A mismatch is information. Change the expected path only when you've decided the new path is right. _(#69)_
+- **One PASS isn't proof.** The model varies run to run. Reliability means pass rates over many runs, which is next. _(open)_
 
 ## Building with an AI coding agent
 

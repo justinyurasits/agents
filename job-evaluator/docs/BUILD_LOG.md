@@ -151,3 +151,34 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Docs drift quietly. By the audit, SPEC still described behavior from
   before two merged PRs. A test that checks a doc against the code is what
   keeps it true.
+
+## 2026-11-14
+
+**Did**
+
+- Added `research_company` (#65, PR #66): stored company facts, and
+  researched pay is used by the hard rules and labelled "base estimated
+  from stored company data" (D34). Scenario 3 now chains two tools by
+  Claude's own choice: research, then rate.
+- Recorded all nine scenarios for real (#67, PR #68). Every one PASS.
+- Added a CLAUDE.md rule (#69, PR #70): any PR that adds a tool or changes
+  a description, schema, prompt or rubric re-runs every scenario, and
+  expectations aren't edited just to make a run pass.
+
+**Broke**
+
+- Nothing in the agent. Adding `research_company` changed the path of
+  scenarios 2 and 4, which the PR never touched: both now research the
+  company before flagging. Re-running every scenario is the only reason it
+  showed up.
+- A commit landed on local `main` instead of a branch: `<N>` in a command
+  was read by zsh as "read from a file called N", so the branch was never
+  created. Nothing reached GitHub; the commit was moved to its branch.
+
+**Learned**
+
+- Tool descriptions are intent definitions. Two that overlap leave the
+  order to the model. The new order was a good one, but nobody decided it.
+- Testing an agent has two layers: unit tests prove the code, recorded
+  scenarios prove the behavior. A single PASS shows a path happened, not
+  that it always will.
