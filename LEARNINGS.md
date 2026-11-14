@@ -25,6 +25,11 @@ Newest at the bottom of each section.
 - **Record real runs and replay them.** A demo that depends on a live API call can fail in front of the person you most want to impress. _(D12)_
 - **The interesting moments are the boundary crossings.** What goes from Python to Claude, what comes back, what goes to a tool. Keep the architecture on screen and animate what crosses it. _(D15)_
 - **Error handling is the most convincing part of the demo.** Happy-path agent demos are everywhere; watching an agent recover from a failure is what shows it was built properly. _(D21)_
+- **A mockup shows one moment; the real page has to decide every moment.** The mockup answered what the page looks like at the failure. It didn't answer what an arrow shows between crossings, or how long a caught guard stays lit. Each of those had to be decided once the page played a whole run. _(#57, PR #60)_
+- **Show only what's happening now.** A dashed "next · request" arrow, drawn during the pass count check, made it look as if the check sent the request. The Next card already says what comes next; the map should show only what's crossing at this step. _(PR #60 review)_
+- **Events aren't steps.** The trace records 47 events for scenario 6; a visitor steps through 23. Checks that pass flash their badge with one line instead of being steps, and the events of one action (the hard rules, the grader call) are grouped. Saving the turn and adding results back stay, because they're what make "the conversation is the memory" visible. _(PR #60, D32)_
+- **Routing isn't a check, even when it's recorded like one.** "Claude says it's done" is logged as a passing `stop_reason` check, but it's one of Claude's two decisions in the run and the reason the loop ends. The page shows it as a step. _(PR #60 review)_
+- **One source for every explanation.** Step text and the one-line check explanations live only in STEPS.md, and a script builds the page's copy. A test fails if they drift. _(#57, build_steps.py)_
 
 ## Building with an AI coding agent
 
