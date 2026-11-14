@@ -332,10 +332,11 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one 
 
 **steps.json has one source.** `python build_steps.py` reads STEPS.md and writes `steps` (per step id: `{number, title, text, error}`, the text being the paragraph(s) between `Step id:` and `Code:`) and `checks` (per guard name: the line from STEPS.md's "Checks" section). Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step or guard in the code or a recording has no explanation.
 
-**Events become page steps.** A run has more events than a visitor should step through (47 in scenario 6), so the page groups them (22 steps for scenario 6):
+**Events become page steps.** A run has more events than a visitor should step through (47 in scenario 6), so the page groups them (23 steps for scenario 6):
 
 - A guard check that **passes** isn't a step. It's attached to the step after it (the pass count to the request, the reply checks to saving the turn), or, for a check inside a tool, to the tool's step before it (the grader's checks to the grader call). While that step is shown, the guard's badge flashes and its line from `checks` appears in the Python box.
 - A guard check that **catches** something is a step of its own, with its E-step explanation.
+- Step 9, **Claude says it's done** (`claude_done`), is always a step, though it's recorded as a passing `stop_reason` check: Python reading Claude's "I'm done" is routing, not a check, and it's why the loop ends.
 - One hard screen's rule events are one step, and evaluate_job's own call to Claude (request, reply, and a simulated failure if there is one) is one step.
 - Everything else is one step per event.
 

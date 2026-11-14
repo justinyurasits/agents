@@ -474,7 +474,7 @@ recording is copied in at publish time).
 
 ## D32 — What counts as a step on the page
 
-**Status:** **Proposed** (issue #57, PR #60 review)
+**Status:** **Approved** (issue #57, PR #60 review)
 **Date:** 2026-11-13
 **Options:** one step per event · hide passing guard checks · also group
 events that belong together (the rules of one hard screen; evaluate_job's own
@@ -484,16 +484,18 @@ Claude's decision) to reach ~15
 after it, or, inside a tool, to the tool's step before it, and while that step
 is shown its badge flashes with a one-line explanation. The lines live in a new
 "Checks" section of STEPS.md, built into steps.json with the step explanations.
-A caught check stays a step. One hard screen's rule events are one step, and
-evaluate_job's own call to Claude (request, reply, any simulated failure) is
-one step. Scenario 6 has 22 steps. The "This request carries" line is shown for
-evaluate_job's own call too, not only the main loop's request.
-**Reasoning:** the review set a target of about 15. Hiding passing checks and
-grouping gets from 47 to 22; going lower means merging distinct STEPS.md steps
-(saving Claude's turn, adding results back, the hard rules), which are the
-things the page teaches, or hiding the caught check, which the review kept as a
-step. Putting the check lines in STEPS.md keeps one source for every
+A caught check stays a step. So does step 9, "Claude says it's done", though
+it's recorded as a passing `stop_reason` check: it's routing, not a check. One
+hard screen's rule events are one step, and evaluate_job's own call to Claude
+(request, reply, any simulated failure) is one step. No further folding:
+scenario 6 has 23 steps. The "This request carries" line is shown for
+evaluate_job's own call too, not only the main loop's request. Justin chose
+no fold, and step 9 as a step, in review.
+**Reasoning:** saving the turn and adding results back are what make "the
+conversation is the memory" visible, and the hard rules step is scenario 5's
+principle, so none of them is folded away. Step 9 is one of Claude's two
+decisions in the run and the reason the loop ends; the run can't finish without
+showing it. Putting the check lines in STEPS.md keeps one source for every
 explanation the page shows.
-**What would change it:** watching it play and finding 22 too many: then the
-next candidates to fold are "Python saves Claude's turn" into the reply before
-it and the hard rules into the tool call (17 steps).
+**What would change it:** other scenarios playing too long, or another guard
+event that is really routing (it would join step 9 as an always-shown step).

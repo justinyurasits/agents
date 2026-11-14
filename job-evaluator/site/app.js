@@ -12,7 +12,8 @@
 // Events become page steps (buildSteps):
 //   - a guard check that passes is not a step: it's attached to the step next
 //     to it, and lights its badge in the Python box while that step is shown;
-//   - a guard check that catches something is a step of its own;
+//   - a guard check that catches something is a step of its own, and so is
+//     step 9 (Claude says it's done): that's routing, not a check;
 //   - the rule events of one hard screen are one step, and evaluate_job's own
 //     call to Claude (request, reply, and any simulated failure) is one step.
 //
@@ -35,6 +36,9 @@ const WHO = { python: "Python", claude: "Claude", tool: "Tool" };
 const RULE_NAMES = { remote: "remote", comp_floor: "salary floor" };
 // Step ids whose consecutive events are shown together as one step.
 const GROUPED = new Set(["hard_screen", "inner_grader"]);
+// Guard events that are routing, not a passing check, so always a step: step 9,
+// Python reading Claude's "I'm done" and ending the loop (PR #60 review).
+const ROUTING = new Set(["claude_done"]);
 
 const state = { trace: null, text: {}, checks: {}, steps: [], i: 0, playing: false, speed: 1, timer: null, tab: "state" };
 
@@ -68,7 +72,7 @@ const listWords = (items) => (items.length < 2 ? items.join("") : items.slice(0,
 const isFault = (e) => !!(e.payload && typeof e.payload === "object" && "fault" in e.payload);
 const isRule = (e) => !!(e.payload && typeof e.payload === "object" && "rule" in e.payload && "outcome" in e.payload);
 const isCaught = (e) => !!(e.guard && e.guard.caught);
-const isPassingCheck = (e) => !!(e.guard && !e.guard.caught);
+const isPassingCheck = (e) => !!(e.guard && !e.guard.caught) && !ROUTING.has(e.step_id);
 const isErrorResult = (e) => e.crossing && e.crossing.kind === "tool_result" && e.payload && e.payload.is_error;
 
 function faultChange(e) {
@@ -136,7 +140,7 @@ function rulesSummary(s) {
 function stopReplyText(p) {
   const uses = (p.content || []).filter((b) => b.type === "tool_use").map((b) => b.name);
   if (uses.length) return { verb: `asked for ${listWords(uses)}`, has: `a request to run ${listWords(uses)}` };
-  if (p.stop_reason === "end_turn") return { verb: "said it's done", has: "its final answer" };
+  if (p.stop_reason === "end_turn") return { verb: "wrote its final answer", has: "its final answer" };
   return { verb: `stopped for a reason labelled ${spaced(p.stop_reason)}`, has: "a reply the agent doesn't handle" };
 }
 
@@ -188,6 +192,7 @@ function hasText(s) {
     case "conversation_setup": return `a new conversation with ${plural(s.after.length, "message")}`;
     case "save_turn": return "Claude's request, to add to the conversation";
     case "results_back": return lastResultFailed(s) ? "the error, to add to the conversation" : "the result, to add to the conversation";
+    case "claude_done": return "Claude's reply, labelled \"I'm done\"";
     case "answer_returned": return "Claude's final answer";
   }
   return "nothing new";
@@ -217,6 +222,7 @@ function doneText(s) {
   }
   switch (s.step_id) {
     case "agent_starts": return "the agent started with a job posting";
+    case "claude_done": return "Claude said it's done, so the loop ends";
     case "conversation_setup": return "Python set up the conversation";
     case "save_turn": return "Python saved Claude's request";
     case "results_back": return lastResultFailed(s) ? "Python added the error to the conversation" : "Python added the result to the conversation";
