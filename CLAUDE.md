@@ -85,3 +85,14 @@ decides>` above each rule's marker;
 - Before opening a PR, run the tests from the agent's folder
   (`python -m unittest discover -s tests -v`) and include the result
   in the PR.
+  - If a PR adds or removes a tool, or changes a tool description, tool
+    schema, system prompt, or rubric, re-run every scenario before opening
+    it (in job-evaluator: `python record.py --all`) and paste every PASS or
+    MISMATCH line into the PR. A tool's description can change which tool
+    Claude picks in scenarios the PR never touched.
+  - Don't change a scenario's expected tools or outcome to make it pass,
+    unless the issue says that path should change. Otherwise report the
+    mismatch and stop.
+  - record.py overwrites the recordings. Restore them before committing
+    (`git restore recordings/ docs/SCENARIOS.md`) unless the issue asks
+    for new ones.
