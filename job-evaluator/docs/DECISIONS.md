@@ -561,7 +561,7 @@ undo their last click, and "Watch it" buttons (D33) will use the same URL.
 **What would change it:** the hero section (D33) needs the scenarios visible
 at once, e.g. as cards; then the chooser becomes those cards, same URL.
 
-## D36 — Scenario intro and summary card: where they sit, and what they may say
+## D37 — Scenario intro and summary card: where they sit, and what they may say
 
 **Status:** **Proposed** (issue #75)
 **Date:** 2026-11-14
@@ -578,6 +578,6 @@ outcome.
 Play, so it sits above the map. The summary is the payoff, so it sits where
 the eye lands after the last step, above the details. A test catches a summary
 that goes stale when a scenario is re-recorded with a different path.
-**What would change it:** the hero section (D33) gets its own scenario cards;
-then the intro may move into them. Or a re-recording of scenario 6 that
+**What would change it:** the scenario cards (#79) show `setup` on each
+card; then the intro panel may shrink to just "Watch for". Or a re-recording of scenario 6 that
 explains the failure instead of retrying, which would need a new summary.
