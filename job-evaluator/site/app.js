@@ -1,13 +1,14 @@
-// Page v0 (#57): replay one recorded run in the Execution Explorer (D15).
+// Page v0 (#57): replay a recorded run in the Execution Explorer (D15). Any of
+// the nine scenarios can be picked (#71).
 //
 // Everything shown is driven by two files:
-//   - the recording (../recordings/scenario-06.json): one event per step, made
+//   - the recording (../recordings/scenario-0N.json): one event per step, made
 //     by record.py from a real run. The map, the four questions, the timeline
 //     and the inspector are all read from its events.
 //   - steps.json: each step's title and explanation, and each guard check's
 //     one-line explanation, generated from docs/STEPS.md by build_steps.py.
 //     The page writes no step explanations of its own.
-// The scenario's name comes from ../scenarios/scenarios.json.
+// The scenario names and groups in the chooser come from ../scenarios/scenarios.json.
 //
 // Events become page steps (buildSteps):
 //   - a guard check that passes is not a step: it's attached to the step next
@@ -21,15 +22,27 @@
 // appear only under "Claude's response". Everywhere else they're replaced with
 // a pointer to that tab.
 //
-// How it fits together: load() fetches the files and builds the steps, then
-// show(i) draws step i. Play calls show(i + 1) every 2.5 s (1.25 s at 2×).
+// How it fits together: start() fetches steps.json and the scenario list once
+// and fills the chooser. loadScenario(id) fetches that scenario's recording,
+// builds the steps and shows step 1; picking another scenario calls it again,
+// with no page reload. show(i) draws step i. Play calls show(i + 1) every 2.5 s
+// (1.25 s at 2×).
+//
+// The URL carries the choice: ?scenario=3 opens scenario 3, and no scenario
+// opens scenario 1. Picking a scenario adds an entry to the browser's history,
+// so Back and Forward move between the scenarios you picked.
 
 "use strict";
 
-const RECORDING = "../recordings/scenario-06.json";
+const RECORDING_DIR = "../recordings/";
+// padStart(2, "0") turns 3 into "03": recordings are scenario-01.json … scenario-09.json.
+const recordingUrl = (id) => `${RECORDING_DIR}scenario-${String(id).padStart(2, "0")}.json`;
 const STEPS = "steps.json";
 const SCENARIOS = "../scenarios/scenarios.json";
 const STEP_MS = 2500;          // at 1×, per the issue
+const DEFAULT_SCENARIO = 1;
+// The chooser's two groups, in D21's order: normal runs, then break-the-agent runs.
+const GROUPS = [["normal", "Normal runs"], ["break", "Break the agent"]];
 const SEE_RESPONSE = "‹Claude's words: see the Claude's response tab›";
 
 const WHO = { python: "Python", claude: "Claude", tool: "Tool" };
@@ -40,7 +53,8 @@ const GROUPED = new Set(["hard_screen", "inner_grader"]);
 // Python reading Claude's "I'm done" and ending the loop (PR #60 review).
 const ROUTING = new Set(["claude_done"]);
 
-const state = { trace: null, text: {}, checks: {}, steps: [], i: 0, playing: false, speed: 1, timer: null, tab: "state" };
+const state = { scenarios: [], scenario: null, loading: 0, trace: null, text: {}, checks: {}, steps: [], i: 0,
+  playing: false, speed: 1, timer: null, tab: "state" };
 
 // --- small helpers --------------------------------------------------------------
 
@@ -74,6 +88,23 @@ const isRule = (e) => !!(e.payload && typeof e.payload === "object" && "rule" in
 const isCaught = (e) => !!(e.guard && e.guard.caught);
 const isPassingCheck = (e) => !!(e.guard && !e.guard.caught) && !ROUTING.has(e.step_id);
 const isErrorResult = (e) => e.crossing && e.crossing.kind === "tool_result" && e.payload && e.payload.is_error;
+
+// The headline of a tool's result: evaluate_job's rating, flag_for_review's
+// status, or whether research_company found the company. null if it has none.
+function resultHeadline(p) {
+  let r;
+  try { r = JSON.parse(p.content); } catch { return null; }
+  if (!r || typeof r !== "object") return null;
+  if (r.rating) return r.rating;
+  if (r.status) return r.status;
+  if ("found" in r) return r.found ? "found" : "not on file";
+  return null;
+}
+
+// research_company's lookup (step 7c), and the error result Python writes for
+// a tool that doesn't exist (scenario 7): neither crosses an arrow.
+const lookup = (s) => (s.step_id === "research_company" ? s.first.payload : null);
+const unknownToolError = (s) => (s.step_id === "run_tools" && s.first.payload && s.first.payload.is_error ? s.first.payload : null);
 
 function faultChange(e) {
   const key = Object.keys(e.payload).find((k) => k !== "fault");
@@ -183,15 +214,25 @@ function hasText(s) {
       case "tool_call": return `${p.tool} and the details Claude filled in`;
       case "tool_result": {
         if (p.is_error) return `the error from ${p.tool}`;
-        try { return `${p.tool}'s rating: ${JSON.parse(p.content).rating}`; } catch { return `${p.tool}'s result`; }
+        const head = resultHeadline(p);
+        if (!head) return `${p.tool}'s result`;
+        return JSON.parse(p.content).rating ? `${p.tool}'s rating: ${head}` : `${p.tool}'s result: ${head}`;
       }
     }
   }
+  if (lookup(s)) return `${lookup(s).found ? "the stored facts" : "no stored facts"} for ${lookup(s).company}`;
+  if (unknownToolError(s)) return `an error to send back: there's no tool called ${unknownToolError(s).tool}`;
+  // A guard stopped the run (scenarios 8 and 9): what Python returns instead of an answer.
+  if (s.first.payload && s.first.payload.ended_by && !s.caught) return `what the run returns instead of an answer: "${s.first.payload.text}"`;
   switch (s.step_id) {
     case "agent_starts": return "the job posting";
     case "conversation_setup": return `a new conversation with ${plural(s.after.length, "message")}`;
     case "save_turn": return "Claude's request, to add to the conversation";
-    case "results_back": return lastResultFailed(s) ? "the error, to add to the conversation" : "the result, to add to the conversation";
+    case "results_back": {
+      if (lastResultFailed(s)) return "the error, to add to the conversation";
+      const n = s.after.at(-1).content.filter((b) => b.type === "tool_result").length;
+      return n > 1 ? `the ${n} results, to add to the conversation in one message` : "the result, to add to the conversation";
+    }
     case "claude_done": return "Claude's reply, labelled \"I'm done\"";
     case "answer_returned": return "Claude's final answer";
   }
@@ -220,6 +261,8 @@ function doneText(s) {
       case "tool_result": return p.is_error ? `${p.tool} failed` : `${p.tool} returned its result`;
     }
   }
+  if (lookup(s)) return `research_company ${lookup(s).found ? "found" : "didn't find"} ${lookup(s).company} in the stored data`;
+  if (unknownToolError(s)) return `Python wrote an error result for ${unknownToolError(s).tool}`;
   switch (s.step_id) {
     case "agent_starts": return "the agent started with a job posting";
     case "claude_done": return "Claude said it's done, so the loop ends";
@@ -268,7 +311,7 @@ function arrowLabel(e) {
     }
     case "tool_result":
       if (p.is_error) return `${errorType(p.content)} · ${shortId(p.tool_use_id)}`;
-      try { return `result · ${JSON.parse(p.content).rating}`; } catch { return "result"; }
+      return resultHeadline(p) ? `result · ${resultHeadline(p)}` : "result";
     default:
       return e.crossing.kind;
   }
@@ -615,6 +658,7 @@ function wireControls() {
     b.addEventListener("click", () => { state.tab = b.dataset.tab; renderTab(); });
   }
   document.addEventListener("keydown", (ev) => {
+    if ($("run").hidden || ev.target.tagName === "SELECT") return;   // no run shown, or the chooser has the keys
     if (ev.target.closest && ev.target.closest("button") && ev.key === " ") return;
     if (ev.key === "ArrowRight") { show(state.i + 1); restartTimer(); }
     else if (ev.key === "ArrowLeft") { show(state.i - 1); restartTimer(); }
@@ -631,34 +675,98 @@ async function getJSON(url) {
   return res.json();
 }
 
-async function load() {
-  try {
-    const [trace, steps] = await Promise.all([getJSON(RECORDING), getJSON(STEPS)]);
-    const scenarios = await getJSON(SCENARIOS).catch(() => []);
-    state.trace = trace;
-    state.text = steps.steps;
-    state.checks = steps.checks || {};
-    state.steps = buildSteps(trace.events);
-
-    const number = Number(String(trace.scenario).replace(/\D/g, ""));
-    const scenario = scenarios.find((s) => s.id === number);
-    $("eyebrow").textContent = `SCENARIO ${number || trace.scenario}`
-      + (scenario ? ` · ${scenario.name.toUpperCase()}` : "")
-      + (trace.fault ? " · SIMULATED FAILURE" : "");
-
-    // One badge per guard this run checks, in the order they first appear.
-    const names = [...new Set(trace.events.filter((e) => e.guard).map((e) => e.guard.name))];
-    $("guards").replaceChildren(...names.map((n) => el("span", { class: "guard", "data-guard": n, title: state.checks[n] || n }, spaced(n))));
-
-    wireControls();
-    show(0);
-    window.explorer = { show, state, setPlaying };   // for checking the page by hand from the console
-  } catch (err) {
-    const box = $("load-error");
-    box.hidden = false;
-    box.textContent = `Couldn't load the run (${err.message}). Serve job-evaluator/ with `
-      + "`python -m http.server` and open /site/.";
-  }
+// The scenario id in the URL: ?scenario=3 → 3. No scenario → scenario 1.
+// Anything that isn't a whole number comes back as text, and gets "not found".
+function scenarioFromUrl() {
+  const raw = new URLSearchParams(location.search).get("scenario");
+  if (raw === null) return DEFAULT_SCENARIO;
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
 }
 
-load();
+// The chooser: every scenario by name, in two groups (D21).
+function fillChooser() {
+  const select = $("scenario");
+  const groups = GROUPS.map(([key, label]) => el("optgroup", { label },
+    state.scenarios.filter((sc) => sc.group === key).map((sc) => el("option", { value: sc.id }, `${sc.id}. ${sc.name}`))));
+  // Shown only when the URL names a scenario that doesn't exist.
+  const none = el("option", { value: "", disabled: true, hidden: true }, "Choose a scenario");
+  select.replaceChildren(none, ...groups);
+  select.disabled = false;
+  select.addEventListener("change", () => {
+    const id = Number(select.value);
+    history.pushState({ scenario: id }, "", `?scenario=${id}`);   // a new history entry: Back returns here
+    loadScenario(id);
+  });
+  // Back and Forward: the URL has already changed; load what it names.
+  window.addEventListener("popstate", () => loadScenario(scenarioFromUrl()));
+}
+
+// Show a short message in place of the run (an unknown id, a missing file).
+function showProblem(eyebrow, message) {
+  setPlaying(false);
+  $("eyebrow").textContent = eyebrow;
+  $("run").hidden = true;
+  for (const b of ["back", "play", "next", "speed"]) $(b).disabled = true;
+  const box = $("load-error");
+  box.hidden = false;
+  box.textContent = message;
+}
+
+// Load one scenario's recording and show it from step 1.
+async function loadScenario(id) {
+  const token = ++state.loading;   // if another pick starts before this one finishes, this one is dropped
+  setPlaying(false);
+  const scenario = state.scenarios.find((sc) => sc.id === id) || null;
+  $("scenario").value = scenario ? String(id) : "";
+  if (!scenario) {
+    const ids = state.scenarios.map((sc) => sc.id);
+    showProblem("SCENARIO NOT FOUND", `There's no scenario "${id}". Pick one of the ${ids.length} from the list`
+      + ` (${ids[0]} to ${ids.at(-1)}).`);
+    return;
+  }
+  let trace;
+  try {
+    trace = await getJSON(recordingUrl(id));
+  } catch (err) {
+    if (token !== state.loading) return;
+    showProblem(`SCENARIO ${id} · NO RECORDING`, `Scenario ${id} (${scenario.name}) has no recording to play`
+      + ` (${err.message}).`);
+    return;
+  }
+  if (token !== state.loading) return;
+
+  state.scenario = scenario;
+  state.trace = trace;
+  state.steps = buildSteps(trace.events);
+  $("load-error").hidden = true;
+  $("run").hidden = false;
+  for (const b of ["play", "speed"]) $(b).disabled = false;
+  $("eyebrow").textContent = `SCENARIO ${id} · ${scenario.name.toUpperCase()}` + (trace.fault ? " · SIMULATED FAILURE" : "");
+
+  // One badge per guard this run checks, in the order they first appear.
+  const names = [...new Set(trace.events.filter((e) => e.guard).map((e) => e.guard.name))];
+  $("guards").replaceChildren(...names.map((n) => el("span", { class: "guard", "data-guard": n, title: state.checks[n] || n }, spaced(n))));
+
+  $("timeline").replaceChildren();   // renderTimeline rebuilds it for these steps
+  show(0);
+  $("timeline").scrollTop = 0;
+}
+
+async function start() {
+  try {
+    const [steps, scenarios] = await Promise.all([getJSON(STEPS), getJSON(SCENARIOS)]);
+    state.text = steps.steps;
+    state.checks = steps.checks || {};
+    state.scenarios = scenarios;
+  } catch (err) {
+    showProblem("COULDN'T LOAD", `Couldn't load the page's data (${err.message}). Serve job-evaluator/ with `
+      + "`python -m http.server` and open /site/.");
+    return;
+  }
+  fillChooser();
+  wireControls();
+  window.explorer = { show, state, setPlaying, loadScenario };   // for checking the page by hand from the console
+  await loadScenario(scenarioFromUrl());
+}
+
+start();

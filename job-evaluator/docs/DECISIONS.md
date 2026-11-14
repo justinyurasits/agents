@@ -542,3 +542,21 @@ certain; asking Claude to declare it would put a rule in the model's hands
 **What would change it:** postings whose listed pay could equal the stored
 figure (then the label could be wrong), or companies with several levels that
 share a word (then key by full level).
+
+## D35 — Scenario chooser: a drop-down in the header; each pick is a history entry
+
+**Status:** **Proposed** (issue #71)
+**Date:** 2026-11-14
+**Options:** a native drop-down (`<select>`) · a row of nine buttons · a
+side list · picking replaces the URL (Back leaves the page) or adds to the
+browser history (Back returns to the previous pick)
+**Decision:** a native `<select>` next to the playback controls, with two
+labelled groups ("Normal runs", "Break the agent", D21). Each pick pushes
+`?scenario=N` onto the history, so Back and Forward move between picks. No
+`scenario` in the URL opens scenario 1 without changing the URL. An unknown id
+or a missing recording hides the run and shows one line; the chooser stays.
+**Reasoning:** a native drop-down is keyboard- and screen-reader-ready and
+fits on a phone; nine buttons wouldn't fit the header. Visitors expect Back to
+undo their last click, and "Watch it" buttons (D33) will use the same URL.
+**What would change it:** the hero section (D33) needs the scenarios visible
+at once, e.g. as cards; then the chooser becomes those cards, same URL.

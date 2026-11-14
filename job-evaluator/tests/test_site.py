@@ -99,11 +99,31 @@ class SiteFilesTest(unittest.TestCase):
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.join(SITE, ref)))
         app = read(os.path.join(SITE, "app.js"))
-        loads = re.findall(r'^const (?:RECORDING|STEPS|SCENARIOS) = "([^"]+)";', app, re.M)
+        loads = re.findall(r'^const (?:RECORDING_DIR|STEPS|SCENARIOS) = "([^"]+)";', app, re.M)
         self.assertEqual(len(loads), 3)
         for ref in loads:
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.normpath(os.path.join(SITE, ref))))
+
+    def test_every_scenario_in_the_chooser_has_a_recording(self):
+        # The page loads recordings/scenario-0N.json for scenario N (#71).
+        scenarios = json.loads(read(os.path.join(HERE, "scenarios", "scenarios.json")))
+        self.assertEqual(len(scenarios), 9)
+        for sc in scenarios:
+            with self.subTest(sc["id"]):
+                path = os.path.join(HERE, "recordings", f"scenario-{sc['id']:02d}.json")
+                self.assertTrue(os.path.exists(path))
+                self.assertEqual(json.loads(read(path))["scenario"], f"scenario-{sc['id']}")
+
+    def test_the_chooser_groups_are_the_scenario_groups_in_d21_order(self):
+        # app.js names the groups; every scenario must be in one of them.
+        app = read(os.path.join(SITE, "app.js"))
+        groups = re.findall(r'\["([a-z]+)", "[^"]+"\]', re.search(r"^const GROUPS = (.*);$", app, re.M).group(1))
+        self.assertEqual(groups, ["normal", "break"])
+        scenarios = json.loads(read(os.path.join(HERE, "scenarios", "scenarios.json")))
+        self.assertEqual({sc["group"] for sc in scenarios}, set(groups))
+        # D21: the five normal runs come before the four break-the-agent runs.
+        self.assertEqual([sc["group"] for sc in scenarios], ["normal"] * 5 + ["break"] * 4)
 
     def test_playback_is_two_and_a_half_seconds_per_step_at_1x(self):
         self.assertIn("const STEP_MS = 2500;", read(os.path.join(SITE, "app.js")))

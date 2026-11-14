@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inside the agent loop</title>
-<!-- Page v0 (#57): replays one recorded run. Everything on it comes from the
-     recording (../recordings/) and steps.json (built from docs/STEPS.md by
+<!-- Page v0 (#57): replays a recorded run, any of the nine (#71). Everything
+     on it comes from the recording (../recordings/) and steps.json (built from docs/STEPS.md by
      build_steps.py). No framework, no build step, no requests except this
      page's own files. Serve job-evaluator/ and open /site/:
-         python -m http.server 8000   then open localhost:8000/site/ -->
+         python -m http.server 8000   then open localhost:8000/site/
+     ?scenario=3 opens scenario 3; with no scenario given, it opens scenario 1. -->
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -21,6 +22,8 @@
     <h1>Inside the agent loop</h1>
   </div>
   <div class="controls">
+    <label class="sr-only" for="scenario">Scenario</label>
+    <select class="btn chooser" id="scenario" disabled></select>
     <button type="button" class="btn icon" id="back" aria-label="Previous step">‹</button>
     <button type="button" class="btn primary" id="play">▶ Play</button>
     <button type="button" class="btn icon" id="next" aria-label="Next step">›</button>
@@ -28,6 +31,7 @@
   </div>
 </header>
 
+<div class="run" id="run" hidden>
 <section class="map" aria-label="Execution map">
   <div class="map-head"><span>EXECUTION MAP · LINEAR</span><span id="map-status"></span></div>
 
@@ -115,8 +119,9 @@
     </div>
   </section>
 </div>
+</div>
 
-<p class="error" id="load-error" hidden></p>
+<p class="error" id="load-error" role="alert" hidden></p>
 </div>
 <script src="app.js"></script>
 </body>
