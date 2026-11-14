@@ -122,7 +122,7 @@ class CaughtGuardTest(TraceTestCase):
         self.assertEqual(g["guard"]["action"], "error_sent_to_claude")
         self.assertEqual(g["guard"]["message"],
                          "ValueError: Unknown tool 'search_web'. Available tools: "
-                         "evaluate_job, flag_for_review.")
+                         "evaluate_job, flag_for_review, research_company.")
         self.assertNotIn("tool_call", [kind(e) for e in rec.events])
         # Python itself answers: no tool, so no crossing.
         nxt = rec.events[rec.events.index(g) + 1]

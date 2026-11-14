@@ -32,7 +32,9 @@ labelled above their marker:
 
 THE WHOLE THING IN BRIEF
 ------------------------
-1. `tools` describes two tools to Claude: evaluate_job and flag_for_review.
+1. `tools` describes three tools to Claude: evaluate_job, flag_for_review,
+   and research_company (stored facts about a company, for a posting with
+   no pay listed).
 2. run_agent(job) starts a conversation (`messages`) with the posting.
 3. Each pass of the loop:
      send messages + tools to Claude      → Claude replies
@@ -41,7 +43,8 @@ THE WHOLE THING IN BRIEF
                                             to messages, go round again
    Inside evaluate_job, code checks the hard rules first (remote, the $180K
    floor); only a posting that passes them goes to the grader, a second
-   Claude that answers one yes/no question.
+   Claude that answers one yes/no question. If the pay came from
+   research_company, the rules use it and the reasons say it was estimated.
 4. Guards stop the run cleanly if something goes wrong (E1–E9).
 5. Faults (faults.py) make one thing go wrong on purpose, so the guards can
    be shown working. They're off unless you ask for one, and every change a
@@ -50,6 +53,7 @@ THE WHOLE THING IN BRIEF
 
 import argparse
 import json
+import os
 import re
 import anthropic
 from dotenv import load_dotenv
@@ -110,6 +114,21 @@ tools = [
                 "missing_info": {"type": "string"},
             },
             "required": ["company", "role_title", "missing_info"],
+        },
+    },
+    {
+        "name": "research_company",
+        "description": (
+            "Look up stored facts about a company: size, stage, and typical base "
+            "pay for a role level. Use when a posting doesn't list compensation."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "company":    {"type": "string"},
+                "role_level": {"type": "string"},
+            },
+            "required": ["company", "role_level"],
         },
     },
 ]
@@ -264,16 +283,33 @@ def strip_json_fences(text):
 
 
 def evaluate_job(company, role_title, job_description,
-                 location="Unknown", remote="Unknown", compensation="Unknown"):
+                 location="Unknown", remote="Unknown", compensation="Unknown",
+                 *, researched_pay=None):
     """Tool: check the hard rules in code, then ask a second Claude (the
     grader) the one question that needs judgment.
 
-    The arguments are exactly what Claude #1 filled in from the tool's
-    input_schema. Optional ones it left out arrive as "Unknown".
+    The arguments before the `*` are exactly what Claude #1 filled in from the
+    tool's input_schema; optional ones it left out arrive as "Unknown".
+    (A `*` in a def means every argument after it must be passed by name.)
+    `researched_pay` comes from run_agent, never from Claude: the pay
+    research_company found earlier in this run, by company,
+    e.g. {"marrowstone logistics": "$200,000–$235,000 base"}.
     Returns {"rating": ..., "reasons": [...]}, or raises an error, which
     run_agent sends back to Claude #1 as a failed tool result (E1).
     """
     rec = tracing.active()            # the run's recorder, if any (trace only)
+
+    # Pay from research (D34). If research_company found pay for this company
+    # earlier in the run, and Claude passed that same pay or none it could
+    # state, the pay is an estimate: the rules below use it, and the reasons
+    # say so. (`x or {}`: an empty dict when nothing was researched.)
+    researched = (researched_pay or {}).get(company.strip().lower())
+    estimated = (researched is not None
+                 and lowest_base(compensation) in (None, lowest_base(researched)))
+    if estimated:
+        compensation = researched
+        print(f"  [hard_screen] pay {researched!r}: {ESTIMATED_NOTE}")  # (terminal only)
+    notes = [ESTIMATED_NOTE] if estimated else []
 
     # Hard screens first, in code. A posting that fails one is IGNORE, and
     # the rating call is never made.
@@ -287,7 +323,7 @@ def evaluate_job(company, role_title, job_description,
     # grader is never asked.
     # STEP: hard_screen
     if failed:
-        return {"rating": "IGNORE", "reasons": failed}
+        return {"rating": "IGNORE", "reasons": failed + notes}
 
     # The grader sees only the posting: remote status and pay were already
     # handled by the screens above, so they aren't passed on separately.
@@ -344,7 +380,7 @@ def evaluate_job(company, role_title, job_description,
         raise ValueError(problem)
     # Code turns the answer into the rating: yes → STRONG, no → WORTH REVIEWING.
     rating = RATING_FOR_ANSWER[grade["answer"].strip().lower()]
-    return {"rating": rating, "reasons": grade["reasons"]}
+    return {"rating": rating, "reasons": grade["reasons"] + notes}
 
 
 def flag_for_review(company, role_title, missing_info):
@@ -352,6 +388,54 @@ def flag_for_review(company, role_title, missing_info):
     a tool can be any Python."""
     return {"status": "flagged", "company": company,
             "role_title": role_title, "missing_info": missing_info}
+
+
+# Stored company facts for research_company: demo data written for the
+# scenarios, not the web (D14). os.path.dirname(__file__) is this file's
+# folder, so the path works from wherever the agent is started.
+COMPANIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "companies.json")
+RESEARCH_SOURCE = "stored demo data"
+ESTIMATED_NOTE = "base estimated from stored company data"
+
+
+def research_company(company, role_level):
+    """Tool: look up stored facts about a company. No Claude call.
+
+    Known company → {"found": True, "company": ..., "size": ..., "stage": ...,
+        "role_level": ..., "typical_base_for_level": "$200,000–$235,000 base"
+        (or None if no level on file matches), "note": ...,
+        "source": "stored demo data"}
+    Unknown company → {"found": False, "source": "stored demo data"}: a normal
+        answer, not an error, so Claude can decide what to do next.
+    """
+    rec = tracing.active()            # the run's recorder, if any (trace only)
+    with open(COMPANIES_FILE, encoding="utf-8") as f:
+        stored = json.load(f)
+    # The stored name that matches, ignoring case; keys starting with "_"
+    # are notes about the file, not companies.
+    name = next((n for n in stored
+                 if not n.startswith("_") and n.lower() == company.strip().lower()), None)
+
+    # STEP: research_company
+    if name is None:
+        result = {"found": False, "source": RESEARCH_SOURCE}
+    else:
+        facts = stored[name]
+        levels = facts.get("typical_base_by_level", {})
+        # The level on file whose word appears in Claude's role level:
+        # "principal" matches "Principal Product Manager". \b = word boundary.
+        level = next((k for k in levels
+                      if re.search(rf"\b{re.escape(k)}\b", role_level, re.IGNORECASE)), None)
+        result = {"found": True, "company": name, "size": facts.get("size"),
+                  "stage": facts.get("stage"), "role_level": role_level,
+                  "typical_base_for_level": levels.get(level),
+                  "note": facts.get("note"), "source": RESEARCH_SOURCE}
+        if level is None:
+            result["levels_on_file"] = list(levels)
+    print(f"  [research_company] {company!r}, {role_level!r}: "
+          f"{'found' if result['found'] else 'not on file'}")  # (terminal only)
+    rec.company_looked_up(company, role_level, result)  # (trace only)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -368,6 +452,7 @@ def flag_for_review(company, role_title, missing_info):
 #       messages += Claude's reply                          save_turn
 #       for each tool request in the reply:                 run_tools
 #           unknown tool?         → error result            GUARD E2
+#           research_company: stored facts, or "not found"  research_company
 #           evaluate_job: fails a hard rule? → IGNORE,
 #                         no rating call                    RULE hard_screen
 #           tool raised?          → error result            GUARD E1
@@ -413,6 +498,10 @@ def run_agent(job_text, recorder=None, fault=None):
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
     rec.messages_changed("conversation_setup", [], messages)  # (trace only)
     print(f"[conversation_setup] messages has {len(messages)} item")  # (terminal only)
+
+    # Pay research_company found in this run, by company name in lowercase,
+    # so evaluate_job can tell when the pay it's given came from research.
+    researched_pay = {}
 
     # At most max_passes passes (MAX_PASSES, unless a fault lowered it). A
     # pass is one outer API call; evaluate_job's own Claude call happens
@@ -548,9 +637,14 @@ def run_agent(job_text, recorder=None, fault=None):
                 # **tool_block.input unpacks Claude's arguments into keyword
                 # arguments: {"company": "X", ...} → evaluate_job(company="X", ...)
                 if tool_block.name == "evaluate_job":
-                    result = evaluate_job(**tool_block.input)
+                    result = evaluate_job(**tool_block.input, researched_pay=researched_pay)
                 elif tool_block.name == "flag_for_review":
                     result = flag_for_review(**tool_block.input)
+                elif tool_block.name == "research_company":
+                    result = research_company(**tool_block.input)
+                    # Remember researched pay for the rest of the run (D34).
+                    if result.get("typical_base_for_level"):
+                        researched_pay[result["company"].lower()] = result["typical_base_for_level"]
                 else:
                     # GUARD (E2 unknown_tool): Claude asked for a tool that
                     # doesn't exist. Raise, so the except below sends Claude

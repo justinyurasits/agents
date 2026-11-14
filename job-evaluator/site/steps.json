@@ -56,6 +56,12 @@
       "text": "This tool asks a separate Claude call one question that needs judgment: does this role build hands-on AI experience? It answers yes or no, and code turns that into the rating (yes: STRONG, no: WORTH REVIEWING). It's a one-off question with no tools and no loop.",
       "error": false
     },
+    "research_company": {
+      "number": "7c",
+      "title": "Inside research_company: Python looks up stored company facts",
+      "text": "When a posting doesn't list pay, Claude can ask this tool about the company: its size, its stage, and typical base pay for the role's level. The facts come from a file of demo data written for this page, not from the web. A company that isn't on file is a normal answer (\"not found\"), not an error; Claude decides what to do next.",
+      "error": false
+    },
     "results_back": {
       "number": "8",
       "title": "The result goes back into the conversation",

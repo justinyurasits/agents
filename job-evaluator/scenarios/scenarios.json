@@ -9,20 +9,20 @@
     "expected_outcome": "STRONG: remote, base above $180K, and the role is hands-on agent building.",
     "expect": {"tools": ["evaluate_job"], "outcome": "STRONG"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": null
   },
   {
     "id": 2,
     "name": "Missing info",
     "group": "normal",
-    "behavior": "No compensation anywhere: Claude picks flag_for_review instead of evaluate_job.",
+    "behavior": "No compensation anywhere: Claude looks the company up first, finds it isn't on file, and picks flag_for_review instead of evaluate_job.",
     "posting": "Wrenfield Health — Senior Product Manager, Clinical AI Assistants\nLocation: Remote (US)\n\nWrenfield Health makes scheduling and intake software for outpatient clinics. We're building AI assistants that help front-desk staff handle patient intake, insurance questions, and appointment changes.\n\nAs Senior PM for Clinical AI Assistants, you'll own the assistant experience from first prototype to rollout across our clinic network. You'll work closely with clinicians and compliance to decide where an assistant can act on its own and where a person must approve.\n\nWhat you'll do:\n- Define the assistant's tasks, tools, and escalation rules\n- Prototype new flows hands-on and test them with clinic staff\n- Set up evaluation and review of assistant conversations\n- Track adoption and time saved per clinic\n\nWhat you bring:\n- 6+ years in product management, including AI or automation products\n- Comfort building prototypes with LLM APIs\n- Experience in healthcare or another regulated industry\n\nThis is a fully remote role open to candidates anywhere in the US. Competitive salary and benefits.",
-    "expected_tools": ["flag_for_review"],
-    "expected_outcome": "Flagged for review: compensation is not listed.",
-    "expect": {"tools": ["flag_for_review"], "outcome": "flagged"},
+    "expected_tools": ["research_company", "flag_for_review"],
+    "expected_outcome": "Flagged for review: compensation is not listed, and the company isn't in the stored data.",
+    "expect": {"tools": ["research_company", "flag_for_review"], "outcome": "flagged"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": null
   },
   {
@@ -35,29 +35,23 @@
     "expected_outcome": "STRONG: research shows a $200K–$235K base for this level; remote; hands-on agent building.",
     "expect": {"tools": ["research_company", "evaluate_job"], "outcome": "STRONG"},
     "summary": null,
-    "company_facts": {
-      "company": "Marrowstone Logistics",
-      "size": "About 600 employees",
-      "stage": "Series C, profitable operations business",
-      "typical_base_for_level": "$200,000–$235,000 base for Principal Product Manager",
-      "source_note": "Stored demo data, written for this scenario. Not a real company."
-    },
+    "stored_company": "Marrowstone Logistics",
     "fault": null
   },
   {
     "id": 4,
     "name": "Two tools at once",
     "group": "normal",
-    "behavior": "Two postings at once: Claude asks for evaluate_job and flag_for_review in the same reply, and both results go back together.",
+    "behavior": "Two postings at once: Claude asks for evaluate_job (first posting) and research_company (second, no pay listed) in the same reply, and both results go back together. The second company isn't on file, so Claude then flags it.",
     "posting": [
       "Quillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.",
       "Fernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
     ],
-    "expected_tools": ["evaluate_job", "flag_for_review"],
-    "expected_outcome": "Quillmark rated STRONG; Fernhollow flagged because compensation is not listed. Both tool results go back in one message.",
-    "expect": {"tools": ["evaluate_job", "flag_for_review"], "outcome": ["STRONG", "flagged"]},
+    "expected_tools": ["evaluate_job", "research_company", "flag_for_review"],
+    "expected_outcome": "Quillmark rated STRONG; Fernhollow flagged because compensation is not listed and the company isn't in the stored data. The first two tool results go back in one message.",
+    "expect": {"tools": ["evaluate_job", "research_company", "flag_for_review"], "outcome": ["STRONG", "flagged"]},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": null
   },
   {
@@ -70,7 +64,7 @@
     "expected_outcome": "Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.",
     "expect": {"tools": ["evaluate_job"], "outcome": "IGNORE"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": null
   },
   {
@@ -87,7 +81,7 @@
       {"tools": ["evaluate_job"], "outcome": "no rating"}
     ],
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": "tool_fails"
   },
   {
@@ -100,7 +94,7 @@
     "expected_outcome": "Python returns an is_error result naming the real tools; Claude then calls evaluate_job and the posting rates STRONG.",
     "expect": {"tools": ["rate_posting", "evaluate_job"], "outcome": "STRONG"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": "unknown_tool"
   },
   {
@@ -113,7 +107,7 @@
     "expected_outcome": "Every attempt fails; the run stops at the lowered cap of 2 passes and returns \"Stopped after 2 passes without finishing.\" (Real Claude retries a failing tool once and then stops on its own, so the cap is lowered for this fault; see #46.)",
     "expect": {"tools": ["evaluate_job"], "outcome": "stopped"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": "runaway_loop"
   },
   {
@@ -126,7 +120,7 @@
     "expected_outcome": "The reply is cut off by the injected token limit; the run stops with \"Claude's reply was cut off (hit the max_tokens limit of …).\"",
     "expect": {"tools": [], "outcome": "stopped"},
     "summary": null,
-    "company_facts": null,
+    "stored_company": null,
     "fault": "reply_cut_off"
   }
 ]

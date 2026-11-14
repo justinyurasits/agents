@@ -514,3 +514,31 @@ how I think. One page serves the learner first and rewards the reader who
 scrolls. "Watch it" turns every claim into something provable by pressing Play.
 **What would change it:** the first-visitor test shows people never scroll
 past the run view.
+
+## D34 — Researched pay: code recognises it; no change to evaluate_job's inputs
+
+**Status:** **Proposed** (issue #65)
+**Date:** 2026-11-14
+**Options:** add a field to evaluate_job's input schema so Claude says the
+pay was researched · let code remember what research_company found in this
+run and recognise it · key stored pay by exact role title, or by a seniority
+word in the level Claude sends
+**Decision:** code. `run_agent` keeps the pay each `research_company` call
+found, by company (lowercase). `evaluate_job` gets it as a keyword argument
+Claude can't set, and treats its pay as researched when research found pay for
+the same company and Claude passed that pay (same lowest base) or none it
+could read; in that case it uses the researched pay for the hard rules and adds
+"base estimated from stored company data" to the reasons. Stored pay in
+`data/companies.json` is keyed by a seniority word ("principal") matched in
+the level Claude sends. `scenarios.json` names a scenario's company
+(`stored_company`) instead of holding its facts, and SCENARIOS.md shows the
+facts from `data/companies.json`.
+**Reasoning:** the only thing Claude sees change is the new tool, with the
+description from the issue; evaluate_job's schema stays as it was. Whether pay
+is an estimate is a fact about where it came from, which code knows for
+certain; asking Claude to declare it would put a rule in the model's hands
+(CLAUDE.md). A seniority word matches the role levels Claude actually sends
+("Principal Product Manager", "Principal PM").
+**What would change it:** postings whose listed pay could equal the stored
+figure (then the label could be wrong), or companies with several levels that
+share a word (then key by full level).

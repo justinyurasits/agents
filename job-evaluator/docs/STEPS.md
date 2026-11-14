@@ -93,6 +93,17 @@ turns that into the rating (yes: STRONG, no: WORTH REVIEWING). It's a one-off
 question with no tools and no loop.
 Code: `# STEP: inner_grader` in agent.py (`eval_response = client.messages.create(...)`)
 
+#### 7c. Inside research_company: Python looks up stored company facts
+
+Step id: `research_company`
+
+When a posting doesn't list pay, Claude can ask this tool about the company:
+its size, its stage, and typical base pay for the role's level. The facts
+come from a file of demo data written for this page, not from the web. A
+company that isn't on file is a normal answer ("not found"), not an error;
+Claude decides what to do next.
+Code: `# STEP: research_company` in agent.py (`if name is None:`)
+
 ### 8. The result goes back into the conversation
 
 Step id: `results_back`
