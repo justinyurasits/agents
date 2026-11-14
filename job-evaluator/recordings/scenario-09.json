@@ -1,0 +1,461 @@
+{
+  "trace_version": 1,
+  "scenario": "scenario-9",
+  "started_at": "2026-11-14T22:33:01Z",
+  "git_commit": "30be0ed",
+  "git_dirty": true,
+  "model": "claude-sonnet-5-5",
+  "limits": {
+    "max_passes": 10,
+    "max_tokens": 30
+  },
+  "fault": "reply_cut_off",
+  "tools": [
+    {
+      "name": "evaluate_job",
+      "description": "Rate a job posting against Justin's criteria. Use when the posting has enough information to rate: company, role, location/remote status, and compensation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_title": {
+            "type": "string"
+          },
+          "job_description": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "remote": {
+            "type": "boolean"
+          },
+          "compensation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_title",
+          "job_description"
+        ]
+      }
+    },
+    {
+      "name": "flag_for_review",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_title": {
+            "type": "string"
+          },
+          "missing_info": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_title",
+          "missing_info"
+        ]
+      }
+    },
+    {
+      "name": "research_company",
+      "description": "Look up stored facts about a company: size, stage, and typical base pay for a role level. Use when a posting doesn't list compensation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_level": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_level"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "seq": 1,
+      "pass": 0,
+      "step_id": "agent_starts",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "job_text": "Tidewick Civic Tech — Head of AI Product\nLocation: Remote (US)\nCompensation: $220,000–$260,000 base\n\nTidewick Civic Tech builds software that state and local governments use to run public services: permit applications, benefits enrollment, and resident support lines. Our products are used by more than 200 agencies, and most of the people they serve are trying to get something done quickly, often on a phone, often in a second language.\n\nWe're hiring our first Head of AI Product to lead how AI shows up across our products. The work starts with resident support: an assistant that answers questions about permits and benefits, helps people fill out forms correctly, and hands off to agency staff when a question needs a person. It extends to tools for agency staff: summarizing case histories, drafting responses, and finding the right policy section in long regulations.\n\nThis is a hands-on leadership role. You'll build early prototypes yourself, then lead a team of three product managers and work closely with engineering, design, accessibility, and our public-sector policy team. Government work raises the bar on trust: answers must cite the policy they come from, every automated action must be logged, and residents must always be able to reach a person.\n\nWhat you'll do:\n- Set the AI product strategy across resident and staff products\n- Prototype assistants hands-on with LLM APIs, tool use, and retrieval\n- Define when the assistant answers, when it asks, and when it hands off\n- Build evaluation and review processes that agency partners can audit\n- Make accessibility and plain language requirements, not afterthoughts\n- Lead and grow a team of product managers\n- Represent the product with agency leaders and procurement teams\n\nWhat you bring:\n- 10+ years in product, including AI products shipped to real users\n- Hands-on experience building with LLM APIs, including retrieval and tool use\n- Experience leading product managers\n- Comfort working in regulated or public-sector environments\n- Clear writing; you can explain an AI system's limits to a non-technical audience\n\nWe're fully remote within the US, with travel two to four times a year to meet agency partners. Base salary $220,000–$260,000 plus benefits."
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "agent_starts",
+        "line": 764,
+        "lines": [
+          "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e2",
+      "seq": 2,
+      "pass": 0,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "fault": "reply_cut_off",
+        "max_tokens": {
+          "normal": 2000,
+          "injected": 30
+        }
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": true
+    },
+    {
+      "id": "e3",
+      "seq": 3,
+      "pass": 0,
+      "step_id": "conversation_setup",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nTidewick Civic Tech — Head of AI Product\nLocation: Remote (US)\nCompensation: $220,000–$260,000 base\n\nTidewick Civic Tech builds software that state and local governments use to run public services: permit applications, benefits enrollment, and resident support lines. Our products are used by more than 200 agencies, and most of the people they serve are trying to get something done quickly, often on a phone, often in a second language.\n\nWe're hiring our first Head of AI Product to lead how AI shows up across our products. The work starts with resident support: an assistant that answers questions about permits and benefits, helps people fill out forms correctly, and hands off to agency staff when a question needs a person. It extends to tools for agency staff: summarizing case histories, drafting responses, and finding the right policy section in long regulations.\n\nThis is a hands-on leadership role. You'll build early prototypes yourself, then lead a team of three product managers and work closely with engineering, design, accessibility, and our public-sector policy team. Government work raises the bar on trust: answers must cite the policy they come from, every automated action must be logged, and residents must always be able to reach a person.\n\nWhat you'll do:\n- Set the AI product strategy across resident and staff products\n- Prototype assistants hands-on with LLM APIs, tool use, and retrieval\n- Define when the assistant answers, when it asks, and when it hands off\n- Build evaluation and review processes that agency partners can audit\n- Make accessibility and plain language requirements, not afterthoughts\n- Lead and grow a team of product managers\n- Represent the product with agency leaders and procurement teams\n\nWhat you bring:\n- 10+ years in product, including AI products shipped to real users\n- Hands-on experience building with LLM APIs, including retrieval and tool use\n- Experience leading product managers\n- Comfort working in regulated or public-sector environments\n- Clear writing; you can explain an AI system's limits to a non-technical audience\n\nWe're fully remote within the US, with travel two to four times a year to meet agency partners. Base salary $220,000–$260,000 plus benefits."
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "conversation_setup",
+        "line": 499,
+        "lines": [
+          "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e4",
+      "seq": 4,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "pass_count",
+        "checked": "pass <= MAX_PASSES (10)",
+        "value": 1,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e5",
+      "seq": 5,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "claude",
+        "kind": "api_request"
+      },
+      "payload": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 30,
+        "system": "You help Justin triage job postings. Use the tools provided.",
+        "tools": [
+          "evaluate_job",
+          "flag_for_review",
+          "research_company"
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "Evaluate this job posting:\n\nTidewick Civic Tech — Head of AI Product\nLocation: Remote (US)\nCompensation: $220,000–$260,000 base\n\nTidewick Civic Tech builds software that state and local governments use to run public services: permit applications, benefits enrollment, and resident support lines. Our products are used by more than 200 agencies, and most of the people they serve are trying to get something done quickly, often on a phone, often in a second language.\n\nWe're hiring our first Head of AI Product to lead how AI shows up across our products. The work starts with resident support: an assistant that answers questions about permits and benefits, helps people fill out forms correctly, and hands off to agency staff when a question needs a person. It extends to tools for agency staff: summarizing case histories, drafting responses, and finding the right policy section in long regulations.\n\nThis is a hands-on leadership role. You'll build early prototypes yourself, then lead a team of three product managers and work closely with engineering, design, accessibility, and our public-sector policy team. Government work raises the bar on trust: answers must cite the policy they come from, every automated action must be logged, and residents must always be able to reach a person.\n\nWhat you'll do:\n- Set the AI product strategy across resident and staff products\n- Prototype assistants hands-on with LLM APIs, tool use, and retrieval\n- Define when the assistant answers, when it asks, and when it hands off\n- Build evaluation and review processes that agency partners can audit\n- Make accessibility and plain language requirements, not afterthoughts\n- Lead and grow a team of product managers\n- Represent the product with agency leaders and procurement teams\n\nWhat you bring:\n- 10+ years in product, including AI products shipped to real users\n- Hands-on experience building with LLM APIs, including retrieval and tool use\n- Experience leading product managers\n- Comfort working in regulated or public-sector environments\n- Clear writing; you can explain an AI system's limits to a non-technical audience\n\nWe're fully remote within the US, with travel two to four times a year to meet agency partners. Base salary $220,000–$260,000 plus benefits."
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": true
+    },
+    {
+      "id": "e6",
+      "seq": 6,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "api_call_succeeded",
+        "checked": "client.messages.create returned a reply",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": true
+    },
+    {
+      "id": "e7",
+      "seq": 7,
+      "pass": 1,
+      "step_id": "claude_decides",
+      "actor": "claude",
+      "crossing": {
+        "from": "claude",
+        "to": "python",
+        "kind": "api_response"
+      },
+      "payload": {
+        "stop_reason": "max_tokens",
+        "content": [
+          {
+            "text": "The posting lists the company, role, location, remote status and compensation, so I'm rating it now.",
+            "type": "text"
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": null,
+      "parent": null,
+      "tokens": {
+        "input": 1466,
+        "output": 30
+      },
+      "guard": null,
+      "injected": true
+    },
+    {
+      "id": "e8",
+      "seq": 8,
+      "pass": 1,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason",
+        "checked": "stop_reason == \"end_turn\"",
+        "value": "max_tokens",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": true
+    },
+    {
+      "id": "e9",
+      "seq": 9,
+      "pass": 1,
+      "step_id": "reply_cut_off",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "reply_cut_off",
+        "line": 588,
+        "lines": [
+          "if response.stop_reason == \"max_tokens\":",
+          "    print(f\"\\n[reply_cut_off] reply cut off at {max_tokens} tokens.\")  # (terminal only)",
+          "    answer = (f\"Claude's reply was cut off (hit the max_tokens limit \"",
+          "              f\"of {max_tokens}).\")",
+          "    rec.end(\"max_tokens\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "max_tokens",
+        "checked": "stop_reason == \"max_tokens\"",
+        "value": "max_tokens",
+        "caught": true,
+        "action": "run_stopped",
+        "message": "Claude's reply was cut off (hit the max_tokens limit of 30)."
+      },
+      "injected": true
+    },
+    {
+      "id": "e10",
+      "seq": 10,
+      "pass": 1,
+      "step_id": "reply_cut_off",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "ended_by": "max_tokens",
+        "text": "Claude's reply was cut off (hit the max_tokens limit of 30)."
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "reply_cut_off",
+        "line": 588,
+        "lines": [
+          "if response.stop_reason == \"max_tokens\":",
+          "    print(f\"\\n[reply_cut_off] reply cut off at {max_tokens} tokens.\")  # (terminal only)",
+          "    answer = (f\"Claude's reply was cut off (hit the max_tokens limit \"",
+          "              f\"of {max_tokens}).\")",
+          "    rec.end(\"max_tokens\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": true
+    }
+  ],
+  "result": {
+    "ended_by": "max_tokens",
+    "text": "Claude's reply was cut off (hit the max_tokens limit of 30)."
+  },
+  "mismatch": false,
+  "check": {
+    "expected": {
+      "tools": [],
+      "outcome": "stopped"
+    },
+    "actual": {
+      "tools": [],
+      "outcome": [
+        "stopped"
+      ]
+    },
+    "mismatch": false,
+    "differences": []
+  }
+}

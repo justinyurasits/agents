@@ -1,0 +1,2888 @@
+{
+  "trace_version": 1,
+  "scenario": "scenario-4",
+  "started_at": "2026-11-14T22:32:03Z",
+  "git_commit": "30be0ed",
+  "git_dirty": true,
+  "model": "claude-sonnet-5-5",
+  "limits": {
+    "max_passes": 10,
+    "max_tokens": 2000
+  },
+  "fault": null,
+  "tools": [
+    {
+      "name": "evaluate_job",
+      "description": "Rate a job posting against Justin's criteria. Use when the posting has enough information to rate: company, role, location/remote status, and compensation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_title": {
+            "type": "string"
+          },
+          "job_description": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "remote": {
+            "type": "boolean"
+          },
+          "compensation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_title",
+          "job_description"
+        ]
+      }
+    },
+    {
+      "name": "flag_for_review",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_title": {
+            "type": "string"
+          },
+          "missing_info": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_title",
+          "missing_info"
+        ]
+      }
+    },
+    {
+      "name": "research_company",
+      "description": "Look up stored facts about a company: size, stage, and typical base pay for a role level. Use when a posting doesn't list compensation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_level": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_level"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "seq": 1,
+      "pass": 0,
+      "step_id": "agent_starts",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "job_text": "Quillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "agent_starts",
+        "line": 764,
+        "lines": [
+          "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e2",
+      "seq": 2,
+      "pass": 0,
+      "step_id": "conversation_setup",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "conversation_setup",
+        "line": 499,
+        "lines": [
+          "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e3",
+      "seq": 3,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "pass_count",
+        "checked": "pass <= MAX_PASSES (10)",
+        "value": 1,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e4",
+      "seq": 4,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "claude",
+        "kind": "api_request"
+      },
+      "payload": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 2000,
+        "system": "You help Justin triage job postings. Use the tools provided.",
+        "tools": [
+          "evaluate_job",
+          "flag_for_review",
+          "research_company"
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e5",
+      "seq": 5,
+      "pass": 1,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "api_call_succeeded",
+        "checked": "client.messages.create returned a reply",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e6",
+      "seq": 6,
+      "pass": 1,
+      "step_id": "claude_decides",
+      "actor": "claude",
+      "crossing": {
+        "from": "claude",
+        "to": "python",
+        "kind": "api_response"
+      },
+      "payload": {
+        "stop_reason": "tool_use",
+        "content": [
+          {
+            "thinking": "",
+            "type": "thinking"
+          },
+          {
+            "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+            "caller": {
+              "type": "direct"
+            },
+            "input": {
+              "company": "Quillmark Learning",
+              "role_title": "Director of AI Product",
+              "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+              "location": "Remote (US)",
+              "remote": true,
+              "compensation": "$190,000–$220,000 base plus bonus"
+            },
+            "name": "evaluate_job",
+            "type": "tool_use"
+          },
+          {
+            "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+            "caller": {
+              "type": "direct"
+            },
+            "input": {
+              "company": "Fernhollow Insurance",
+              "role_level": "Lead Product Manager"
+            },
+            "name": "research_company",
+            "type": "tool_use"
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": null,
+      "parent": null,
+      "tokens": {
+        "input": 1292,
+        "output": 482
+      },
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e7",
+      "seq": 7,
+      "pass": 1,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason",
+        "checked": "stop_reason == \"end_turn\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e8",
+      "seq": 8,
+      "pass": 1,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "max_tokens",
+        "checked": "stop_reason == \"max_tokens\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e9",
+      "seq": 9,
+      "pass": 1,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason_known",
+        "checked": "stop_reason == \"tool_use\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e10",
+      "seq": 10,
+      "pass": 1,
+      "step_id": "save_turn",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        }
+      ],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "save_turn",
+        "line": 620,
+        "lines": [
+          "messages.append({\"role\": \"assistant\", \"content\": response.content})"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e11",
+      "seq": 11,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_exists",
+        "checked": "tool name is defined",
+        "value": "evaluate_job",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e12",
+      "seq": 12,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "tool",
+        "kind": "tool_call"
+      },
+      "payload": {
+        "tool": "evaluate_job",
+        "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+        "arguments": {
+          "company": "Quillmark Learning",
+          "role_title": "Director of AI Product",
+          "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+          "location": "Remote (US)",
+          "remote": true,
+          "compensation": "$190,000–$220,000 base plus bonus"
+        }
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e13",
+      "seq": 13,
+      "pass": 1,
+      "step_id": "hard_screen",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "rule": "remote",
+        "checked": "remote is not false",
+        "value": true,
+        "outcome": "passed",
+        "note": "remote"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "hard_screen",
+        "line": 325,
+        "lines": [
+          "if failed:",
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
+        ]
+      },
+      "parent": "e12",
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e14",
+      "seq": 14,
+      "pass": 1,
+      "step_id": "hard_screen",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "rule": "comp_floor",
+        "checked": "lowest base >= MIN_BASE (180000)",
+        "value": 190000,
+        "outcome": "passed",
+        "note": "base $190,000 meets the $180K floor"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "hard_screen",
+        "line": 325,
+        "lines": [
+          "if failed:",
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
+        ]
+      },
+      "parent": "e12",
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e15",
+      "seq": 15,
+      "pass": 1,
+      "step_id": "inner_grader",
+      "actor": "tool",
+      "crossing": {
+        "from": "tool",
+        "to": "claude",
+        "kind": "inner_api_request"
+      },
+      "payload": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 2000,
+        "system": "You judge one thing about a job posting for Justin:\ndoes this role build hands-on AI experience?\nAnswer only that question.\nRespond with JSON only: {\"answer\": \"yes\" or \"no\", \"reasons\": [\"...\", \"...\"]}",
+        "tools": [],
+        "messages": [
+          {
+            "role": "user",
+            "content": "Company: Quillmark Learning\nRole: Director of AI Product\n\nLead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus."
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "inner_grader",
+        "line": 339,
+        "lines": [
+          "eval_response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=MAX_TOKENS,",
+          "    system=RUBRIC,",
+          "    messages=grader_messages,",
+          ")"
+        ]
+      },
+      "parent": "e12",
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e16",
+      "seq": 16,
+      "pass": 1,
+      "step_id": "inner_grader",
+      "actor": "claude",
+      "crossing": {
+        "from": "claude",
+        "to": "tool",
+        "kind": "inner_api_response"
+      },
+      "payload": {
+        "stop_reason": "end_turn",
+        "content": [
+          {
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}",
+            "type": "text"
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "inner_grader",
+        "line": 339,
+        "lines": [
+          "eval_response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=MAX_TOKENS,",
+          "    system=RUBRIC,",
+          "    messages=grader_messages,",
+          ")"
+        ]
+      },
+      "parent": "e12",
+      "tokens": {
+        "input": 248,
+        "output": 222
+      },
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e17",
+      "seq": 17,
+      "pass": 1,
+      "step_id": "inner_grader",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "inner_grader",
+        "line": 339,
+        "lines": [
+          "eval_response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=MAX_TOKENS,",
+          "    system=RUBRIC,",
+          "    messages=grader_messages,",
+          ")"
+        ]
+      },
+      "parent": "e12",
+      "tokens": null,
+      "guard": {
+        "name": "max_tokens",
+        "checked": "stop_reason == \"max_tokens\"",
+        "value": "end_turn",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e18",
+      "seq": 18,
+      "pass": 1,
+      "step_id": "inner_grader",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "inner_grader",
+        "line": 339,
+        "lines": [
+          "eval_response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=MAX_TOKENS,",
+          "    system=RUBRIC,",
+          "    messages=grader_messages,",
+          ")"
+        ]
+      },
+      "parent": "e12",
+      "tokens": null,
+      "guard": {
+        "name": "grade_valid",
+        "checked": "rating is one of the three and reasons is a list of strings",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e19",
+      "seq": 19,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_succeeded",
+        "checked": "evaluate_job returned without raising",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e20",
+      "seq": 20,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "tool",
+      "crossing": {
+        "from": "tool",
+        "to": "python",
+        "kind": "tool_result"
+      },
+      "payload": {
+        "tool": "evaluate_job",
+        "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+        "is_error": false,
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e21",
+      "seq": 21,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_exists",
+        "checked": "tool name is defined",
+        "value": "research_company",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e22",
+      "seq": 22,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "tool",
+        "kind": "tool_call"
+      },
+      "payload": {
+        "tool": "research_company",
+        "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+        "arguments": {
+          "company": "Fernhollow Insurance",
+          "role_level": "Lead Product Manager"
+        }
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e23",
+      "seq": 23,
+      "pass": 1,
+      "step_id": "research_company",
+      "actor": "tool",
+      "crossing": null,
+      "payload": {
+        "company": "Fernhollow Insurance",
+        "role_level": "Lead Product Manager",
+        "found": false,
+        "typical_base_for_level": null,
+        "source": "stored demo data"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "research_company",
+        "line": 420,
+        "lines": [
+          "if name is None:",
+          "    result = {\"found\": False, \"source\": RESEARCH_SOURCE}",
+          "else:",
+          "    facts = stored[name]",
+          "    levels = facts.get(\"typical_base_by_level\", {})",
+          "    # The level on file whose word appears in Claude's role level:",
+          "    # \"principal\" matches \"Principal Product Manager\". \\b = word boundary;",
+          "    # re.escape(k) makes the level's text match literally; .get(None) is None.",
+          "    level = next((k for k in levels",
+          "                  if re.search(rf\"\\b{re.escape(k)}\\b\", role_level, re.IGNORECASE)), None)",
+          "    result = {\"found\": True, \"company\": name, \"size\": facts.get(\"size\"),",
+          "              \"stage\": facts.get(\"stage\"), \"role_level\": role_level,",
+          "              \"typical_base_for_level\": levels.get(level),",
+          "              \"note\": facts.get(\"note\"), \"source\": RESEARCH_SOURCE}",
+          "    if level is None:",
+          "        result[\"levels_on_file\"] = list(levels)"
+        ]
+      },
+      "parent": "e22",
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e24",
+      "seq": 24,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_succeeded",
+        "checked": "research_company returned without raising",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e25",
+      "seq": 25,
+      "pass": 1,
+      "step_id": "run_tools",
+      "actor": "tool",
+      "crossing": {
+        "from": "tool",
+        "to": "python",
+        "kind": "tool_result"
+      },
+      "payload": {
+        "tool": "research_company",
+        "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+        "is_error": false,
+        "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e26",
+      "seq": 26,
+      "pass": 1,
+      "step_id": "results_back",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        }
+      ],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "results_back",
+        "line": 681,
+        "lines": [
+          "messages.append({\"role\": \"user\", \"content\": tool_results})"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e27",
+      "seq": 27,
+      "pass": 2,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "pass_count",
+        "checked": "pass <= MAX_PASSES (10)",
+        "value": 2,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e28",
+      "seq": 28,
+      "pass": 2,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "claude",
+        "kind": "api_request"
+      },
+      "payload": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 2000,
+        "system": "You help Justin triage job postings. Use the tools provided.",
+        "tools": [
+          "evaluate_job",
+          "flag_for_review",
+          "research_company"
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "company": "Quillmark Learning",
+                  "role_title": "Director of AI Product",
+                  "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                  "location": "Remote (US)",
+                  "remote": true,
+                  "compensation": "$190,000–$220,000 base plus bonus"
+                },
+                "name": "evaluate_job",
+                "type": "tool_use"
+              },
+              {
+                "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "company": "Fernhollow Insurance",
+                  "role_level": "Lead Product Manager"
+                },
+                "name": "research_company",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              },
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+              }
+            ]
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e29",
+      "seq": 29,
+      "pass": 2,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "api_call_succeeded",
+        "checked": "client.messages.create returned a reply",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e30",
+      "seq": 30,
+      "pass": 2,
+      "step_id": "claude_decides",
+      "actor": "claude",
+      "crossing": {
+        "from": "claude",
+        "to": "python",
+        "kind": "api_response"
+      },
+      "payload": {
+        "stop_reason": "tool_use",
+        "content": [
+          {
+            "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+            "caller": {
+              "type": "direct"
+            },
+            "input": {
+              "company": "Fernhollow Insurance",
+              "role_title": "Lead Product Manager, AI Claims",
+              "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+            },
+            "name": "flag_for_review",
+            "type": "tool_use"
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": null,
+      "parent": null,
+      "tokens": {
+        "input": 2072,
+        "output": 176
+      },
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e31",
+      "seq": 31,
+      "pass": 2,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason",
+        "checked": "stop_reason == \"end_turn\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e32",
+      "seq": 32,
+      "pass": 2,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "max_tokens",
+        "checked": "stop_reason == \"max_tokens\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e33",
+      "seq": 33,
+      "pass": 2,
+      "step_id": "check_reply",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason_known",
+        "checked": "stop_reason == \"tool_use\"",
+        "value": "tool_use",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e34",
+      "seq": 34,
+      "pass": 2,
+      "step_id": "save_turn",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+            }
+          ]
+        }
+      ],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_title": "Lead Product Manager, AI Claims",
+                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+              },
+              "name": "flag_for_review",
+              "type": "tool_use"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "save_turn",
+        "line": 620,
+        "lines": [
+          "messages.append({\"role\": \"assistant\", \"content\": response.content})"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e35",
+      "seq": 35,
+      "pass": 2,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_exists",
+        "checked": "tool name is defined",
+        "value": "flag_for_review",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e36",
+      "seq": 36,
+      "pass": 2,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "tool",
+        "kind": "tool_call"
+      },
+      "payload": {
+        "tool": "flag_for_review",
+        "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+        "arguments": {
+          "company": "Fernhollow Insurance",
+          "role_title": "Lead Product Manager, AI Claims",
+          "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+        }
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e37",
+      "seq": 37,
+      "pass": 2,
+      "step_id": "run_tools",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "tool_succeeded",
+        "checked": "flag_for_review returned without raising",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e38",
+      "seq": 38,
+      "pass": 2,
+      "step_id": "run_tools",
+      "actor": "tool",
+      "crossing": {
+        "from": "tool",
+        "to": "python",
+        "kind": "tool_result"
+      },
+      "payload": {
+        "tool": "flag_for_review",
+        "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+        "is_error": false,
+        "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "run_tools",
+        "line": 631,
+        "lines": [
+          "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
+          "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
+          "    rec.tool_checked(tool_block)       # does it exist? then the call (trace only)",
+          "",
+          "    # If the tool raises, don't crash: send the error back to Claude",
+          "    # as the tool_result, marked is_error, and let Claude decide.",
+          "    try:",
+          "        # **tool_block.input unpacks Claude's arguments into keyword",
+          "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
+          "        if tool_block.name == \"evaluate_job\":",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
+          "        elif tool_block.name == \"flag_for_review\":",
+          "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
+          "        else:",
+          "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
+          "            # doesn't exist. Raise, so the except below sends Claude",
+          "            # an error naming the real tools.",
+          "            # STEP: unknown_tool",
+          "            raise ValueError(",
+          "                f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+          "                f\"{', '.join(t['name'] for t in tools)}.\")",
+          "        outcome = {\"content\": json.dumps(result)}",
+          "    # GUARD (E1 tool_failed): any error from a tool (bad JSON, bad",
+          "    # arguments, the grader's own call failing) becomes an is_error",
+          "    # result for Claude, instead of crashing the run.",
+          "    # STEP: tool_failed",
+          "    except Exception as e:",
+          "        error = f\"{type(e).__name__}: {e}\"",
+          "        print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+          "        outcome = {\"content\": error, \"is_error\": True}",
+          "    rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)",
+          "",
+          "    # Each result carries the SAME id Claude gave its request.",
+          "    # **outcome copies outcome's keys into this dict, giving e.g.",
+          "    #   {\"type\": \"tool_result\", \"tool_use_id\": \"toolu_01…\",",
+          "    #    \"content\": \"JSONDecodeError: ...\", \"is_error\": True}",
+          "    tool_results.append({",
+          "        \"type\": \"tool_result\",",
+          "        \"tool_use_id\": tool_block.id,",
+          "        **outcome,",
+          "    })"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e39",
+      "seq": 39,
+      "pass": 2,
+      "step_id": "results_back",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_title": "Lead Product Manager, AI Claims",
+                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+              },
+              "name": "flag_for_review",
+              "type": "tool_use"
+            }
+          ]
+        }
+      ],
+      "messages_after": [
+        {
+          "role": "user",
+          "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Quillmark Learning",
+                "role_title": "Director of AI Product",
+                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "location": "Remote (US)",
+                "remote": true,
+                "compensation": "$190,000–$220,000 base plus bonus"
+              },
+              "name": "evaluate_job",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_level": "Lead Product Manager"
+              },
+              "name": "research_company",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "company": "Fernhollow Insurance",
+                "role_title": "Lead Product Manager, AI Claims",
+                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+              },
+              "name": "flag_for_review",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "file": "agent.py",
+        "marker": "results_back",
+        "line": 681,
+        "lines": [
+          "messages.append({\"role\": \"user\", \"content\": tool_results})"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e40",
+      "seq": 40,
+      "pass": 3,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "pass_count",
+        "checked": "pass <= MAX_PASSES (10)",
+        "value": 3,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e41",
+      "seq": 41,
+      "pass": 3,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": {
+        "from": "python",
+        "to": "claude",
+        "kind": "api_request"
+      },
+      "payload": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 2000,
+        "system": "You help Justin triage job postings. Use the tools provided.",
+        "tools": [
+          "evaluate_job",
+          "flag_for_review",
+          "research_company"
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "Evaluate this job posting:\n\nQuillmark Learning — Director of AI Product\nLocation: Remote (US)\nCompensation: $190,000–$220,000 base\n\nQuillmark Learning builds tutoring software used by community colleges. We're looking for a Director of AI Product to lead our AI tutor and grading assistant.\n\nYou'll set product direction for both assistants, prototype new features hands-on with LLM APIs, and work with faculty to define where AI helps students and where an instructor must stay in the loop. You'll lead a small team of two PMs and partner closely with engineering and learning science.\n\nWhat you bring:\n- 8+ years in product, including AI products shipped to real users\n- Hands-on prototyping with LLM APIs\n- Experience leading product managers\n\nFully remote in the US. Base salary $190,000–$220,000 plus bonus.\n\n---\n\nFernhollow Insurance — Lead Product Manager, AI Claims\nLocation: Remote (US)\n\nFernhollow Insurance is modernizing claims handling for small-business policies. We're hiring a Lead PM to own AI-assisted claims intake: reading submitted documents, pulling out the key details, and routing each claim to the right adjuster.\n\nYou'll prototype extraction and routing flows, define accuracy targets with the claims team, and decide where a person must review before a claim moves forward.\n\nWhat you bring:\n- 7+ years in product, including document AI or automation\n- Hands-on experience with LLM APIs\n- Insurance or financial services background preferred\n\nRemote within the US. Salary and benefits discussed during interviews."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "company": "Quillmark Learning",
+                  "role_title": "Director of AI Product",
+                  "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                  "location": "Remote (US)",
+                  "remote": true,
+                  "compensation": "$190,000–$220,000 base plus bonus"
+                },
+                "name": "evaluate_job",
+                "type": "tool_use"
+              },
+              {
+                "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "company": "Fernhollow Insurance",
+                  "role_level": "Lead Product Manager"
+                },
+                "name": "research_company",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              },
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "content": "{\"found\": false, \"source\": \"stored demo data\"}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "company": "Fernhollow Insurance",
+                  "role_title": "Lead Product Manager, AI Claims",
+                  "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+                },
+                "name": "flag_for_review",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+                "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+              }
+            ]
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e42",
+      "seq": 42,
+      "pass": 3,
+      "step_id": "send_to_claude",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "send_to_claude",
+        "line": 520,
+        "lines": [
+          "response = client.messages.create(",
+          "    model=MODEL,",
+          "    max_tokens=max_tokens,",
+          "    system=SYSTEM_PROMPT,",
+          "    tools=tools,",
+          "    messages=messages,",
+          ")"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "api_call_succeeded",
+        "checked": "client.messages.create returned a reply",
+        "value": null,
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e43",
+      "seq": 43,
+      "pass": 3,
+      "step_id": "claude_decides",
+      "actor": "claude",
+      "crossing": {
+        "from": "claude",
+        "to": "python",
+        "kind": "api_response"
+      },
+      "payload": {
+        "stop_reason": "end_turn",
+        "content": [
+          {
+            "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it.",
+            "type": "text"
+          }
+        ]
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": null,
+      "parent": null,
+      "tokens": {
+        "input": 2366,
+        "output": 402
+      },
+      "guard": null,
+      "injected": false
+    },
+    {
+      "id": "e44",
+      "seq": 44,
+      "pass": 3,
+      "step_id": "claude_done",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "check_reply",
+        "line": 566,
+        "lines": [
+          "if response.stop_reason == \"end_turn\":",
+          "    print(f\"\\n[claude_done] end_turn → done. \"",
+          "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+          "    # next(<matches>, None): the first text block's text, or None if",
+          "    # the reply has no text block at all.",
+          "    # STEP: answer_returned",
+          "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+          "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+          "    # text (e.g. only a thinking block). Say so, rather than crash at",
+          "    # the very last step.",
+          "    # STEP: no_final_answer",
+          "    if answer is None:",
+          "        answer = \"Claude finished without writing a final answer.\"",
+          "        rec.end(\"no_text\", answer)  # (trace only)",
+          "        return answer",
+          "    rec.end(\"end_turn\", answer)  # (trace only)",
+          "    return answer"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "stop_reason",
+        "checked": "stop_reason == \"end_turn\"",
+        "value": "end_turn",
+        "caught": false,
+        "action": "finish",
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e45",
+      "seq": 45,
+      "pass": 3,
+      "step_id": "answer_returned",
+      "actor": "python",
+      "crossing": null,
+      "payload": null,
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "answer_returned",
+        "line": 572,
+        "lines": [
+          "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": {
+        "name": "final_text_present",
+        "checked": "the reply has a text block",
+        "value": "text",
+        "caught": false,
+        "action": null,
+        "message": null
+      },
+      "injected": false
+    },
+    {
+      "id": "e46",
+      "seq": 46,
+      "pass": 3,
+      "step_id": "answer_returned",
+      "actor": "python",
+      "crossing": null,
+      "payload": {
+        "ended_by": "end_turn",
+        "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it."
+      },
+      "messages_before": null,
+      "messages_after": null,
+      "code": {
+        "file": "agent.py",
+        "marker": "answer_returned",
+        "line": 572,
+        "lines": [
+          "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
+        ]
+      },
+      "parent": null,
+      "tokens": null,
+      "guard": null,
+      "injected": false
+    }
+  ],
+  "result": {
+    "ended_by": "end_turn",
+    "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it."
+  },
+  "mismatch": false,
+  "check": {
+    "expected": {
+      "tools": [
+        "evaluate_job",
+        "research_company",
+        "flag_for_review"
+      ],
+      "outcome": [
+        "STRONG",
+        "flagged"
+      ]
+    },
+    "actual": {
+      "tools": [
+        "evaluate_job",
+        "research_company",
+        "flag_for_review"
+      ],
+      "outcome": [
+        "STRONG",
+        "flagged"
+      ]
+    },
+    "mismatch": false,
+    "differences": []
+  }
+}

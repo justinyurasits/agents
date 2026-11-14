@@ -1,9 +1,9 @@
 {
   "trace_version": 1,
   "scenario": "scenario-6",
-  "started_at": "2026-11-13T22:44:04Z",
-  "git_commit": "d967f96",
-  "git_dirty": false,
+  "started_at": "2026-11-14T22:32:21Z",
+  "git_commit": "30be0ed",
+  "git_dirty": true,
   "model": "claude-sonnet-5-5",
   "limits": {
     "max_passes": 10,
@@ -65,6 +65,25 @@
           "missing_info"
         ]
       }
+    },
+    {
+      "name": "research_company",
+      "description": "Look up stored facts about a company: size, stage, and typical base pay for a role level. Use when a posting doesn't list compensation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "role_level": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "role_level"
+        ]
+      }
     }
   ],
   "events": [
@@ -83,7 +102,7 @@
       "code": {
         "file": "agent.py",
         "marker": "agent_starts",
-        "line": 669,
+        "line": 764,
         "lines": [
           "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
         ]
@@ -111,7 +130,7 @@
       "code": {
         "file": "agent.py",
         "marker": "conversation_setup",
-        "line": 413,
+        "line": 499,
         "lines": [
           "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
         ]
@@ -134,7 +153,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -174,7 +193,8 @@
         "system": "You help Justin triage job postings. Use the tools provided.",
         "tools": [
           "evaluate_job",
-          "flag_for_review"
+          "flag_for_review",
+          "research_company"
         ],
         "messages": [
           {
@@ -188,7 +208,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -217,7 +237,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -255,14 +275,18 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+            "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Veltrane Software",
               "role_title": "Staff Product Manager, AI Platform",
-              "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+              "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
               "location": "Remote (US)",
               "remote": true,
               "compensation": "$205,000–$240,000 base plus equity"
@@ -277,8 +301,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1024,
-        "output": 455
+        "input": 1146,
+        "output": 506
       },
       "guard": null,
       "injected": false
@@ -296,7 +320,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -342,7 +366,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -388,7 +412,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -444,14 +468,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -465,7 +493,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 530,
+        "line": 620,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -488,7 +516,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -500,9 +528,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -558,11 +591,11 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+        "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
         "arguments": {
           "company": "Veltrane Software",
           "role_title": "Staff Product Manager, AI Platform",
-          "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+          "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
           "location": "Remote (US)",
           "remote": true,
           "compensation": "$205,000–$240,000 base plus equity"
@@ -573,7 +606,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -585,9 +618,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -642,10 +680,10 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 289,
+        "line": 325,
         "lines": [
           "if failed:",
-          "    return {\"rating\": \"IGNORE\", \"reasons\": failed}"
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
         ]
       },
       "parent": "e12",
@@ -672,10 +710,10 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 289,
+        "line": 325,
         "lines": [
           "if failed:",
-          "    return {\"rating\": \"IGNORE\", \"reasons\": failed}"
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
         ]
       },
       "parent": "e12",
@@ -702,7 +740,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Veltrane Software\nRole: Staff Product Manager, AI Platform\n\nVeltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs."
+            "content": "Company: Veltrane Software\nRole: Staff Product Manager, AI Platform\n\nVeltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity."
           }
         ]
       },
@@ -711,7 +749,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -741,7 +779,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"The AI platform group owns model routing, evaluation, prompt management, and tracing, which exposes the PM to the core technical problems of shipping production AI features.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require working directly with real AI systems and tradeoffs.\", \"Hands-on experience with LLM APIs is a stated requirement, so the role expects continued practical building rather than only strategy or coordination.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM would be building directly with the technology.\", \"It owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which would give deep practical exposure to how AI features are built, measured, and operated.\", \"Responsibilities such as turning one-off AI integrations into reusable services and defining quality and cost metrics for AI features require working through real implementation tradeoffs.\", \"Design reviews with engineering leads and the requirement for hands-on LLM API experience mean the work is technical and close to the implementation, not just high-level strategy.\"]}",
             "type": "text"
           }
         ]
@@ -751,7 +789,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -763,8 +801,8 @@
       },
       "parent": "e12",
       "tokens": {
-        "input": 369,
-        "output": 221
+        "input": 389,
+        "output": 235
       },
       "guard": null,
       "injected": false
@@ -782,7 +820,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -814,7 +852,7 @@
       "payload": {
         "fault": "tool_fails",
         "grader_reply": {
-          "real": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"The AI platform group owns model routing, evaluation, prompt management, and tracing, which exposes the PM to the core technical problems of shipping production AI features.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require working directly with real AI systems and tradeoffs.\", \"Hands-on experience with LLM APIs is a stated requirement, so the role expects continued practical building rather than only strategy or coordination.\"]}",
+          "real": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM would be building directly with the technology.\", \"It owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which would give deep practical exposure to how AI features are built, measured, and operated.\", \"Responsibilities such as turning one-off AI integrations into reusable services and defining quality and cost metrics for AI features require working through real implementation tradeoffs.\", \"Design reviews with engineering leads and the requirement for hands-on LLM API experience mean the work is technical and close to the implementation, not just high-level strategy.\"]}",
           "injected": "Sure! Here's my rating: STRONG"
         }
       },
@@ -823,7 +861,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -851,7 +889,7 @@
       "code": {
         "file": "agent.py",
         "marker": "tool_failed",
-        "line": 567,
+        "line": 662,
         "lines": [
           "except Exception as e:",
           "    error = f\"{type(e).__name__}: {e}\"",
@@ -884,7 +922,7 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+        "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
         "is_error": true,
         "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
       },
@@ -893,7 +931,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -905,9 +943,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -960,14 +1003,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -987,14 +1034,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -1009,7 +1060,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
               "is_error": true
             }
@@ -1019,7 +1070,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 586,
+        "line": 681,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -1042,7 +1093,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1082,7 +1133,8 @@
         "system": "You help Justin triage job postings. Use the tools provided.",
         "tools": [
           "evaluate_job",
-          "flag_for_review"
+          "flag_for_review",
+          "research_company"
         ],
         "messages": [
           {
@@ -1093,14 +1145,18 @@
             "role": "assistant",
             "content": [
               {
-                "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+                "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+                "type": "text"
+              },
+              {
+                "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Veltrane Software",
                   "role_title": "Staff Product Manager, AI Platform",
-                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
                   "compensation": "$205,000–$240,000 base plus equity"
@@ -1115,7 +1171,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+                "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
                 "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
                 "is_error": true
               }
@@ -1128,7 +1184,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1157,7 +1213,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1199,21 +1255,21 @@
             "type": "thinking"
           },
           {
-            "text": "The tool returned an error, so I'm retrying the call.",
+            "text": "The tool returned an error, so I'll try the call again.",
             "type": "text"
           },
           {
-            "id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+            "id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Veltrane Software",
               "role_title": "Staff Product Manager, AI Platform",
-              "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+              "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
               "location": "Remote (US)",
               "remote": true,
-              "compensation": "$205,000–$240,000 base plus equity"
+              "compensation": "$205,000-$240,000 base plus equity"
             },
             "name": "evaluate_job",
             "type": "tool_use"
@@ -1225,8 +1281,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1518,
-        "output": 486
+        "input": 1691,
+        "output": 509
       },
       "guard": null,
       "injected": false
@@ -1244,7 +1300,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1290,7 +1346,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1336,7 +1392,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1386,14 +1442,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -1408,7 +1468,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
               "is_error": true
             }
@@ -1424,14 +1484,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -1446,7 +1510,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
               "is_error": true
             }
@@ -1460,21 +1524,21 @@
               "type": "thinking"
             },
             {
-              "text": "The tool returned an error, so I'm retrying the call.",
+              "text": "The tool returned an error, so I'll try the call again.",
               "type": "text"
             },
             {
-              "id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+              "id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$205,000–$240,000 base plus equity"
+                "compensation": "$205,000-$240,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -1485,7 +1549,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 530,
+        "line": 620,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -1508,7 +1572,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1520,9 +1584,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -1578,14 +1647,14 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+        "tool_use_id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
         "arguments": {
           "company": "Veltrane Software",
           "role_title": "Staff Product Manager, AI Platform",
-          "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+          "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
           "location": "Remote (US)",
           "remote": true,
-          "compensation": "$205,000–$240,000 base plus equity"
+          "compensation": "$205,000-$240,000 base plus equity"
         }
       },
       "messages_before": null,
@@ -1593,7 +1662,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1605,9 +1674,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -1662,10 +1736,10 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 289,
+        "line": 325,
         "lines": [
           "if failed:",
-          "    return {\"rating\": \"IGNORE\", \"reasons\": failed}"
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
         ]
       },
       "parent": "e31",
@@ -1692,10 +1766,10 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 289,
+        "line": 325,
         "lines": [
           "if failed:",
-          "    return {\"rating\": \"IGNORE\", \"reasons\": failed}"
+          "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
         ]
       },
       "parent": "e31",
@@ -1722,7 +1796,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Veltrane Software\nRole: Staff Product Manager, AI Platform\n\nVeltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs."
+            "content": "Company: Veltrane Software\nRole: Staff Product Manager, AI Platform\n\nVeltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity."
           }
         ]
       },
@@ -1731,7 +1805,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1761,7 +1835,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"It owns shared AI services (model routing, evaluation, prompt management, tracing), which exposes the PM to the practical details of shipping reliable AI features.\", \"Defining quality and cost metrics for AI features across the company requires working directly with evaluation and cost tradeoffs rather than treating AI abstractly.\", \"Turning one-off AI integrations into reusable platform services and running design reviews with engineering leads keeps the PM close to real implementation decisions.\", \"Hands-on experience with LLM APIs is a stated requirement, which signals the team expects practical building, though Justin would be a PM and not a full-time engineer.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM is building directly with the technology rather than only writing specs.\", \"The PM owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which means working closely with how LLM systems are built, measured, and run in production.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require practical understanding of LLM behavior, evaluation, and cost tradeoffs.\", \"The requirements call for hands-on experience building with LLM APIs, which signals that ongoing practical work is expected, though the role is still primarily product management rather than full-time engineering.\"]}",
             "type": "text"
           }
         ]
@@ -1771,7 +1845,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1783,8 +1857,8 @@
       },
       "parent": "e31",
       "tokens": {
-        "input": 369,
-        "output": 272
+        "input": 389,
+        "output": 260
       },
       "guard": null,
       "injected": false
@@ -1802,7 +1876,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1837,7 +1911,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 303,
+        "line": 339,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1872,7 +1946,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1884,9 +1958,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -1942,16 +2021,16 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+        "tool_use_id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
         "is_error": false,
-        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"It owns shared AI services (model routing, evaluation, prompt management, tracing), which exposes the PM to the practical details of shipping reliable AI features.\", \"Defining quality and cost metrics for AI features across the company requires working directly with evaluation and cost tradeoffs rather than treating AI abstractly.\", \"Turning one-off AI integrations into reusable platform services and running design reviews with engineering leads keeps the PM close to real implementation decisions.\", \"Hands-on experience with LLM APIs is a stated requirement, which signals the team expects practical building, though Justin would be a PM and not a full-time engineer.\"]}"
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM is building directly with the technology rather than only writing specs.\", \"The PM owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which means working closely with how LLM systems are built, measured, and run in production.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require practical understanding of LLM behavior, evaluation, and cost tradeoffs.\", \"The requirements call for hands-on experience building with LLM APIs, which signals that ongoing practical work is expected, though the role is still primarily product management rather than full-time engineering.\"]}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 541,
+        "line": 631,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1963,9 +2042,14 @@
           "        # **tool_block.input unpacks Claude's arguments into keyword",
           "        # arguments: {\"company\": \"X\", ...} → evaluate_job(company=\"X\", ...)",
           "        if tool_block.name == \"evaluate_job\":",
-          "            result = evaluate_job(**tool_block.input)",
+          "            result = evaluate_job(**tool_block.input, researched_pay=researched_pay)",
           "        elif tool_block.name == \"flag_for_review\":",
           "            result = flag_for_review(**tool_block.input)",
+          "        elif tool_block.name == \"research_company\":",
+          "            result = research_company(**tool_block.input)",
+          "            # Remember researched pay for the rest of the run (D34).",
+          "            if result.get(\"typical_base_for_level\"):",
+          "                researched_pay[result[\"company\"].lower()] = result[\"typical_base_for_level\"]",
           "        else:",
           "            # GUARD (E2 unknown_tool): Claude asked for a tool that",
           "            # doesn't exist. Raise, so the except below sends Claude",
@@ -2018,14 +2102,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -2040,7 +2128,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
               "is_error": true
             }
@@ -2054,21 +2142,21 @@
               "type": "thinking"
             },
             {
-              "text": "The tool returned an error, so I'm retrying the call.",
+              "text": "The tool returned an error, so I'll try the call again.",
               "type": "text"
             },
             {
-              "id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+              "id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$205,000–$240,000 base plus equity"
+                "compensation": "$205,000-$240,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -2085,14 +2173,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$205,000–$240,000 base plus equity"
@@ -2107,7 +2199,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+              "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
               "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
               "is_error": true
             }
@@ -2121,21 +2213,21 @@
               "type": "thinking"
             },
             {
-              "text": "The tool returned an error, so I'm retrying the call.",
+              "text": "The tool returned an error, so I'll try the call again.",
               "type": "text"
             },
             {
-              "id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+              "id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Veltrane Software",
                 "role_title": "Staff Product Manager, AI Platform",
-                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$205,000–$240,000 base plus equity"
+                "compensation": "$205,000-$240,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -2147,8 +2239,8 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"It owns shared AI services (model routing, evaluation, prompt management, tracing), which exposes the PM to the practical details of shipping reliable AI features.\", \"Defining quality and cost metrics for AI features across the company requires working directly with evaluation and cost tradeoffs rather than treating AI abstractly.\", \"Turning one-off AI integrations into reusable platform services and running design reviews with engineering leads keeps the PM close to real implementation decisions.\", \"Hands-on experience with LLM APIs is a stated requirement, which signals the team expects practical building, though Justin would be a PM and not a full-time engineer.\"]}"
+              "tool_use_id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM is building directly with the technology rather than only writing specs.\", \"The PM owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which means working closely with how LLM systems are built, measured, and run in production.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require practical understanding of LLM behavior, evaluation, and cost tradeoffs.\", \"The requirements call for hands-on experience building with LLM APIs, which signals that ongoing practical work is expected, though the role is still primarily product management rather than full-time engineering.\"]}"
             }
           ]
         }
@@ -2156,7 +2248,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 586,
+        "line": 681,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -2179,7 +2271,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2219,7 +2311,8 @@
         "system": "You help Justin triage job postings. Use the tools provided.",
         "tools": [
           "evaluate_job",
-          "flag_for_review"
+          "flag_for_review",
+          "research_company"
         ],
         "messages": [
           {
@@ -2230,14 +2323,18 @@
             "role": "assistant",
             "content": [
               {
-                "id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+                "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it directly.",
+                "type": "text"
+              },
+              {
+                "id": "toolu_0116GQ5u9mHUFdby5gquT63D",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Veltrane Software",
                   "role_title": "Staff Product Manager, AI Platform",
-                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000–$240,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
                   "compensation": "$205,000–$240,000 base plus equity"
@@ -2252,7 +2349,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01Daiy69iRKtmacwTpUGMcKm",
+                "tool_use_id": "toolu_0116GQ5u9mHUFdby5gquT63D",
                 "content": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
                 "is_error": true
               }
@@ -2266,21 +2363,21 @@
                 "type": "thinking"
               },
               {
-                "text": "The tool returned an error, so I'm retrying the call.",
+                "text": "The tool returned an error, so I'll try the call again.",
                 "type": "text"
               },
               {
-                "id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
+                "id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Veltrane Software",
                   "role_title": "Staff Product Manager, AI Platform",
-                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers; prototypes new platform capabilities hands-on with LLM APIs; measures success by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs.",
+                  "job_description": "Veltrane Software makes developer tools for data teams. The AI platform group builds shared services every product team uses to ship AI features: model routing, evaluation, prompt management, and tracing. Staff PM owns the roadmap for those shared services, treating internal product teams as customers. Prototypes new platform capabilities hands-on with LLM APIs; success measured by how quickly teams ship reliable AI features. Responsibilities: turn one-off AI integrations into reusable platform services; prototype platform features with LLM APIs; define quality and cost metrics for AI features across the company; run design reviews with engineering leads. Requirements: 9+ years in product, including platform or developer products; hands-on experience building with LLM APIs; comfort with APIs, observability, and cost tradeoffs. Base salary $205,000-$240,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
-                  "compensation": "$205,000–$240,000 base plus equity"
+                  "compensation": "$205,000-$240,000 base plus equity"
                 },
                 "name": "evaluate_job",
                 "type": "tool_use"
@@ -2292,8 +2389,8 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01KMbZ5t9ARuASf3Ly2ky6Ep",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so building with AI is part of the day-to-day work.\", \"It owns shared AI services (model routing, evaluation, prompt management, tracing), which exposes the PM to the practical details of shipping reliable AI features.\", \"Defining quality and cost metrics for AI features across the company requires working directly with evaluation and cost tradeoffs rather than treating AI abstractly.\", \"Turning one-off AI integrations into reusable platform services and running design reviews with engineering leads keeps the PM close to real implementation decisions.\", \"Hands-on experience with LLM APIs is a stated requirement, which signals the team expects practical building, though Justin would be a PM and not a full-time engineer.\"]}"
+                "tool_use_id": "toolu_01BQDwpBsGXsK7hgpFZ73Upb",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new platform capabilities hands-on with LLM APIs, so the PM is building directly with the technology rather than only writing specs.\", \"The PM owns the roadmap for core AI infrastructure (model routing, evaluation, prompt management, tracing), which means working closely with how LLM systems are built, measured, and run in production.\", \"Responsibilities such as defining quality and cost metrics for AI features and turning one-off integrations into reusable services require practical understanding of LLM behavior, evaluation, and cost tradeoffs.\", \"The requirements call for hands-on experience building with LLM APIs, which signals that ongoing practical work is expected, though the role is still primarily product management rather than full-time engineering.\"]}"
               }
             ]
           }
@@ -2304,7 +2401,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2333,7 +2430,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 430,
+        "line": 520,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2371,7 +2468,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "**Rating: STRONG**\n\nVeltrane Software, Staff Product Manager, AI Platform. Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on AI work:** You'd prototype new platform capabilities yourself with LLM APIs, so building with AI is part of the daily job.\n- **Real AI infrastructure:** You'd own model routing, evaluation, prompt management, and tracing. That keeps you close to the details of shipping reliable AI features.\n- **Metrics ownership:** You'd define quality and cost metrics for AI features across the company. That means working directly with evaluation and cost tradeoffs.\n- **Close to implementation:** You'd turn one-off AI integrations into reusable services and run design reviews with engineering leads.\n- **Practical expectations:** The posting requires hands-on LLM API experience, so the team expects you to build.\n\n**Caveat:** This is a PM role, not a full-time engineering one. The building is real, but it sits alongside roadmap and stakeholder work.\n\nThe first evaluation call errored, and the retry succeeded.",
+            "text": "**Rating: STRONG**\n\n**Veltrane Software, Staff Product Manager, AI Platform.** Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on building:** You'd prototype new platform capabilities yourself with LLM APIs. You wouldn't only write specs.\n- **Core AI infrastructure:** You'd own the roadmap for model routing, evaluation, prompt management, and tracing. That keeps you close to how LLM systems are built, measured, and run in production.\n- **Real AI judgment calls:** You'd define quality and cost metrics for AI features and turn one-off integrations into reusable services. Both need a practical understanding of LLM behavior, evaluation, and cost tradeoffs.\n- **Hands-on requirement:** The posting requires experience building with LLM APIs, so ongoing practical work is expected.\n\n**Caveat:** It's still mainly a product management role, not full-time engineering. The prototyping is part of the job, but it isn't the whole job.\n\nThe compensation and remote status are both clearly stated, so I didn't need to flag anything for review. The first evaluation call failed with a tool error, and the retry went through.",
             "type": "text"
           }
         ]
@@ -2381,8 +2478,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 2281,
-        "output": 372
+        "input": 2465,
+        "output": 400
       },
       "guard": null,
       "injected": false
@@ -2400,7 +2497,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 476,
+        "line": 566,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -2446,7 +2543,7 @@
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 482,
+        "line": 572,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2472,14 +2569,14 @@
       "crossing": null,
       "payload": {
         "ended_by": "end_turn",
-        "text": "**Rating: STRONG**\n\nVeltrane Software, Staff Product Manager, AI Platform. Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on AI work:** You'd prototype new platform capabilities yourself with LLM APIs, so building with AI is part of the daily job.\n- **Real AI infrastructure:** You'd own model routing, evaluation, prompt management, and tracing. That keeps you close to the details of shipping reliable AI features.\n- **Metrics ownership:** You'd define quality and cost metrics for AI features across the company. That means working directly with evaluation and cost tradeoffs.\n- **Close to implementation:** You'd turn one-off AI integrations into reusable services and run design reviews with engineering leads.\n- **Practical expectations:** The posting requires hands-on LLM API experience, so the team expects you to build.\n\n**Caveat:** This is a PM role, not a full-time engineering one. The building is real, but it sits alongside roadmap and stakeholder work.\n\nThe first evaluation call errored, and the retry succeeded."
+        "text": "**Rating: STRONG**\n\n**Veltrane Software, Staff Product Manager, AI Platform.** Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on building:** You'd prototype new platform capabilities yourself with LLM APIs. You wouldn't only write specs.\n- **Core AI infrastructure:** You'd own the roadmap for model routing, evaluation, prompt management, and tracing. That keeps you close to how LLM systems are built, measured, and run in production.\n- **Real AI judgment calls:** You'd define quality and cost metrics for AI features and turn one-off integrations into reusable services. Both need a practical understanding of LLM behavior, evaluation, and cost tradeoffs.\n- **Hands-on requirement:** The posting requires experience building with LLM APIs, so ongoing practical work is expected.\n\n**Caveat:** It's still mainly a product management role, not full-time engineering. The prototyping is part of the job, but it isn't the whole job.\n\nThe compensation and remote status are both clearly stated, so I didn't need to flag anything for review. The first evaluation call failed with a tool error, and the retry went through."
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 482,
+        "line": 572,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2492,7 +2589,7 @@
   ],
   "result": {
     "ended_by": "end_turn",
-    "text": "**Rating: STRONG**\n\nVeltrane Software, Staff Product Manager, AI Platform. Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on AI work:** You'd prototype new platform capabilities yourself with LLM APIs, so building with AI is part of the daily job.\n- **Real AI infrastructure:** You'd own model routing, evaluation, prompt management, and tracing. That keeps you close to the details of shipping reliable AI features.\n- **Metrics ownership:** You'd define quality and cost metrics for AI features across the company. That means working directly with evaluation and cost tradeoffs.\n- **Close to implementation:** You'd turn one-off AI integrations into reusable services and run design reviews with engineering leads.\n- **Practical expectations:** The posting requires hands-on LLM API experience, so the team expects you to build.\n\n**Caveat:** This is a PM role, not a full-time engineering one. The building is real, but it sits alongside roadmap and stakeholder work.\n\nThe first evaluation call errored, and the retry succeeded."
+    "text": "**Rating: STRONG**\n\n**Veltrane Software, Staff Product Manager, AI Platform.** Remote (US), $205K–$240K base plus equity.\n\n**Why it rated strong:**\n- **Hands-on building:** You'd prototype new platform capabilities yourself with LLM APIs. You wouldn't only write specs.\n- **Core AI infrastructure:** You'd own the roadmap for model routing, evaluation, prompt management, and tracing. That keeps you close to how LLM systems are built, measured, and run in production.\n- **Real AI judgment calls:** You'd define quality and cost metrics for AI features and turn one-off integrations into reusable services. Both need a practical understanding of LLM behavior, evaluation, and cost tradeoffs.\n- **Hands-on requirement:** The posting requires experience building with LLM APIs, so ongoing practical work is expected.\n\n**Caveat:** It's still mainly a product management role, not full-time engineering. The prototyping is part of the job, but it isn't the whole job.\n\nThe compensation and remote status are both clearly stated, so I didn't need to flag anything for review. The first evaluation call failed with a tool error, and the retry went through."
   },
   "mismatch": false,
   "check": {
