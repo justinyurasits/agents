@@ -423,7 +423,8 @@ def research_company(company, role_level):
         facts = stored[name]
         levels = facts.get("typical_base_by_level", {})
         # The level on file whose word appears in Claude's role level:
-        # "principal" matches "Principal Product Manager". \b = word boundary.
+        # "principal" matches "Principal Product Manager". \b = word boundary;
+        # re.escape(k) makes the level's text match literally; .get(None) is None.
         level = next((k for k in levels
                       if re.search(rf"\b{re.escape(k)}\b", role_level, re.IGNORECASE)), None)
         result = {"found": True, "company": name, "size": facts.get("size"),
