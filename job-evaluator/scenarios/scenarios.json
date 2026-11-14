@@ -8,6 +8,7 @@
     "expected_tools": ["evaluate_job"],
     "expected_outcome": "STRONG: remote, base above $180K, and the role is hands-on agent building.",
     "expect": {"tools": ["evaluate_job"], "outcome": "STRONG"},
+    "summary": null,
     "company_facts": null,
     "fault": null
   },
@@ -20,6 +21,7 @@
     "expected_tools": ["flag_for_review"],
     "expected_outcome": "Flagged for review: compensation is not listed.",
     "expect": {"tools": ["flag_for_review"], "outcome": "flagged"},
+    "summary": null,
     "company_facts": null,
     "fault": null
   },
@@ -32,6 +34,7 @@
     "expected_tools": ["research_company", "evaluate_job"],
     "expected_outcome": "STRONG: research shows a $200K–$235K base for this level; remote; hands-on agent building.",
     "expect": {"tools": ["research_company", "evaluate_job"], "outcome": "STRONG"},
+    "summary": null,
     "company_facts": {
       "company": "Marrowstone Logistics",
       "size": "About 600 employees",
@@ -53,6 +56,7 @@
     "expected_tools": ["evaluate_job", "flag_for_review"],
     "expected_outcome": "Quillmark rated STRONG; Fernhollow flagged because compensation is not listed. Both tool results go back in one message.",
     "expect": {"tools": ["evaluate_job", "flag_for_review"], "outcome": ["STRONG", "flagged"]},
+    "summary": null,
     "company_facts": null,
     "fault": null
   },
@@ -65,6 +69,7 @@
     "expected_tools": ["evaluate_job (stops at the hard screen)"],
     "expected_outcome": "Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.",
     "expect": {"tools": ["evaluate_job"], "outcome": "IGNORE"},
+    "summary": null,
     "company_facts": null,
     "fault": null
   },
@@ -81,6 +86,7 @@
       {"tools": ["evaluate_job"], "outcome": "WORTH REVIEWING"},
       {"tools": ["evaluate_job"], "outcome": "no rating"}
     ],
+    "summary": null,
     "company_facts": null,
     "fault": "tool_fails"
   },
@@ -93,6 +99,7 @@
     "expected_tools": ["(unknown tool, injected)", "evaluate_job"],
     "expected_outcome": "Python returns an is_error result naming the real tools; Claude then calls evaluate_job and the posting rates STRONG.",
     "expect": {"tools": ["rate_posting", "evaluate_job"], "outcome": "STRONG"},
+    "summary": null,
     "company_facts": null,
     "fault": "unknown_tool"
   },
@@ -105,6 +112,7 @@
     "expected_tools": ["evaluate_job (repeated, always fails)"],
     "expected_outcome": "Every attempt fails; the run stops at the lowered cap of 2 passes and returns \"Stopped after 2 passes without finishing.\" (Real Claude retries a failing tool once and then stops on its own, so the cap is lowered for this fault; see #46.)",
     "expect": {"tools": ["evaluate_job"], "outcome": "stopped"},
+    "summary": null,
     "company_facts": null,
     "fault": "runaway_loop"
   },
@@ -117,6 +125,7 @@
     "expected_tools": [],
     "expected_outcome": "The reply is cut off by the injected token limit; the run stops with \"Claude's reply was cut off (hit the max_tokens limit of …).\"",
     "expect": {"tools": [], "outcome": "stopped"},
+    "summary": null,
     "company_facts": null,
     "fault": "reply_cut_off"
   }
