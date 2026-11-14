@@ -18,6 +18,7 @@ Newest at the bottom of each section.
 - **Smaller questions get more reliable answers.** The rating prompt went from three criteria including pay and location to one yes/no question about the work. _(#26)_
 - **Guards, rules and routing are different things.** Guards catch failures. Rules apply decisions already made. Routing decides where the loop goes next. Treating them as one confuses both the code and anyone reading it. _(stop_reason discussion, #51 review)_
 - **Fail closed on the unknown.** The loop handles the stop reasons it knows and stops on anything else, rather than listing known bad ones. A stop reason the API adds later is caught automatically. _(#21, D29)_
+- **Guards catch failures; defensive handling prevents them.** Fence stripping, finding text by type and answering every tool request never "catch" anything: they handle every input correctly so nothing fails. Keeping them out of the guard list keeps "guard" meaning one thing. *(#63)*
 
 ## Showing how an agent works
 
