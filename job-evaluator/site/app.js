@@ -18,6 +18,10 @@
 //   - the rule events of one hard screen are one step, and evaluate_job's own
 //     call to Claude (request, reply, and any simulated failure) is one step.
 //
+// Each scenario also has an intro (setup and watch_for) shown above the run, and
+// a summary card shown only on the last step (#75). That text comes from
+// scenarios.json, written for this page like the step explanations.
+//
 // Claude's own words (its text, thinking, final answer, and the grader's reply)
 // appear only under "Claude's response". Everywhere else they're replaced with
 // a pointer to that tab.
@@ -383,6 +387,8 @@ function show(i) {
   renderTimeline();
   renderExplanation(s);
   renderTab();
+  // The summary card: only on the last step.
+  $("summary").hidden = state.i !== state.steps.length - 1;
   $("back").disabled = state.i === 0;
   $("next").disabled = state.i === state.steps.length - 1;
 }
@@ -741,6 +747,9 @@ async function loadScenario(id) {
   $("load-error").hidden = true;
   $("run").hidden = false;
   for (const b of ["play", "speed"]) $(b).disabled = false;
+  $("intro-setup").textContent = scenario.setup || "";
+  $("intro-watch").textContent = scenario.watch_for || "";
+  $("summary-text").textContent = scenario.summary || "";
   $("eyebrow").textContent = `SCENARIO ${id} · ${scenario.name.toUpperCase()}` + (trace.fault ? " · SIMULATED FAILURE" : "");
 
   // One badge per guard this run checks, in the order they first appear.

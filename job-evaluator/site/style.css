@@ -145,6 +145,13 @@ h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
 
 /* --- timeline ---------------------------------------------------------------- */
 .run { display: flex; flex-direction: column; gap: 18px; }
+/* The scenario intro and the summary card (#75). */
+.intro { padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+.intro-row { display: flex; gap: 14px; font-size: 14px; line-height: 1.55; color: var(--body); }
+.intro-k, .summary-k { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--amber); }
+.intro-k { flex: 0 0 92px; padding-top: 2px; text-transform: uppercase; }
+.summary { padding: 18px 24px; border-color: var(--amber); background: var(--amber-bg); display: flex; flex-direction: column; gap: 8px; }
+.summary p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--text); }
 .lower { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
 .timeline { flex: 1 1 280px; max-width: 340px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 0 8px; }
 .timeline-head { padding: 0 18px 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
@@ -221,4 +228,6 @@ pre .ln { color: var(--faint); user-select: none; display: inline-block; min-wid
   .timeline { max-width: none; }
   .timeline-list { max-height: 320px; }
   .btn.chooser { flex: 1 1 100%; max-width: none; }
+  .intro-row { flex-direction: column; gap: 2px; }
+  .intro-k { flex: none; }
 }

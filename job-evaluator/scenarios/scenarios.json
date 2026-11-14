@@ -8,7 +8,9 @@
     "expected_tools": ["evaluate_job"],
     "expected_outcome": "STRONG: remote, base above $180K, and the role is hands-on agent building.",
     "expect": {"tools": ["evaluate_job"], "outcome": "STRONG"},
-    "summary": null,
+    "setup": "A complete posting: remote, with pay listed ($200,000–$240,000 base).",
+    "watch_for": "The one tool call, and evaluate_job making its own, separate call to Claude to grade the job.",
+    "summary": "Claude asked for evaluate_job once. Inside it, code checked the hard rules, the grader answered, and the job rated STRONG. In the next pass Claude wrote its final answer. This is the whole loop at its simplest: request, tool, result, answer, in two passes.",
     "stored_company": null,
     "fault": null
   },
@@ -21,7 +23,9 @@
     "expected_tools": ["research_company", "flag_for_review"],
     "expected_outcome": "Flagged for review: compensation is not listed, and the company isn't in the stored data.",
     "expect": {"tools": ["research_company", "flag_for_review"], "outcome": "flagged"},
-    "summary": null,
+    "setup": "The posting doesn't list pay.",
+    "watch_for": "Which tool Claude asks for first when pay is missing, and what it does with the answer.",
+    "summary": "Claude asked research_company about Wrenfield Health first. The stored data had no entry for it (found: false). In the next pass Claude called flag_for_review, and the posting was flagged for a person to check. With no pay to go on, the job goes to a human instead of getting a guessed rating.",
     "stored_company": null,
     "fault": null
   },
@@ -34,7 +38,9 @@
     "expected_tools": ["research_company", "evaluate_job"],
     "expected_outcome": "STRONG: research shows a $200K–$235K base for this level; remote; hands-on agent building.",
     "expect": {"tools": ["research_company", "evaluate_job"], "outcome": "STRONG"},
-    "summary": null,
+    "setup": "The posting doesn't list pay.",
+    "watch_for": "Claude choosing a second tool on its own, using what the first one found.",
+    "summary": "Claude asked research_company first. The stored data had Marrowstone Logistics, with a typical base of $200,000–$235,000 for a principal role. In the next pass Claude called evaluate_job with that pay. Code checked the hard rules on it, the grader answered, and the job rated STRONG, with the reason \"base estimated from stored company data\". One tool's result became the next tool's input.",
     "stored_company": "Marrowstone Logistics",
     "fault": null
   },
@@ -50,7 +56,9 @@
     "expected_tools": ["evaluate_job", "research_company", "flag_for_review"],
     "expected_outcome": "Quillmark rated STRONG; Fernhollow flagged because compensation is not listed and the company isn't in the stored data. The first two tool results go back in one message.",
     "expect": {"tools": ["evaluate_job", "research_company", "flag_for_review"], "outcome": ["STRONG", "flagged"]},
-    "summary": null,
+    "setup": "Two postings in one message. The first lists pay; the second doesn't.",
+    "watch_for": "One reply from Claude that asks for two tools, and both results going back to Claude together, in one message.",
+    "summary": "In one reply Claude asked for evaluate_job (Quillmark Learning) and research_company (Fernhollow Insurance). Python ran both, one after the other, and sent both results back in one message, each tagged with the ID of the request it answers. Quillmark rated STRONG. Fernhollow wasn't in the stored data; in the next pass Claude called flag_for_review, and it was flagged. The loop handles several tool requests in one reply, and the IDs keep each result matched to its request.",
     "stored_company": null,
     "fault": null
   },
@@ -63,7 +71,9 @@
     "expected_tools": ["evaluate_job (stops at the hard screen)"],
     "expected_outcome": "Claude calls evaluate_job; a hard screen in code rejects the posting (base below the $180K floor) and returns IGNORE before the rating call, so the grader is never asked.",
     "expect": {"tools": ["evaluate_job"], "outcome": "IGNORE"},
-    "summary": null,
+    "setup": "A complete, remote posting with pay listed at $140,000–$165,000 base.",
+    "watch_for": "Which part of the agent applies your salary floor: Claude, or code.",
+    "summary": "Claude asked for evaluate_job. Inside it, code checked the hard rules: remote passed, the $180K salary floor failed, and the tool returned IGNORE without making its own call to Claude. In the next pass Claude wrote its final answer. A firm rule lives in code, so it applies the same way every time and costs no grader call.",
     "stored_company": null,
     "fault": null
   },
@@ -80,7 +90,9 @@
       {"tools": ["evaluate_job"], "outcome": "WORTH REVIEWING"},
       {"tools": ["evaluate_job"], "outcome": "no rating"}
     ],
-    "summary": null,
+    "setup": "A complete posting: remote, with pay listed ($205,000–$240,000 base). Simulated: the grader's reply inside evaluate_job is replaced with broken JSON, once.",
+    "watch_for": "What Python does when a tool crashes, and what Claude does with the error it's handed.",
+    "summary": "The grader's reply was replaced with broken JSON, so evaluate_job raised a JSONDecodeError. A guard (E1) caught it and sent the error back to Claude as a tool result marked is_error, instead of crashing. In the next pass Claude called evaluate_job again; this time the grader's real reply came through, and the job rated STRONG. A guard turns a crash into information the model can act on.",
     "stored_company": null,
     "fault": "tool_fails"
   },
@@ -93,7 +105,9 @@
     "expected_tools": ["(unknown tool, injected)", "evaluate_job"],
     "expected_outcome": "Python returns an is_error result naming the real tools; Claude then calls evaluate_job and the posting rates STRONG.",
     "expect": {"tools": ["rate_posting", "evaluate_job"], "outcome": "STRONG"},
-    "summary": null,
+    "setup": "A complete posting: remote, with pay listed ($210,000–$245,000 base). Simulated: the name in Claude's first tool request is changed to rate_posting, a tool that doesn't exist.",
+    "watch_for": "How Python answers a request for a tool it doesn't have.",
+    "summary": "Claude's first tool request arrived as rate_posting. Python has no tool by that name, so a guard (E2) sent back an error marked is_error that lists the real tools. In the next pass Claude called evaluate_job, and the job rated STRONG. A clear error lets the run recover from a bad tool name instead of failing.",
     "stored_company": null,
     "fault": "unknown_tool"
   },
@@ -106,7 +120,9 @@
     "expected_tools": ["evaluate_job (repeated, always fails)"],
     "expected_outcome": "Every attempt fails; the run stops at the lowered cap of 2 passes and returns \"Stopped after 2 passes without finishing.\" (Real Claude retries a failing tool once and then stops on its own, so the cap is lowered for this fault; see #46.)",
     "expect": {"tools": ["evaluate_job"], "outcome": "stopped"},
-    "summary": null,
+    "setup": "A complete posting: remote, with pay listed ($185,000–$215,000 base). Simulated: the grader's reply is replaced with broken JSON every time, and the pass cap is lowered from 10 to 2.",
+    "watch_for": "The pass count, checked before every call to Claude.",
+    "summary": "evaluate_job failed in pass 1 and again in pass 2, and each error went back to Claude marked is_error. Before a third call to Claude, the pass-count guard (E4) found the run at its cap and stopped it with \"Stopped after 2 passes without finishing.\" Without a cap, a tool that always fails could keep the loop calling Claude, and spending money, with no end. In real runs the cap is 10.",
     "stored_company": null,
     "fault": "runaway_loop"
   },
@@ -119,7 +135,9 @@
     "expected_tools": [],
     "expected_outcome": "The reply is cut off by the injected token limit; the run stops with \"Claude's reply was cut off (hit the max_tokens limit of …).\"",
     "expect": {"tools": [], "outcome": "stopped"},
-    "summary": null,
+    "setup": "A complete posting: remote, with pay listed ($220,000–$260,000 base). Simulated: the main call to Claude gets a token limit of 30, far too small for a full reply.",
+    "watch_for": "The stop reason on Claude's first reply, and what Python does when it isn't a normal one.",
+    "summary": "Claude's first reply hit the 30-token limit and came back with stop reason max_tokens. A guard (E3) caught it and stopped the run with \"Claude's reply was cut off (hit the max_tokens limit of 30).\" No tool ran. Half a reply could mean a tool run with half its input, so the agent stops instead of acting on it (D22).",
     "stored_company": null,
     "fault": "reply_cut_off"
   }

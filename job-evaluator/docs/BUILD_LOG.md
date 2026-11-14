@@ -164,6 +164,18 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Added a CLAUDE.md rule (#69, PR #70): any PR that adds a tool or changes
   a description, schema, prompt or rubric re-runs every scenario, and
   expectations aren't edited just to make a run pass.
+- The page plays any of the nine scenarios (#71, PR #72): a drop-down in
+  two groups, `?scenario=N` in the URL, Back and Forward between picks, and
+  a one-line message for an unknown id. Playing all nine found steps that
+  scenario 6 never reaches, so the page had no words for them ("Has ·
+  nothing new", "rating: undefined"). Fixed in the same PR.
+- Each scenario now has an intro before the run (the setup, and what to
+  watch for) and a summary card on the last step (#75, PR #77). The text is
+  a draft for all nine. Tests keep outcome words out of the intros and check
+  each summary against its recording's tools and outcome.
+- Wrote issues for the rest of the page: an eight-section structure (#78,
+  D36), scenario cards (#79), design principles (#80), and How it was built
+  plus the footer (#81).
 
 **Broke**
 
@@ -174,6 +186,11 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - A commit landed on local `main` instead of a branch: `<N>` in a command
   was read by zsh as "read from a file called N", so the branch was never
   created. Nothing reached GitHub; the commit was moved to its branch.
+- PR #72 put Claude's whole final answer in the "Has" box on the last step
+  of every normal run, which breaks D31. The scripted browser checks passed.
+  A screenshot taken for #75 showed it. Filed as #76.
+- PR #77 numbered its decision D36, which #78 had already planned for the
+  page structure. Renumbered to D37 before merge.
 
 **Learned**
 
@@ -182,3 +199,8 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Testing an agent has two layers: unit tests prove the code, recorded
   scenarios prove the behavior. A single PASS shows a path happened, not
   that it always will.
+- A page tested on one scenario is tested on that scenario only. Every new
+  path through the loop is a new thing for the page to describe.
+- An automated check only finds what it was written to look for. A rule
+  like "Claude's words only under Claude's response" needs its own check.
+  The screenshot only caught it by luck.

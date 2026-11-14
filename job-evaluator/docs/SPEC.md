@@ -358,7 +358,7 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 |---|---|
 | `recordings/scenario-0N.json` | The chosen scenario's events: the map, the four questions, the timeline, the inspector. Fetched when the scenario is picked |
 | `site/steps.json` | Each step's title and explanation, and each guard check's one-line explanation, generated from [STEPS.md](STEPS.md) by [`build_steps.py`](../build_steps.py) |
-| `scenarios/scenarios.json` | The chooser: each scenario's id, name and group |
+| `scenarios/scenarios.json` | The chooser (each scenario's id, name and group), the intro (`setup`, `watch_for`) and the summary card (`summary`) |
 | `site/fonts/` | Inter and JetBrains Mono (SIL Open Font License; the licenses are next to the files) |
 
 **steps.json has one source.** `python build_steps.py` reads STEPS.md and writes `steps` (per step id: `{number, title, text, error}`, the text being the paragraph(s) between `Step id:` and `Code:`) and `checks` (per guard name: the line from STEPS.md's "Checks" section). Edit STEPS.md, rerun the script; a test fails if the two disagree, or if any step or guard in the code or a recording has no explanation.
@@ -376,6 +376,8 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 | 7. Unknown tool | 21 |
 | 8. Runaway loop stopped | 23 |
 | 9. Reply cut off | 7 |
+
+**Intro and summary card** (#75, D37). Under the title, an intro panel shows the scenario's `setup` (what's different about this input) and `watch_for` (the moment worth noticing). An intro never states the outcome. Break-the-agent intros add a "Simulated:" sentence saying what is injected and how. On the last step only, a summary card ("What happened") shows `summary`: what the recording shows happened, the outcome, and why it matters. Both are labelled "Written for this page · not Claude's output", like the step explanations. Tests check that every scenario has all three; that no intro uses an outcome word (a rating, flag, stop, retry); that scenarios with a `fault` say "Simulated:"; and that each summary names its recording's tools and outcome, as `record.actual()` reads them, and no other outcome.
 
 **Events become page steps.** A run has more events than a visitor should step through (47 in scenario 6), so the page groups them (23 steps for scenario 6):
 

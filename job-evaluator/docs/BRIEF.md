@@ -47,9 +47,12 @@ loads the matching scenario into the run view and plays it.
 
 1. **Hero + the run** — one sentence on what this is, my name, and the
    Execution Explorer directly below: scenario chooser in two groups (Normal
-   runs / Break the agent), playback that starts paused. When a run finishes,
-   a short summary card says what happened, labeled "Written for this page",
-   with links to watch another scenario or read how it works.
+   runs / Break the agent), playback that starts paused. Before the run, an
+   intro gives the setup (what's different about this input, without the
+   ending) and what to watch for. On the last step, a short summary card says
+   what happened and why it matters. Both are labeled "Written for this page"
+   (#75). Still to come: links on the card to watch another scenario or read
+   How it works, once that section exists.
 2. **How it works** — the mechanics, briefly: the loop, tools, and the
    conversation as memory.
 3. **Design principles** — six, each one sentence with a Watch it button:
