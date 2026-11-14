@@ -32,6 +32,14 @@
 </header>
 
 <div class="run" id="run" hidden>
+<!-- The scenario's intro (#75): what's different about this input, and what
+     to watch for. From scenarios.json; never states the outcome. -->
+<section class="card intro" id="intro" aria-label="About this scenario">
+  <div class="intro-row"><span class="intro-k">The setup</span><span id="intro-setup"></span></div>
+  <div class="intro-row"><span class="intro-k">Watch for</span><span id="intro-watch"></span></div>
+  <div class="explain-foot"><span>Written for this page · not Claude's output</span><span>from scenarios/scenarios.json</span></div>
+</section>
+
 <section class="map" aria-label="Execution map">
   <div class="map-head"><span>EXECUTION MAP · LINEAR</span><span id="map-status"></span></div>
 
@@ -84,6 +92,13 @@
   <span class="fact"><span class="k">Because ·</span> <span id="fact-because"></span></span>
   <span class="fact"><span class="k">Next ·</span> <span id="fact-next"></span></span>
 </div>
+
+<!-- Shown only on the last step (#75): what happened, and why it matters. -->
+<section class="card summary" id="summary" aria-label="Run summary" hidden>
+  <div class="summary-k">WHAT HAPPENED</div>
+  <p id="summary-text"></p>
+  <div class="explain-foot"><span>Written for this page · not Claude's output</span><span>from scenarios/scenarios.json</span></div>
+</section>
 
 <div class="lower">
   <section class="timeline" aria-label="Timeline">

@@ -560,3 +560,24 @@ fits on a phone; nine buttons wouldn't fit the header. Visitors expect Back to
 undo their last click, and "Watch it" buttons (D33) will use the same URL.
 **What would change it:** the hero section (D33) needs the scenarios visible
 at once, e.g. as cards; then the chooser becomes those cards, same URL.
+
+## D36 — Scenario intro and summary card: where they sit, and what they may say
+
+**Status:** **Proposed** (issue #75)
+**Date:** 2026-11-14
+**Options:** what's simulated as its own field · as a "Simulated:" sentence in
+`setup` · the summary card inside the inspector · full width above it
+**Decision:** the intro is a full-width panel under the title, always visible
+while a run is shown. The summary card is full width between the four
+questions and the timeline, visible only on the last step. What's simulated is
+a "Simulated:" sentence at the end of `setup`, not a new field: the issue
+asked for two intro lines. The rules are tests, not just guidance: no outcome
+words in an intro, and each summary must name the recording's tools and
+outcome.
+**Reasoning:** the intro is what a first-time visitor reads before pressing
+Play, so it sits above the map. The summary is the payoff, so it sits where
+the eye lands after the last step, above the details. A test catches a summary
+that goes stale when a scenario is re-recorded with a different path.
+**What would change it:** the hero section (D33) gets its own scenario cards;
+then the intro may move into them. Or a re-recording of scenario 6 that
+explains the failure instead of retrying, which would need a new summary.

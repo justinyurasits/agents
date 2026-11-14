@@ -8,6 +8,8 @@ import os
 import re
 import unittest
 
+import record
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -70,12 +72,48 @@ class BriefTest(unittest.TestCase):
 
 
 class ScenarioFieldsTest(unittest.TestCase):
+    """The page's intro and summary card text, in scenarios.json (#75)."""
 
-    def test_every_scenario_has_a_summary_field(self):
-        # The end-of-run card's text; null until Justin writes it (#62).
-        for s in json.loads(read("scenarios", "scenarios.json")):
+    SCENARIOS = json.loads(read("scenarios", "scenarios.json"))
+    # Words that give away how a run ends: a rating, a flag, a stop.
+    OUTCOME_WORDS = re.compile(r"STRONG|WORTH REVIEWING|IGNORE|flag|stop(?! reason)|rated|rating|cut off|recover|retr(y|ies)",
+                               re.IGNORECASE)
+
+    def test_every_scenario_has_setup_watch_for_and_summary_text(self):
+        for s in self.SCENARIOS:
+            for field in ("setup", "watch_for", "summary"):
+                with self.subTest(scenario=s["id"], field=field):
+                    self.assertIsInstance(s.get(field), str)
+                    self.assertTrue(s[field].strip())
+
+    def test_no_intro_states_the_outcome(self):
+        for s in self.SCENARIOS:
+            for field in ("setup", "watch_for"):
+                with self.subTest(scenario=s["id"], field=field):
+                    self.assertIsNone(self.OUTCOME_WORDS.search(s[field]), s[field])
+
+    def test_break_the_agent_intros_say_what_is_simulated(self):
+        for s in self.SCENARIOS:
             with self.subTest(s["id"]):
-                self.assertIn("summary", s)
+                if s["fault"]:
+                    self.assertIn("Simulated:", s["setup"])
+                else:
+                    self.assertNotIn("Simulated", s["setup"])
+
+    def test_each_summary_names_its_recordings_tools_and_outcome(self):
+        # record.actual() is what record.py checks a run against: the tools
+        # called, in order, and the outcome. The summary must agree with it.
+        words = {"flagged": "flagged", "stopped": "stopped", "no rating": "no rating"}
+        others = {"STRONG", "WORTH REVIEWING", "IGNORE", "flagged", "stopped"}
+        for s in self.SCENARIOS:
+            with self.subTest(s["id"]):
+                got = record.actual(json.loads(read("recordings", f"scenario-{s['id']:02d}.json")))
+                for tool in got["tools"]:
+                    self.assertIn(tool, s["summary"])
+                for outcome in got["outcome"]:
+                    self.assertIn(words.get(outcome, outcome), s["summary"])
+                for wrong in others - set(got["outcome"]):
+                    self.assertNotIn(wrong, s["summary"])
 
 
 if __name__ == "__main__":

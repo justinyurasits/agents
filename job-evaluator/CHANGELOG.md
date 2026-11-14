@@ -37,6 +37,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Add the `research_company` tool: looks up stored demo facts about a company (`data/companies.json`, moved out of scenarios.json), including typical base pay for the role level; an unknown company is `found: false`, not an error. When `evaluate_job` gets the researched pay, the hard rules apply as usual and the reasons say "base estimated from stored company data". New step 7c `research_company`. Scenario 3 now passes; scenarios 2 and 4 now research the company with no pay listed first, so their expected tools include `research_company` (#65).
 - Record all nine scenarios with `record.py --all`; every scenario prints PASS, and docs/SCENARIOS.md is regenerated (#67).
 - The page plays any of the nine scenarios: a grouped chooser in the header, `?scenario=N` in the URL, Back and Forward between picks, and a short message for an unknown id or a missing recording (#71).
+- The page shows each scenario's setup and what to watch for above the run, and a summary card on the last step; `setup`, `watch_for` and `summary` text added to scenarios.json for all nine (#75).
 
 ## 0.1.0 — 2026-11-11
 
