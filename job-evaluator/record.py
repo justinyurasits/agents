@@ -147,8 +147,12 @@ def _expect_line(expect):
     return " **or** ".join(one(o) for o in _as_list(expect))
 
 
-def render_scenarios_md(scenarios):
-    """docs/SCENARIOS.md, built from scenarios.json. Pure function."""
+def render_scenarios_md(scenarios, companies=None):
+    """docs/SCENARIOS.md, built from scenarios.json, with each scenario's
+    stored company facts from data/companies.json."""
+    if companies is None:
+        with open(agent.COMPANIES_FILE, encoding="utf-8") as f:
+            companies = json.load(f)
     lines = ["# Scenarios", "",
              "The runs the page plays. Generated from `scenarios/scenarios.json`; "
              "edit the JSON, not this file. `python record.py` regenerates it.", "",
@@ -167,10 +171,14 @@ def render_scenarios_md(scenarios):
             if len(postings) > 1:
                 lines += [f"**Posting {n}:**", ""]
             lines += ["```text", posting, "```", ""]
-        if s["company_facts"]:
-            lines += ["**Stored company facts:**", ""]
+        if s["stored_company"]:
+            facts = companies[s["stored_company"]]
+            lines += [f"**Stored company facts** (`data/companies.json`, read by research_company):", "",
+                      f"- Company: {s['stored_company']}"]
             lines += [f"- {key.replace('_', ' ').capitalize()}: {value}"
-                      for key, value in s["company_facts"].items()]
+                      for key, value in facts.items() if not isinstance(value, dict)]
+            lines += [f"- Typical base, {level}: {pay}"
+                      for level, pay in facts.get("typical_base_by_level", {}).items()]
             lines += [""]
         lines += [f"**Expected tools:** {', '.join(s['expected_tools']) or 'none (no tool runs)'}", "",
                   f"**Expected outcome:** {s['expected_outcome']}", "",

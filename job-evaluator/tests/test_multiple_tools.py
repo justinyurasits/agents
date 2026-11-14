@@ -98,7 +98,7 @@ class MultipleToolUseTest(FakeClientTestCase):
             ])
 
         self.assertEqual(final, FINAL_TEXT)
-        evaluate.assert_called_once_with(**EVAL_INPUT)
+        evaluate.assert_called_once_with(**EVAL_INPUT, researched_pay={})
         flag.assert_called_once_with(**flag_input(2))
 
         results = {r["tool_use_id"]: r for r in self.tool_results_sent(fake)}

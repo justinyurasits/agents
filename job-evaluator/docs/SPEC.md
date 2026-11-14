@@ -44,7 +44,7 @@ It's a small, deliberately visible agent. It was built to learn and demonstrate 
 
 Other ways to run it: `python agent.py --scenario <id>` runs a scenario from `scenarios/scenarios.json` (its posting, and its fault if it has one), and `python agent.py --fault <name>` forces one failure on purpose (see [Faults injected on purpose](#faults-injected-on-purpose)).
 
-**Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call) or screened out by a hard rule (no grader call).
+**Cost of a typical run:** 3 API calls when the posting gets rated (2 outer + 1 inside `evaluate_job`), 2 when it's flagged (`flag_for_review` makes no API call) or screened out by a hard rule (no grader call). Researching the company first (`research_company`, no API call) adds one outer call: 4 for a researched rating, 3 for research then a flag.
 
 **What `run_agent` can return.** It always returns a string, one of the six kinds below, and callers can only tell them apart by the text:
 
@@ -70,15 +70,16 @@ Everything is in one file, [`agent.py`](../agent.py). Top to bottom:
 | `client`, `MODEL` | The Anthropic client (key from `.env`, loaded with `override=True`) and the model, `claude-sonnet-5-5`. |
 | `MAX_PASSES = 10` | Most outer API calls per run. See the loop cap guard. |
 | `MAX_TOKENS = 2000` | Longest reply Claude may write. Used by **both** API calls. |
-| `tools` | The two tool definitions (name, description, input schema) sent to Claude on every outer call. The descriptions are how Claude decides which tool to use. |
+| `tools` | The three tool definitions (name, description, input schema) sent to Claude on every outer call. The descriptions are how Claude decides which tool to use. |
 | `MIN_BASE = 180_000`, `REQUIRE_REMOTE = True` | The hard rules, as named constants. |
 | `lowest_base(text)`, `hard_screens(remote, compensation)` | Pure functions. `lowest_base` reads the lowest yearly base from Claude's compensation text (`"$140,000–$165,000"` → 140000; `"180-220k"` → 180000; `"competitive"`, `"$90/hr"` → `None`). `hard_screens` returns one result per rule: passed, failed, or skipped. |
 | `RUBRIC` | System prompt for the grader call inside `evaluate_job`: the one judgment question, plus "Respond with JSON only: `{"answer": "yes" or "no", "reasons": [...]}`". It doesn't mention pay or location. |
 | `RATING_FOR_ANSWER` | `{"yes": "STRONG", "no": "WORTH REVIEWING"}`: code, not the grader, turns the answer into the rating. |
 | `strip_json_fences(text)` | Removes a surrounding ```` ``` ```` / ```` ```json ```` fence from the grader's reply. Pure string function. |
 | `grade_problem(grade)` | A pure function that says what's wrong with the grader's parsed JSON (or `None`). A rule in code, not the prompt. |
-| `evaluate_job(...)` | Tool. Runs the hard screens first; if one fails, returns `{"rating": "IGNORE", "reasons": [...]}` with no API call. Otherwise makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns `{"rating", "reasons"}` (or raises `ValueError` naming the problem). |
+| `evaluate_job(...)` | Tool. If the pay is researched (below), uses it and adds `"base estimated from stored company data"` to the reasons. Runs the hard screens first; if one fails, returns `{"rating": "IGNORE", "reasons": [...]}` with no API call. Otherwise makes its **own** Claude call with `RUBRIC` (no tools, no loop), parses the JSON reply, checks it with `grade_problem`, and returns `{"rating", "reasons"}` (or raises `ValueError` naming the problem). |
 | `flag_for_review(...)` | Tool. Plain Python, no API call. Returns `{"status": "flagged", "company", "role_title", "missing_info"}`. |
+| `research_company(company, role_level)`, `COMPANIES_FILE` | Tool (#65). Plain Python, no API call. Looks the company up in [`data/companies.json`](../data/companies.json), stored demo data (D14), ignoring case. Known: `{"found": true, "company", "size", "stage", "role_level", "typical_base_for_level", "note", "source": "stored demo data"}`; `typical_base_for_level` is the pay for the stored level whose word appears in `role_level` ("principal" in "Principal Product Manager"), or `null` with `levels_on_file`. Unknown: `{"found": false, "source": "stored demo data"}`, a normal result, not an error. |
 | `SYSTEM_PROMPT` | Claude #1's system prompt, a constant so the call and the trace use the same text. |
 | `run_agent(job_text, recorder=None, fault=None)` | The agent loop (next section). With a `Recorder`, it writes a trace (section 7). With a `Fault`, it fails on purpose in one way. |
 | `SAMPLE_JOB`, `choose_run(argv)` | The built-in posting, and the command line (`--scenario`, `--fault`) turned into what to run. |
@@ -124,7 +125,7 @@ Tools run in order, not in parallel. The dispatch is an `if / elif` on the tool 
 | | Claude #1: agent (outer call) | Claude #2: grader (inside `evaluate_job`) |
 |---|---|---|
 | **System prompt** | `"You help Justin triage job postings. Use the tools provided."` | `RUBRIC` (the one question + "Respond with JSON only: `{"answer": "yes" or "no", "reasons": [...]}`") |
-| **Tools** | `evaluate_job`, `flag_for_review` (names, descriptions, input schemas) | none |
+| **Tools** | `evaluate_job`, `flag_for_review`, `research_company` (names, descriptions, input schemas) | none |
 | **Messages** | The posting, then every assistant turn and tool result so far | One user message: `Company / Role` lines, then the description. Remote status and pay aren't sent separately: the hard screens already used them (#26). |
 | **Limit** | `max_tokens = MAX_TOKENS` (2000) | `max_tokens = MAX_TOKENS` (2000) |
 
@@ -136,11 +137,12 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 |---|---|---|
 | `evaluate_job` | "Rate a job posting against Justin's criteria. Use when the posting has enough information to rate: company, role, location/remote status, and compensation." | `company`, `role_title`, `job_description` (required); `location`, `remote` (boolean), `compensation` |
 | `flag_for_review` | "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably." | `company`, `role_title`, `missing_info` (all required) |
+| `research_company` | "Look up stored facts about a company: size, stage, and typical base pay for a role level. Use when a posting doesn't list compensation." | `company`, `role_level` (both required) |
 
 **Tool results as Claude #1 sees them:**
 
 - Success: `content` is the tool's return value as JSON. There's no `is_error` field.
-- Failure: `content` is `"<ExceptionType>: <message>"` and `is_error: true`. For example, `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` or `ValueError: Unknown tool 'search_web'. Available tools: evaluate_job, flag_for_review.`
+- Failure: `content` is `"<ExceptionType>: <message>"` and `is_error: true`. For example, `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` or `ValueError: Unknown tool 'search_web'. Available tools: evaluate_job, flag_for_review, research_company.`
 
 What Claude does after an error (retry, switch tools, or explain the failure) is Claude's decision, not the code's (D18). In live runs it has retried once and then explained the failure without inventing a rating. That's observed behavior, not a guarantee.
 
@@ -194,6 +196,8 @@ The repo's rule (CLAUDE.md) is that **deterministic rules belong in code, not pr
 
 The floor and remote rules were moved into code by [#26](https://github.com/justinyurasits/agents/issues/26) (D28), which closes D6.
 
+**Researched pay (#65, D34).** When a posting lists no pay, Claude can call `research_company` and pass the stored typical base on to `evaluate_job`. Code, not Claude, decides whether the pay `evaluate_job` received is researched. `run_agent` remembers the pay each `research_company` call found in this run, by company. `evaluate_job` treats its pay as researched when research found pay for the same company and Claude passed that pay (same lowest base) or no readable pay at all; then the hard rules use the researched pay as usual, and the reasons end with `"base estimated from stored company data"`, on IGNORE and on a rating alike. Pay Claude read from the posting is never labelled, and research on one company never labels another's pay.
+
 **Rules are not guards.** A guard (section 5) catches a failure: a crash, a hang, or bad data. A rule applies one of Justin's decisions, and a posting that fails one is the agent working as intended. So the hard screens are a normal step, `hard_screen` (STEPS.md 7a), not an E-step; agent.py labels them `RULE (hard_screen)`, not `GUARD`; and the trace records them as rule events, never as caught guards (section 7).
 
 | Rule | Fails when | Then | Can't be checked when | Test |
@@ -237,6 +241,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 | `run_tools` | `tool_call` (python → tool) | `tool`, `tool_use_id`, `arguments`. Only for a tool that exists. |
 | `inner_grader` | `inner_api_request` (tool → claude) | Same shape as `api_request`, with `system` = `RUBRIC` and `tools` = `[]`. `parent` = the `evaluate_job` tool_call. |
 | `inner_grader` | `inner_api_response` (claude → tool) | Same shape as `api_response`, with `tokens`. `parent` = the `evaluate_job` tool_call. |
+| `research_company` | — (`actor` = `tool`) | `company`, `role_level`, `found`, `typical_base_for_level`, `source`: the lookup in the stored data. `parent` = the `research_company` tool_call. A company that isn't on file is `found: false`, never a caught guard. |
 | `run_tools` | `tool_result` (tool → python) | `tool`, `tool_use_id`, `is_error`, `content`. For an unknown tool, `actor` is `python` and `crossing` is `null`: no tool ran, Python itself answers. |
 | `answer_returned` / `reply_cut_off` / `pass_cap` / `api_call_failed` / `no_final_answer` / `unexpected_stop` | — | `ended_by`, `text`: the last event, in the step that matches how the run ended |
 
@@ -332,7 +337,8 @@ The `print` lines are still there for following a run live, one line per event. 
 | `[claude_done] end_turn → done. Outer calls: N …` | Normal finish |
 | `[save_turn] appended assistant turn …` | Before dispatch |
 | `[run_tools] dispatching <tool>(**{…})` | Each tool |
-| `  [hard_screen] <rule>: <note>` (indented) | Each hard rule, inside `evaluate_job` |
+| `  [hard_screen] <rule>: <note>` (indented) | Each hard rule, inside `evaluate_job`; first, `pay '<pay>': base estimated from stored company data` when the pay is researched |
+| `  [research_company] '<company>', '<role level>': found` / `not on file` (indented) | Each lookup, inside `research_company` |
 | `[tool_failed] <tool> raised → <Type>: <message>` | A tool failed (E1) |
 | `  [inner_grader] …` (indented) | Inside `evaluate_job`'s grader call |
 | `[results_back] appended N tool_result(s) (ids: …[ is_error]) …` | After the tools run |
@@ -379,8 +385,6 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays one 
 
 ## 9. Known limits
 
-- **Scenario 3 can't pass yet.** It expects a `research_company` tool that doesn't exist, so `record.py 3` saves it as a mismatch. No issue yet.
-
 What the code does **not** handle today. Each item is checked against the code, and linked where an issue exists.
 
 - **Reading pay is a heuristic** (`lowest_base`, #26). It assumes US dollars and a yearly salary; it skips hourly, daily, weekly and monthly pay rather than compare it, and ignores numbers under 10,000 (bonus percentages, weeks of leave). A posting quoted in another currency would be compared as if it were dollars.
@@ -388,4 +392,6 @@ What the code does **not** handle today. Each item is checked against the code, 
 - **No retry with a bigger token limit** when a reply is cut off. Out of scope for #18.
 - **The cap is fixed in code**, not configurable from outside, and it counts passes, not tokens or dollars. Out of scope for #15.
 - **Return values are plain strings.** A caller can only tell "finished", "cut off", and "stopped at the cap" apart by comparing the text (see [Overview](#1-overview)).
-- **Tools run one at a time**, in order (D20). Fine with two tools; slow if several grader calls ever happen in one turn.
+- **Tools run one at a time**, in order (D20). Fine with three tools; slow if several grader calls ever happen in one turn.
+- **Researched pay is matched by its lowest base** (D34). If a posting's own pay happened to equal the stored figure for that company, after Claude had researched it anyway, it would be labelled estimated. Role levels are matched by one stored word per level ("principal"); a level not on file gets no pay.
+- **Stored company data covers only Marrowstone Logistics**, the company scenario 3 needs (#65). Every other company is `found: false`.

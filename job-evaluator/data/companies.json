@@ -1,0 +1,11 @@
+{
+  "_about": "Stored demo data for research_company (#65, D14). Written for the scenarios; every company here is fictional. Keys are company names (matched ignoring case); typical_base_by_level is keyed by the seniority word looked for in the role level Claude sends.",
+  "Marrowstone Logistics": {
+    "size": "About 600 employees",
+    "stage": "Series C, profitable operations business",
+    "typical_base_by_level": {
+      "principal": "$200,000–$235,000 base"
+    },
+    "note": "Stored demo data, written for this scenario. Not a real company."
+  }
+}

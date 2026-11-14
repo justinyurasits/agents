@@ -199,7 +199,12 @@ class StoppedAndJoinedTest(RecordTestCase):
 
     def test_two_postings_are_sent_together_and_both_outcomes_count(self):
         code, printed = self.run_record(
-            ["4"], outer=[tool_turn(("toolu_1", "evaluate_job", EVAL), ("toolu_2", "flag_for_review", FLAG)),
+            # Scenario 4's path since research_company (#65): rate the first
+            # posting and research the second in one reply, then flag it.
+            ["4"], outer=[tool_turn(("toolu_1", "evaluate_job", EVAL),
+                                    ("toolu_2", "research_company",
+                                     {"company": "Fernhollow Insurance", "role_level": "Lead PM"})),
+                          tool_turn(("toolu_3", "flag_for_review", FLAG)),
                           done()],
             inner=[fakes.reply(fakes.text(YES))])
         self.assertEqual(code, 0, printed)

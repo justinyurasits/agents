@@ -321,6 +321,16 @@ class Recorder:
                                    "value": rule["value"], "outcome": rule["outcome"],
                                    "note": rule["note"]})
 
+    def company_looked_up(self, company, role_level, result):
+        """research_company's lookup in the stored company data (#65): what
+        Claude asked for and what was found. A company that isn't on file is
+        a normal answer (found: false), not a caught guard."""
+        return self.event("research_company", "tool", parent=self._call,
+                          payload={"company": company, "role_level": role_level,
+                                   "found": result["found"],
+                                   "typical_base_for_level": result.get("typical_base_for_level"),
+                                   "source": result["source"]})
+
     def grader_checked(self, stop_reason):
         caught = stop_reason == "max_tokens"
         message = (f"The grader's reply was cut off (hit the max_tokens limit "

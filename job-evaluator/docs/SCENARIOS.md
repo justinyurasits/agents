@@ -41,7 +41,7 @@ Fully remote within the US. Base salary $200,000–$240,000 plus equity.
 
 ### 2. Missing info
 
-**What the visitor sees:** No compensation anywhere: Claude picks flag_for_review instead of evaluate_job.
+**What the visitor sees:** No compensation anywhere: Claude looks the company up first, finds it isn't on file, and picks flag_for_review instead of evaluate_job.
 
 ```text
 Wrenfield Health — Senior Product Manager, Clinical AI Assistants
@@ -65,11 +65,11 @@ What you bring:
 This is a fully remote role open to candidates anywhere in the US. Competitive salary and benefits.
 ```
 
-**Expected tools:** flag_for_review
+**Expected tools:** research_company, flag_for_review
 
-**Expected outcome:** Flagged for review: compensation is not listed.
+**Expected outcome:** Flagged for review: compensation is not listed, and the company isn't in the stored data.
 
-**Checked by record.py:** tools flag_for_review; outcome flagged
+**Checked by record.py:** tools research_company, flag_for_review; outcome flagged
 
 ### 3. Multi-tool
 
@@ -97,13 +97,13 @@ What you bring:
 Remote within the US, with occasional visits to our operations centers.
 ```
 
-**Stored company facts:**
+**Stored company facts** (`data/companies.json`, read by research_company):
 
 - Company: Marrowstone Logistics
 - Size: About 600 employees
 - Stage: Series C, profitable operations business
-- Typical base for level: $200,000–$235,000 base for Principal Product Manager
-- Source note: Stored demo data, written for this scenario. Not a real company.
+- Note: Stored demo data, written for this scenario. Not a real company.
+- Typical base, principal: $200,000–$235,000 base
 
 **Expected tools:** research_company, evaluate_job
 
@@ -113,7 +113,7 @@ Remote within the US, with occasional visits to our operations centers.
 
 ### 4. Two tools at once
 
-**What the visitor sees:** Two postings at once: Claude asks for evaluate_job and flag_for_review in the same reply, and both results go back together.
+**What the visitor sees:** Two postings at once: Claude asks for evaluate_job (first posting) and research_company (second, no pay listed) in the same reply, and both results go back together. The second company isn't on file, so Claude then flags it.
 
 **Posting 1:**
 
@@ -152,11 +152,11 @@ What you bring:
 Remote within the US. Salary and benefits discussed during interviews.
 ```
 
-**Expected tools:** evaluate_job, flag_for_review
+**Expected tools:** evaluate_job, research_company, flag_for_review
 
-**Expected outcome:** Quillmark rated STRONG; Fernhollow flagged because compensation is not listed. Both tool results go back in one message.
+**Expected outcome:** Quillmark rated STRONG; Fernhollow flagged because compensation is not listed and the company isn't in the stored data. The first two tool results go back in one message.
 
-**Checked by record.py:** tools evaluate_job, flag_for_review; outcome STRONG, flagged
+**Checked by record.py:** tools evaluate_job, research_company, flag_for_review; outcome STRONG, flagged
 
 ### 5. Hard screen in code
 

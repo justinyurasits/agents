@@ -106,7 +106,9 @@ class CleanRunTest(TraceTestCase):
         _, rec = self.clean_run()
         with open(code_refs.AGENT_PATH.replace("agent.py", "docs/STEPS.md"), encoding="utf-8") as f:
             step_ids = set(re.findall(r"^Step id: `(\w+)`$", f.read(), re.M))
-        not_in_clean_run = {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
+        # research_company runs only when Claude asks for it (a posting with no pay).
+        not_in_clean_run = {"research_company",
+                            "tool_failed", "unknown_tool", "reply_cut_off", "pass_cap",
                             "grader_cut_off", "api_call_failed", "no_final_answer",
                             "invalid_grade", "unexpected_stop"}
         self.assertEqual({e["step_id"] for e in rec.events}, step_ids - not_in_clean_run)
@@ -143,7 +145,7 @@ class PayloadTest(TraceTestCase):
         for e in requests:
             p = e["payload"]
             self.assertEqual(p["system"], agent.SYSTEM_PROMPT)
-            self.assertEqual(p["tools"], ["evaluate_job", "flag_for_review"])
+            self.assertEqual(p["tools"], ["evaluate_job", "flag_for_review", "research_company"])
             self.assertEqual(p["model"], agent.MODEL)
             self.assertEqual(p["max_tokens"], agent.MAX_TOKENS)
         # Snapshot, not a live reference: pass 1 sent 1 message, pass 2 sent 3.
@@ -267,7 +269,7 @@ class SecretsAndFileTest(TraceTestCase):
                                        "git_dirty", "model", "limits", "fault", "tools", "events", "result"])
         self.assertEqual(trace["git_commit"], "abc1234")
         self.assertEqual(trace["limits"], {"max_passes": 10, "max_tokens": 2000})
-        self.assertEqual([t["name"] for t in trace["tools"]], ["evaluate_job", "flag_for_review"])
+        self.assertEqual([t["name"] for t in trace["tools"]], ["evaluate_job", "flag_for_review", "research_company"])
         self.assertIn("description", trace["tools"][0])   # full definitions, stored once
         self.assertEqual(trace["events"], rec.events)
 

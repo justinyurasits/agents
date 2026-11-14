@@ -108,7 +108,7 @@ class UnknownToolTest(FaultRunTestCase):
         self.assertEqual(g["guard"]["value"], faults.UNKNOWN_TOOL)
         self.assertEqual(g["guard"]["message"],
                          f"ValueError: Unknown tool '{faults.UNKNOWN_TOOL}'. "
-                         "Available tools: evaluate_job, flag_for_review.")
+                         "Available tools: evaluate_job, flag_for_review, research_company.")
         # Once only: the second request runs evaluate_job for real.
         self.assertEqual(len([e for e in rec.events if kind(e) == "tool_call"]), 1)
 

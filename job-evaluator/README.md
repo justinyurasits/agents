@@ -19,6 +19,7 @@ Python runs the requested tool, appends the request + tool_result, sends again
 Tools:
 - `evaluate_job` — checks the hard rules in code first (remote, $180K base floor; a posting that fails one is IGNORE), then makes a separate, focused Claude call that answers one yes/no question, and returns `{rating, reasons}`
 - `flag_for_review` — plain Python, no model call; returns what's missing
+- `research_company` — plain Python, no model call; looks up stored demo facts about a company (`data/companies.json`), including typical base pay for a role level, for postings with no pay listed
 
 See [docs/SPEC.md](docs/SPEC.md) for the full spec.
 
