@@ -11,7 +11,7 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Walked through the agent loop step by step: tool definitions vs functions, dispatch, `stop_reason`, the messages list as memory, `tool_use_id` pairing, the inner Claude call in `evaluate_job`.
 - Created the `agents` repo (private, Python .gitignore), added `job-evaluator/` with `agent.py`, `requirements.txt`, `.env.example`.
 - Set up a virtual environment and `.env`; added `load_dotenv()` so the key loads from `.env`.
-- - Removed compensation from the test job: Claude chose flag_for_review instead of
+- Removed compensation from the test job: Claude chose flag_for_review instead of
     evaluate_job (2 API calls instead of 3). No code changed; the tool description
     drove the choice.
 - First successful end-to-end run: 3 API calls, evaluate_job requested and dispatched,
@@ -33,7 +33,7 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   content[0] is text; the model returned a thinking block first.
   Fix: find blocks by type, not position, in evaluate_job and in the exit check.
   Raised max_tokens to 2000.
-- NameError: name '**\_\_**' is not defined. Pasted the fill-in-the-blank template
+- NameError: name `______` is not defined. Pasted the fill-in-the-blank template
   literally.
 
 **Learned**
@@ -41,22 +41,59 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - API key in .env needs to have no leading spaces.
 - High level walkthrough of the script, including the tools, the agent loop, and the basic interactions between.
 
-## 2026-11-12
+## 2026-11-12 — Product brief, workflow, and the agent hardened
 
-- 401 again in a new terminal: VS Code was still carrying the revoked key from
-  before .zshrc was cleaned. Fix: load_dotenv(override=True); quit and reopen VS Code.
+**Did**
+
+- Wrote the product brief: a learning and demo tool, visitors watch real
+  recorded runs, no visitor input.
+- Picked the run view after four design directions on a canvas: the
+  Execution Explorer (D15).
+- Set up the workflow: project board, milestones, CLAUDE.md, step list
+  (STEPS.md), issues with acceptance criteria, Claude Code working each
+  issue as a PR that I review and merge.
+- Hardened the agent, one issue at a time: JSON fences (#2), tests (#5),
+  tool errors back to Claude (#8), unknown tool (#11), every tool request
+  answered (#7), loop cap (#15), cut-off replies (#18).
+- Tracing: a plan first, then three PRs (#34–#36), so every run records
+  every step, crossing and guard check.
+- Wrote the nine scenarios (PR #39): five normal runs, four that break
+  the agent on purpose.
+
+**Broke**
+
+- 401 again in a new terminal: VS Code was still carrying the revoked key
+  from before .zshrc was cleaned. Fix: load_dotenv(override=True); quit
+  and reopen VS Code.
 - Debugger "Connection refused": stale session. Fix: full VS Code restart.
+- The sample job had been missing its compensation line since a test the
+  day before, so the "clean" run had quietly been taking the missing-info
+  path. A PR review caught it.
+- A save conflict in CHANGELOG.md: an open editor tab with old content
+  would have overwritten six entries from merged PRs. Closed the tab
+  without saving.
 
-## **Learned** _(write in your own words)_
+**Learned**
 
-- **Next**
-
-- First successful run; check `git status` shows no `.env`.
-- Set up the project board and write issues #1–8 with acceptance criteria.
-- Take issue #1 through the full branch → PR → merge loop.
-- I deleted the compensation from the job and the code was running without that all day.
+- A run can finish cleanly and still be the wrong run. The sample job lost
+  its compensation line, and the "clean" run quietly became the
+  missing-info run. Nothing failed, so only a review of what it actually
+  did caught it.
+- Hardening one issue at a time, each with a test that fails without the
+  fix, means every guard has an issue, a PR and a test I can point to.
 
 ## 2026-11-13
+
+**Did**
+
+- Moved the hard rules into code (#26, PR #51): Claude extracts remote and
+  pay; code applies the $180K floor and the remote rule before any rating
+  call. Rules and guards are now different things on the page.
+- Unknown stop reasons stop the run (#21, PR #52): fail closed.
+- Fault injection (#46) and the recording script, then the first real
+  recording: scenario 6, PASS (PR #58).
+- Added LEARNINGS.md, and a docs audit that brought every doc in line
+  with the code (#62, PR #63).
 
 **Broke**
 
@@ -102,12 +139,15 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   reason the loop ends.
 - Fonts ship with the page, since it may load nothing but its own files.
 
-**Learned** _(draft, rewrite in your own words)_
+**Learned**
 
+- A rule rejecting a posting and a guard catching a failure look alike in
+  code, but they mean opposite things: one is the agent working, the other
+  is something going wrong. Naming them differently made both the code and
+  the page easier to read.
 - A mockup is one frame. Making it real meant deciding everything between
-  frames.
-- If a picture can be misread, it will be: the "next" arrow looked like cause
-  and effect.
-- What the trace records and what a person needs to see are different lists.
-  Choosing the steps is a teaching decision, not a data one.
-
+  frames, and the one thing that could be misread was: the dashed "next"
+  arrow looked like cause and effect.
+- Docs drift quietly. By the audit, SPEC still described behavior from
+  before two merged PRs. A test that checks a doc against the code is what
+  keeps it true.
