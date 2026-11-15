@@ -132,3 +132,4 @@ The page shows what actually happened and labels everything else.
 - Page v0 lives in `job-evaluator/site/`, ships its fonts, and shows Claude's words only under "Claude's response" (D31).
 - Page steps: passing checks aren't steps; caught checks and "Claude says it's done" are (D32).
 - One page, six sections, a "Watch it" button on every claim (D33).
+- Browser tests check the page's rules in Chromium (Playwright, a dev-only requirement) and skip when it isn't installed. Claude's words are searched in every tab but its own; the only exemption is tool_result content in Payload (D38).

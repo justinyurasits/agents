@@ -584,7 +584,7 @@ explains the failure instead of retrying, which would need a new summary.
 
 ## D38 — Browser tests: Playwright in a dev requirements file, skipped when missing
 
-**Status:** **Proposed** (issue #84)
+**Status:** **Approved** (issue #84, PR #85 review)
 **Date:** 2026-11-14
 **Options:** add Playwright to `requirements.txt` · a separate
 `requirements-dev.txt` · check every tab in the "Claude's words" test, or only
