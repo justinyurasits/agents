@@ -270,6 +270,19 @@ class PrinciplesTest(unittest.TestCase):
                 out.append((m.group(1), guards, watch))
         return out
 
+    def test_spec_principles_section_holds_only_the_seven_row_table(self):
+        # Every table line in the section must be the header, its separator, or
+        # one of the seven four-column rows. Rows the parser skipped hid the old
+        # table's leftovers (#94).
+        table = self.SPEC.split("## Design principles", 1)[1].split("\n---\n", 1)[0]
+        lines = [line for line in table.splitlines() if "|" in line]
+        self.assertEqual(lines[0], "| Principle | In this agent | Guards | Watch it |")
+        self.assertEqual(lines[1], "|---|---|---|---|")
+        rows = lines[2:]
+        four_columns = re.compile(r"^\| \*\*[^*]+\*\* \| [^|]+ \| [^|]+ \| [^|]+ \|$")
+        self.assertEqual([r for r in rows if not four_columns.match(r)], [], "lines that aren't a principle row")
+        self.assertEqual(len(rows), 7)
+
     def test_the_page_and_spec_list_the_same_seven_principles(self):
         page, spec = self.page_rows(), self.spec_rows()
         self.assertEqual(len(page), 7)
