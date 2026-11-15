@@ -13,6 +13,7 @@ local http server these tests start, and check all nine scenarios:
      matches its recording, and clicking one loads its run.
   6. Design principles (#80): every Watch it loads its scenario, and guard
      names come from steps.json.
+  7. How it was built (#81): every number shown is the one in numbers.json.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -504,6 +505,24 @@ class BrowserTest(unittest.TestCase):
         for step, name in shown:
             with self.subTest(step):
                 self.assertEqual(name, f"{steps[step]['number']} · {steps[step]['title']}")
+
+
+    # --- how it was built (#81) --------------------------------------------
+
+    def test_how_it_was_built_shows_the_numbers_from_numbers_json(self):
+        numbers = json.load(open(os.path.join(HERE, "site", "numbers.json"), encoding="utf-8"))
+        page = self.open()
+        self.wait_for_scenario(page, 1)
+        page.wait_for_function("[...document.querySelectorAll('[data-number]')].every(n => n.textContent !== '')")
+        shown = page.eval_on_selector_all("[data-number]", "ns => ns.map(n => [n.dataset.number, n.textContent])")
+        self.assertEqual(len(shown), 10)
+        for slot, text in shown:
+            with self.subTest(slot):
+                value = numbers
+                for key in slot.split("."):
+                    value = value[key]
+                self.assertEqual(text, str(value))
+        self.assertEqual(self.errors, [])
 
 
 if __name__ == "__main__":

@@ -134,3 +134,6 @@ def main(src=STEPS_MD, dest=STEPS_JSON):
 
 if __name__ == "__main__":
     main()
+    # The page's other generated file: the numbers in "How it was built" (#81).
+    import build_numbers   # here, not at the top: build_numbers imports this file
+    build_numbers.main()

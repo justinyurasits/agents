@@ -48,6 +48,7 @@ const RECORDING_DIR = "../recordings/";
 const recordingUrl = (id) => `${RECORDING_DIR}scenario-${String(id).padStart(2, "0")}.json`;
 const STEPS = "steps.json";
 const SCENARIOS = "../scenarios/scenarios.json";
+const NUMBERS = "numbers.json";   // "How it was built" (#81), counted from the repo by build_numbers.py
 const STEP_MS = 2500;          // at 1×, per the issue
 const DEFAULT_SCENARIO = 1;
 // "How this agent works" (#78): one line per tool on when Claude uses it,
@@ -822,6 +823,17 @@ function fillGuardNames() {
   }
 }
 
+// "How it was built" (#81): each [data-number="decisions.approved"] gets that
+// value from numbers.json. If the file can't be read, the numbers are hidden
+// rather than shown empty.
+function fillNumbers(numbers) {
+  for (const node of document.querySelectorAll("[data-number]")) {
+    // "decisions.approved" → numbers.decisions.approved
+    const value = node.dataset.number.split(".").reduce((obj, key) => (obj == null ? obj : obj[key]), numbers);
+    node.textContent = value == null ? "?" : String(value);
+  }
+}
+
 // Mark the card for the scenario now shown; none for an unknown id.
 function markCard(id) {
   for (const card of document.querySelectorAll(".scenario-card")) {
@@ -914,6 +926,7 @@ async function start() {
   // The tool list reads scenario 1's recording, whatever scenario is shown.
   fillCards();
   fillGuardNames();
+  getJSON(NUMBERS).then(fillNumbers).catch(() => document.querySelector(".numbers").remove());
   getRecording(DEFAULT_SCENARIO).then(fillTools).catch(() => $("tools-intro").remove());
   await loadScenario(scenarioFromUrl());
 }

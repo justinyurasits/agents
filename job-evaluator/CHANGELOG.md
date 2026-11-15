@@ -43,6 +43,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - The page has its final shape: a header bar and eight sections (D36). New: the hero, What's an agent (with a loop diagram) and How this agent works (tools listed from the recordings, Watch it buttons for scenarios 1, 3 and 4). Placeholders for scenarios, principles, How it was built and the footer. The keys drive the run only while it's on screen (#78).
 - Scenario cards: nine cards in two groups, each with its setup line and the tools the run called, worked out from the recording. Clicking one loads its run; the shown scenario's card is marked (#79).
 - Design principles on the page: seven principles, the part of the agent that applies each one, Watch it buttons, and every guard listed under one, demonstrated by a scenario or tested. SPEC's table matches; tests fail if they drift or a claim is wrong (#80).
+- How it was built and the footer: the workflow, numbers counted from the repo by `build_numbers.py` (tests, scenarios, guards, decisions, merged PRs), and links to the repo on GitHub. Tests fail if a number drifts or a link points at a missing file (#81).
 
 ## 0.1.0 — 2026-11-11
 

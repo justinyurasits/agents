@@ -366,13 +366,15 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 4. Scenarios: nine cards (#79, D39).
 5. The run view: everything below in this section.
 6. Design principles: seven principles, each guard under one (#80).
-7. How it was built (placeholder until #81).
-8. Footer (placeholder until #81).
+7. How it was built: the workflow, numbers counted from the repo, and links (#81, D41).
+8. Footer: name, one line, the repo (#81). A contact link comes later.
 
 A header bar links to each section. It's sticky on wide screens, and scrolls away on phones, where it wraps to three lines. The text in sections 1–3 is written for the page and labelled so.
 
 - **The tool list** in How this agent works is read from scenario 1's recording: the tools Python offered Claude in its first request. Each tool gets a line from `TOOL_LINES` in `app.js`. Tests fail if `TOOL_LINES`, any recording's tool list, or a tool name in the page's text differs from `agent.py`'s `tools`.
 - **Scenario cards** (#79, D39): one per scenario, in D21's two groups. Each card has the name, the `setup` line, a "Simulated failure" tag for scenarios 6–9, and the tool path, worked out from the recording: each pass's tool results in order, `+` within a pass, `→` between passes, and `→ error` after a tool that failed. A card's own words (the setup line and the tag) never state the rating; the path may end in `flag_for_review`, and a break-the-agent scenario's name states its failure (D39). Clicking a card works like a "Watch it" button. The card for the scenario now shown is marked, on load and on Back / Forward too, and no card is marked for an unknown id. The drop-down stays. The page fetches each recording once; the cards and the run share it.
+- **The numbers in How it was built** come from `site/numbers.json`, which `build_numbers.py` counts from the repo (D41). `build_steps.py` runs it too. The counts are test cases in `tests/`; scenarios by group; decisions by Status line; E-steps, and how many a recording shows caught; and `Merge pull request #` commits before HEAD. The page fills each `data-number` slot from the file, and no digit is typed into the section. Tests fail if the committed file differs from a fresh count, or if the page shows a different number.
+- **Links out:** the page may link to this repo on GitHub (`<a href>` only), to a file that exists in the repo; tests check both. It still requests nothing but its own files (D31). The repo is private for now (D2), so these links work for visitors once it's public.
 - **A "Watch it" button** loads its scenario at step 1, paused, adds a history entry like the chooser does, and scrolls to the run view.
 - **Back over a nav link** leaves the run where it was. Only a change of `?scenario=` reloads it.
 - **The arrow keys and Space** drive the run only while the run view is on screen, so Space scrolls the page everywhere else.
