@@ -53,6 +53,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Removed the committed macOS `.DS_Store` files (repo root and job-evaluator/) and ignored `.DS_Store` everywhere; a test fails if one is committed again (#106).
 - Link previews: a meta description, Open Graph and Twitter card tags, and `site/preview.png` (1200×630, made by `make_preview.py`), so a shared link shows a card instead of a bare URL (#105).
 - `build_numbers.py` no longer undercounts merged PRs on a branch with no commits yet: it leaves out HEAD's merge only on main (#108).
+- The root README is rewritten for launch: what the repo is, the job evaluator and its live page, how to run it locally, and how it's built. Tests check its links, and that no tracked file holds an Anthropic key (#102).
 
 ## 0.1.0 — 2026-11-11
 
