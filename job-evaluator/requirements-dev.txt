@@ -1,0 +1,5 @@
+# For working on the agent: the agent's own requirements, plus the browser
+# tests' (tests/test_browser.py, #84). After installing, also run:
+#   python -m playwright install chromium
+-r requirements.txt
+playwright==1.65.2

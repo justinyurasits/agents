@@ -132,3 +132,7 @@ The page shows what actually happened and labels everything else.
 - Page v0 lives in `job-evaluator/site/`, ships its fonts, and shows Claude's words only under "Claude's response" (D31).
 - Page steps: passing checks aren't steps; caught checks and "Claude says it's done" are (D32).
 - One page, six sections, a "Watch it" button on every claim (D33).
+- Researched pay: code recognises pay that research_company found and labels it "base estimated from stored company data"; evaluate_job's inputs don't change (D34).
+- The page's scenario chooser is a drop-down in two groups; each pick is a browser history entry, and `?scenario=N` opens a scenario (D35).
+- Each run has an intro before it (setup, watch for, never the outcome) and a summary card on its last step, both tested against the recordings (D37).
+- Browser tests check the page's rules in Chromium (Playwright, a dev-only requirement) and skip when it isn't installed. Claude's words are searched in every tab but its own; the only exemption is tool_result content in Payload (D38).

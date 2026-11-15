@@ -517,7 +517,7 @@ past the run view.
 
 ## D34 — Researched pay: code recognises it; no change to evaluate_job's inputs
 
-**Status:** **Proposed** (issue #65)
+**Status:** **Approved** (issue #65, PR #66)
 **Date:** 2026-11-14
 **Options:** add a field to evaluate_job's input schema so Claude says the
 pay was researched · let code remember what research_company found in this
@@ -545,7 +545,7 @@ share a word (then key by full level).
 
 ## D35 — Scenario chooser: a drop-down in the header; each pick is a history entry
 
-**Status:** **Proposed** (issue #71)
+**Status:** **Approved** (issue #71, PR #72)
 **Date:** 2026-11-14
 **Options:** a native drop-down (`<select>`) · a row of nine buttons · a
 side list · picking replaces the URL (Back leaves the page) or adds to the
@@ -563,7 +563,7 @@ at once, e.g. as cards; then the chooser becomes those cards, same URL.
 
 ## D37 — Scenario intro and summary card: where they sit, and what they may say
 
-**Status:** **Proposed** (issue #75)
+**Status:** **Approved** (issue #75, PR #77)
 **Date:** 2026-11-14
 **Options:** what's simulated as its own field · as a "Simulated:" sentence in
 `setup` · the summary card inside the inspector · full width above it
@@ -581,3 +581,43 @@ that goes stale when a scenario is re-recorded with a different path.
 **What would change it:** the scenario cards (#79) show `setup` on each
 card; then the intro panel may shrink to just "Watch for". Or a re-recording of scenario 6 that
 explains the failure instead of retrying, which would need a new summary.
+
+## D38 — Browser tests: Playwright in a dev requirements file, skipped when missing
+
+**Status:** **Approved** (issue #84, PR #85 review)
+**Date:** 2026-11-14
+**Options:** add Playwright to `requirements.txt` · a separate
+`requirements-dev.txt` · check every tab in the "Claude's words" test, or only
+what the page shows by default
+**Decision:**
+- Playwright (pinned, 1.65.2) goes in a new `requirements-dev.txt`, which
+  includes `requirements.txt`. Someone who only runs the agent doesn't need a
+  browser.
+- `tests/test_browser.py` is plain `unittest`. It starts its own local server
+  and skips with a one-line reason when Playwright or Chromium is missing.
+- The "Claude's words" check (D31) searches the State change, Code and
+  Payload tabs at every step, along with everything else on the page. A tab
+  that fails to draw, or a console error, fails the check, so it can't
+  search the wrong tab by mistake.
+- **One exemption, in Payload only:** the content of a tool_result. A tool's
+  result is data, even when it carries the grader's reasons inside
+  evaluate_job's rating. The test removes exactly the recorded
+  tool_result content strings from Payload's text before searching. Nothing
+  else on any tab is exempt.
+- Claude often repeats its input: a line of the posting, or the
+  job_description it passed to evaluate_job. A piece of Claude's words that
+  also appears in the posting, in what Python sends Claude (system prompt,
+  tool definitions, user messages other than tool results), or in Claude's
+  tool request arguments (data, D31) isn't searched for. It would match the
+  input, not a leak. Between 92% and 100% of each scenario's pieces are still
+  searched.
+- The tests read the page's state through `window.explorer`, which the page
+  already exposes for checking by hand.
+**Reasoning:** the page's rules (D31, every scenario plays) were checked by
+hand on each PR and a gap slipped through (#76). A dev file keeps the agent's
+install small; skipping keeps a fresh checkout's tests green while CLAUDE.md
+makes a skipped suite not count for a `site/` PR.
+**What would change it:** a CI runner with Chromium (then the suite always
+runs). A new tab, which gets added to the searched tabs. Claude's words
+reaching a tool_result through some new path (then the exemption needs
+narrowing).

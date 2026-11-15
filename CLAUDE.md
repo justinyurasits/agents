@@ -85,6 +85,11 @@ decides>` above each rule's marker;
 - Before opening a PR, run the tests from the agent's folder
   (`python -m unittest discover -s tests -v`) and include the result
   in the PR.
+  - If a PR touches `site/`, run them with Playwright and Chromium
+    installed (`pip install -r requirements-dev.txt`, then
+    `python -m playwright install chromium`) and paste the browser
+    tests' result (`tests/test_browser.py`) into the PR. A skipped
+    browser suite doesn't count.
   - If a PR adds or removes a tool, or changes a tool description, tool
     schema, system prompt, or rubric, re-run every scenario before opening
     it (in job-evaluator: `python record.py --all`) and paste every PASS or

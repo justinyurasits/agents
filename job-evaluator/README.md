@@ -62,6 +62,17 @@ python -m unittest discover -s tests -v
 
 The tests use a fake Claude client, so they make no API calls and need no `.env` or API key. Run them before every PR.
 
+### Browser tests
+
+`tests/test_browser.py` loads the page in a real browser (headless Chromium, through Playwright for Python) and checks all nine scenarios: Claude's words appear only under "Claude's response", searched in the State change, Code and Payload tabs at every step (D31, D38), every scenario plays to its last step with no console errors and no `undefined` on screen, and `?scenario=` and Back work. The tests start their own local server. One-time setup:
+
+```bash
+pip install -r requirements-dev.txt     # the agent's requirements, plus Playwright
+python -m playwright install chromium   # the browser (about 100 MB, stored outside the repo)
+```
+
+Without Playwright or Chromium, these four tests are skipped with the reason and everything else still runs. A PR that touches `site/` needs them run, not skipped.
+
 ## Status
 
 Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: all nine are recorded (`recordings/`), and page v0 replays any of them. Next is the full page (D33). Known gaps are in [docs/SPEC.md](docs/SPEC.md#9-known-limits) and open issues on the board.
