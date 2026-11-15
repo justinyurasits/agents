@@ -734,9 +734,11 @@ stopping.
   - **Decisions:** entries in this file, and how many say Approved or
     Proposed. 16 early entries have no Status line, and one says "closed by
     D28", so the page shows logged, approved and proposed.
-  - **Merged pull requests:** `Merge pull request #` commits before HEAD.
-    Leaving HEAD out means the count a PR commits still matches once it's
-    merged, because its merge commit is then HEAD.
+  - **Merged pull requests:** `Merge pull request #` commits before this
+    PR. On main, HEAD isn't counted when it's a merge: it's this PR's own
+    merge, so the count a PR commits still matches once it's merged. On a
+    feature branch HEAD is counted, since a branch with no commits yet starts
+    at the previous PR's merge (#108).
 - Every PR reruns the script (CLAUDE.md). A test fails if the file and a
   fresh count differ.
 - The page may link to this repo on GitHub, in `<a href>` only, and only to
