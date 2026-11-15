@@ -1,14 +1,14 @@
 {
-  "tests": 247,
+  "tests": 251,
   "scenarios": {
     "total": 9,
     "normal": 5,
     "break": 4
   },
   "decisions": {
-    "logged": 42,
+    "logged": 43,
     "approved": 25,
-    "proposed": 0,
+    "proposed": 1,
     "other_status": 1,
     "no_status": 16
   },
@@ -16,5 +16,5 @@
     "total": 9,
     "demonstrated": 4
   },
-  "merged_prs": 54
+  "merged_prs": 55
 }
