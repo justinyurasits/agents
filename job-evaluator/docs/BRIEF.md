@@ -41,37 +41,46 @@ When I walk someone through it — in an interview, a client conversation, or a 
 
 ## What's on the page
 
-One long page. A header bar jumps to each section. Every claim the page makes
-can be watched: principles and guardrails each have a "Watch it" button that
-loads the matching scenario into the run view and plays it.
+One long page in eight sections (D36). A header bar links to each one, by the
+names below. Every claim the page makes can be watched: "Watch it" buttons
+load the matching scenario into the run view at step 1, paused, and scroll to
+it.
 
-1. **Hero + the run** — one sentence on what this is, my name, and the
-   Execution Explorer directly below: scenario chooser in two groups (Normal
-   runs / Break the agent), playback that starts paused. Before the run, an
-   intro gives the setup (what's different about this input, without the
-   ending) and what to watch for. On the last step, a short summary card says
-   what happened and why it matters. Both are labeled "Written for this page"
-   (#75). Still to come: links on the card to watch another scenario or read
-   How it works, once that section exists.
-2. **How it works** — the mechanics, briefly: the loop, tools, and the
-   conversation as memory.
-3. **Design principles** — six, each one sentence with a Watch it button:
+1. **Inside the agent loop** (the hero) — one line on what this is, my name,
+   and a **Watch it run** button that jumps to the run.
+2. **What's an agent** — three sentences and a small loop diagram: the model
+   decides, code runs the tool, the result goes back, repeat until done.
+   "Claude decides; Python executes" lives here.
+3. **How this agent works** — the four parts (Python, Claude, the tools, the
+   grader), the loop, and the tools, each with a line on when it's used.
+   Watch it buttons for scenarios 1, 3 and 4.
+4. **Scenarios** — nine cards in two groups (Normal runs / Break the agent),
+   each with its setup line and the tools the run calls, worked out from its
+   recording (D39). Clicking a card loads that run.
+5. **The run** — the Execution Explorer: a scenario chooser in the same two
+   groups, playback that starts paused, an intro before the run (the setup,
+   without the ending, and what to watch for), and a summary card on the last
+   step saying what happened and why it matters (D37). Both are labelled
+   "Written for this page".
+6. **Design principles** — seven, as one table: the principle, the part of
+   the agent that applies it, and Watch it (#80). Every guard is listed under
+   the principle it serves (D40): watch the ones a scenario shows; the rest
+   are marked "Tested, not demonstrated" with the test that proves them.
    1. The model for judgment, code for rules (scenario 5)
-   2. A guard turns a crash into information the model can act on (scenario 6)
-   3. Claude decides; Python executes (any run)
-   4. The conversation is the memory (scenario 1)
-   5. Tool descriptions steer the agent (scenario 2)
-   6. Show what happened; label everything else (the page itself)
-4. **Guardrails** — every failure the agent handles: what goes wrong, what
-   catches it, what happens next, and a Watch it button. Guards with no
-   scenario are marked "tested, not shown" and link to their test.
-5. **How it was built** — the process (brief → decisions → issues with
-   acceptance criteria → built by Claude Code → reviewed by me → tested),
-   real counts linked to GitHub, three key decisions, and three or four
-   learnings about building with an AI coding agent, linking to
-   LEARNINGS.md. Claude Code wrote the code; I wrote the specs and reviewed
-   every change.
-6. **Footer** — name, one line, links to the repo, LinkedIn, and my site.
+   2. Tool choice is intent classification, so state precedence (scenarios 2 and 3)
+   3. Errors go back to the model as information (scenario 6)
+   4. Fail closed on the unknown (scenario 7)
+   5. Bound the loop (scenario 8)
+   6. Smaller questions get more reliable answers (scenario 1)
+   7. The conversation is the memory (scenario 1)
+7. **How it was built** — for people evaluating the work: I wrote the first
+   version by hand to learn the loop, then Claude Code wrote the code from my
+   issues while I made the decisions and reviewed every change. The workflow,
+   numbers counted from the repo (tests, scenarios, guards, decisions, merged
+   pull requests; D41), "Show what happened; label everything else", and
+   links to the repo, CLAUDE.md, DECISIONS.md and LEARNINGS.md.
+8. **About** (the footer) — my name, one line, and the repo. A contact link
+   comes later.
 
 ## The four questions (page design rule)
 
@@ -131,7 +140,7 @@ The page shows what actually happened and labels everything else.
 - Recordings are checked against each scenario's `expect` (D30).
 - Page v0 lives in `job-evaluator/site/`, ships its fonts, and shows Claude's words only under "Claude's response" (D31).
 - Page steps: passing checks aren't steps; caught checks and "Claude says it's done" are (D32).
-- One page, six sections, a "Watch it" button on every claim (D33).
+- One page, a "Watch it" button on every claim (D33; its section list superseded by D36).
 - Researched pay: code recognises pay that research_company found and labels it "base estimated from stored company data"; evaluate_job's inputs don't change (D34).
 - The page's scenario chooser is a drop-down in two groups; each pick is a browser history entry, and `?scenario=N` opens a scenario (D35).
 - Each run has an intro before it (setup, watch for, never the outcome) and a summary card on its last step, both tested against the recordings (D37).
