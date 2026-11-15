@@ -33,6 +33,7 @@ Newest at the bottom of each section.
 - **Events aren't steps.** The trace records 47 events for scenario 6; a visitor steps through 23. Checks that pass flash their badge with one line instead of being steps, and the events of one action (the hard rules, the grader call) are grouped. Saving the turn and adding results back stay, because they're what make "the conversation is the memory" visible. _(PR #60, D32)_
 - **Routing isn't a check, even when it's recorded like one.** "Claude says it's done" is logged as a passing `stop_reason` check, but it's one of Claude's two decisions in the run and the reason the loop ends. The page shows it as a step. _(PR #60 review)_
 - **One source for every explanation.** Step text and the one-line check explanations live only in STEPS.md, and a script builds the page's copy. A test fails if they drift. _(#57, build_steps.py)_
+- **Explaining the system tests it.** Writing "state precedence" on the page as a principle showed the agent didn't follow it yet. The fix (#91) came from writing the page, not from a failing test. _(PR #90, PR #98)_
 - **A page built on one example only covers that example.** Page v0 was built and checked on scenario 6. Playing the other eight turned up four kinds of step it had no words for: "Has · nothing new", "rating: undefined". _(#71, PR #72)_
 - **Set up the run without giving away the ending.** A first-time visitor needs to know what's different about this input and what to watch for, and the scenario's `behavior` line told them how it ends. So the page has an intro before the run (setup, watch for) and a summary card after it. _(#75, PR #77)_
 - **A summary says what the recording shows, not why Claude did it.** "Claude asked for research_company first" is in the data. "Claude realised it needed pay" is a guess presented as fact. _(#75)_
@@ -49,6 +50,8 @@ Newest at the bottom of each section.
 - **Testing on one example only tests what that example reaches.** The page was built and checked against scenario 6 alone. Playing the other eight found four kinds of step it had no words for, and one that leaked Claude's final answer. _(#72, #76)_
 - **A test needs its own check that it looked where it meant to.** A tab that crashed left the previous tab on screen, and the leak check passed while searching the wrong one. Now it fails unless the tab it clicked is the one showing. _(PR #85)_
 - **Check every view, not just the default.** The leak check first searched only the tab the inspector opens on; the raw payloads, where a leak is likeliest, were a click away and unchecked. _(PR #85)_
+- **A test only sees the shape it was built to read.** The principles test read only four-column rows, so six leftover rows of the old table sat in SPEC unnoticed. _(#94)_
+- **Same PASS, different run.** Re-recorded, scenario 9 still passed, but Claude was cut off at a different point. A PASS checks the outcome, not the path inside it. _(PR #98)_
 
 ## Building with an AI coding agent
 
