@@ -354,7 +354,7 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 1. Hero, with **Watch it run**.
 2. What's an agent.
 3. How this agent works.
-4. Scenarios (placeholder until #79).
+4. Scenarios: nine cards (#79, D39).
 5. The run view: everything below in this section.
 6. Design principles (placeholder until #80).
 7. How it was built (placeholder until #81).
@@ -363,6 +363,7 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 A header bar links to each section. It's sticky on wide screens, and scrolls away on phones, where it wraps to three lines. The text in sections 1–3 is written for the page and labelled so.
 
 - **The tool list** in How this agent works is read from scenario 1's recording: the tools Python offered Claude in its first request. Each tool gets a line from `TOOL_LINES` in `app.js`. Tests fail if `TOOL_LINES`, any recording's tool list, or a tool name in the page's text differs from `agent.py`'s `tools`.
+- **Scenario cards** (#79, D39): one per scenario, in D21's two groups. Each card has the name, the `setup` line, a "Simulated failure" tag for scenarios 6–9, and the tool path, worked out from the recording: each pass's tool results in order, `+` within a pass, `→` between passes, and `→ error` after a tool that failed. Clicking a card works like a "Watch it" button. The card for the scenario now shown is marked, on load and on Back / Forward too, and no card is marked for an unknown id. The drop-down stays. The page fetches each recording once; the cards and the run share it.
 - **A "Watch it" button** loads its scenario at step 1, paused, adds a history entry like the chooser does, and scrolls to the run view.
 - **Back over a nav link** leaves the run where it was. Only a change of `?scenario=` reloads it.
 - **The arrow keys and Space** drive the run only while the run view is on screen, so Space scrolls the page everywhere else.
