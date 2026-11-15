@@ -517,7 +517,7 @@ past the run view.
 
 ## D34 — Researched pay: code recognises it; no change to evaluate_job's inputs
 
-**Status:** **Proposed** (issue #65)
+**Status:** **Approved** (issue #65, PR #66)
 **Date:** 2026-11-14
 **Options:** add a field to evaluate_job's input schema so Claude says the
 pay was researched · let code remember what research_company found in this
@@ -545,7 +545,7 @@ share a word (then key by full level).
 
 ## D35 — Scenario chooser: a drop-down in the header; each pick is a history entry
 
-**Status:** **Proposed** (issue #71)
+**Status:** **Approved** (issue #71, PR #72)
 **Date:** 2026-11-14
 **Options:** a native drop-down (`<select>`) · a row of nine buttons · a
 side list · picking replaces the URL (Back leaves the page) or adds to the
@@ -563,7 +563,7 @@ at once, e.g. as cards; then the chooser becomes those cards, same URL.
 
 ## D37 — Scenario intro and summary card: where they sit, and what they may say
 
-**Status:** **Proposed** (issue #75)
+**Status:** **Approved** (issue #75, PR #77)
 **Date:** 2026-11-14
 **Options:** what's simulated as its own field · as a "Simulated:" sentence in
 `setup` · the summary card inside the inspector · full width above it
