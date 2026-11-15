@@ -561,6 +561,42 @@ undo their last click, and "Watch it" buttons (D33) will use the same URL.
 **What would change it:** the hero section (D33) needs the scenarios visible
 at once, e.g. as cards; then the chooser becomes those cards, same URL.
 
+## D36 — Page structure: eight sections, principles after the run
+
+**Status:** **Proposed** (issue #78)
+**Date:** 2026-11-14
+**Supersedes:** D33's section list. D33's "Watch it" buttons, the summary
+card at the end of a run (D37), and naming me in the hero and footer stay.
+**Decision:** one page, a header bar linking to eight sections in this order:
+1. **Hero:** what this is in one line, who built it, and a **Watch it run**
+   button that jumps to the run view.
+2. **What's an agent:** three sentences, a small loop diagram, and "Claude
+   decides; Python executes".
+3. **How this agent works:** the four parts (Python, Claude, the tools, the
+   grader), the loop, and the tools with one line each on when they're
+   used. Watch it buttons for scenarios 1, 3 and 4.
+4. **Scenarios:** nine cards (#79).
+5. **The run view:** the Execution Explorer (D15).
+6. **Design principles:** principle → feature → Watch it (#80). This replaces
+   D33's separate Guardrails section: guards are listed as features under
+   the principle they serve.
+7. **How it was built** (#81).
+8. **Footer** (#81).
+
+What D33 changes:
+- D33's "How it works" becomes two sections, What's an agent and How this
+  agent works.
+- The run view is its own section, after the scenarios.
+- Principles come after the run, because they point at scenarios.
+- A "Watch it" button loads its scenario at step 1 and scrolls to the run.
+  It starts paused, like every run (D33 said "loads and plays").
+
+**Reasoning:** a first-time visitor needs "what's an agent" before the run
+means anything. Someone evaluating the work wants the principles once they've
+seen a run, and the cards give them a way into any scenario.
+**What would change it:** the first-visitor test shows people skip the text
+and go straight to the run. Then the run view moves up, under the hero.
+
 ## D37 — Scenario intro and summary card: where they sit, and what they may say
 
 **Status:** **Approved** (issue #75, PR #77)

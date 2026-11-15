@@ -296,6 +296,7 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual(len(links), 8)
         for href in links:
             with self.subTest(href):
+                self.assertEqual(page.locator(href).count(), 1, f"nav link {href}: no section with that id")
                 page.click(f'.nav a[href="{href}"]')
                 top = self.top_of(page, href)
                 # Just below the sticky nav (about 50px), or as high as the page can scroll.

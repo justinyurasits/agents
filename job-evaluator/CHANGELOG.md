@@ -40,6 +40,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - The page shows each scenario's setup and what to watch for above the run, and a summary card on the last step; `setup`, `watch_for` and `summary` text added to scenarios.json for all nine (#75).
 - The page's last step no longer shows Claude's final answer in the "Has" box (it said "what the run returns instead of an answer"), and the passed checks no longer spill out of the Python box on phones (#76).
 - Browser tests for the page (`tests/test_browser.py`, Playwright for Python, in `requirements-dev.txt`): Claude's words stay in their tab, all nine scenarios play to the end with no console errors, and `?scenario=` and Back work. Skipped when Playwright or Chromium isn't installed (#84).
+- The page has its final shape: a header bar and eight sections (D36). New: the hero, What's an agent (with a loop diagram) and How this agent works (tools listed from the recordings, Watch it buttons for scenarios 1, 3 and 4). Placeholders for scenarios, principles, How it was built and the footer. The keys drive the run only while it's on screen (#78).
 
 ## 0.1.0 — 2026-11-11
 

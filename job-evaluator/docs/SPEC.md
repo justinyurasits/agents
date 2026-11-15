@@ -350,6 +350,23 @@ The `print` lines are still there for following a run live, one line per event. 
 
 Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a recorded run in the Execution Explorer layout (D15). Since [#71](https://github.com/justinyurasits/agents/issues/71) a visitor can pick any of the nine scenarios. It's plain HTML, CSS and JavaScript in [`site/`](../site/): no framework, no build step, no API calls, no key. The design reference is [`design/explorer-d1-mockup.html`](../design/explorer-d1-mockup.html).
 
+**Page structure** ([#78](https://github.com/justinyurasits/agents/issues/78), D36). One page, eight sections, in this order:
+1. Hero, with **Watch it run**.
+2. What's an agent.
+3. How this agent works.
+4. Scenarios (placeholder until #79).
+5. The run view: everything below in this section.
+6. Design principles (placeholder until #80).
+7. How it was built (placeholder until #81).
+8. Footer (placeholder until #81).
+
+A header bar links to each section. It's sticky on wide screens, and scrolls away on phones, where it wraps to three lines. The text in sections 1–3 is written for the page and labelled so.
+
+- **The tool list** in How this agent works is read from scenario 1's recording: the tools Python offered Claude in its first request. Each tool gets a line from `TOOL_LINES` in `app.js`. Tests fail if `TOOL_LINES`, any recording's tool list, or a tool name in the page's text differs from `agent.py`'s `tools`.
+- **A "Watch it" button** loads its scenario at step 1, paused, adds a history entry like the chooser does, and scrolls to the run view.
+- **Back over a nav link** leaves the run where it was. Only a change of `?scenario=` reloads it.
+- **The arrow keys and Space** drive the run only while the run view is on screen, so Space scrolls the page everywhere else.
+
 **Run it:** from `job-evaluator/`, `python -m http.server 8000`, then open `localhost:8000/site/`. It has to be served (browsers won't `fetch` from a `file://` page), and it's served from `job-evaluator/` so the page can read `../recordings/` and `../scenarios/` without copies.
 
 **What it loads, and nothing else** (a test checks the source has no URLs):
