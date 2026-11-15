@@ -412,13 +412,15 @@ class BrowserTest(unittest.TestCase):
                 if sc["fault"]:
                     self.assertEqual(chip.inner_text(), "Simulated failure")
 
-    def test_no_card_states_the_outcome(self):
-        # The card's own words: everything but the scenario's name and the
-        # tool path (tool names). Same outcome words as the intro test (#75).
-        try:
-            from test_docs import ScenarioFieldsTest
-        except ImportError:  # when run as tests.test_browser
-            from tests.test_docs import ScenarioFieldsTest
+    # A rating, or saying there was one. (?i:...) ignores case for that part only.
+    RATING_WORDS = re.compile(r"\b(STRONG|WORTH REVIEWING|IGNORE)\b|(?i:\brat(ed|ing)\b)")
+
+    def test_no_card_states_the_rating(self):
+        # D39 (PR #89 review): a card's own words never state the rating. Its
+        # own words are everything but the scenario's name and the tool path:
+        # a path may end in flag_for_review, and a break-the-agent name states
+        # its failure, which is the premise, not the ending. (The setup line
+        # is also held to #75's stricter intro rule, in test_docs.)
         page = self.open()
         self.cards_ready(page)
         for sc in SCENARIOS:
@@ -427,7 +429,7 @@ class BrowserTest(unittest.TestCase):
                     const copy = c.cloneNode(true);
                     copy.querySelectorAll('.card-name, .card-path').forEach(x => x.remove());
                     return copy.textContent; }""")
-                found = ScenarioFieldsTest.OUTCOME_WORDS.search(words)
+                found = self.RATING_WORDS.search(words)
                 self.assertIsNone(found and found.group(), f"scenario {sc['id']}: {words!r}")
 
     def test_clicking_a_card_loads_its_run_and_back_returns_to_the_previous_card(self):

@@ -660,7 +660,7 @@ narrowing).
 
 ## D39 — Scenario cards: tool paths worked out from the recordings, by pass
 
-**Status:** **Proposed** (issue #79)
+**Status:** **Approved** (issue #79, PR #89 review)
 **Date:** 2026-11-14
 **Options:** the path from each scenario's expected tools, typed into
 scenarios.json · from the recording, generated at build time · from the
@@ -674,8 +674,13 @@ recording, worked out in the browser
 - A run that calls no tool (scenario 9) says "no tools called".
 - The page fetches all nine recordings when it loads, once each, and the run
   view reuses them.
-- The cards never state the outcome in their own words. The scenario's name
-  and the tool names in the path are not counted as stating it.
+- A card's own words never state the rating. This loosens #79's "cards never
+  state the outcome" (PR #89 review). Its own words are the setup line and
+  the "Simulated failure" tag. The full path stays, including paths that end
+  in `flag_for_review` (scenarios 2 and 4): it's the card's most useful line.
+  The names of scenarios 8 and 9 ("Runaway loop stopped", "Reply cut off")
+  stay too: for a break-the-agent scenario, the failure is the premise, not
+  the ending.
 **Reasoning:** the recording is what happened, so the path can't drift from
 it. Expected tools can't show an error or two tools in one pass, and a build
 step would add a generated file to keep in sync. A browser test compares each
@@ -683,6 +688,6 @@ path with one worked out separately in Python.
 **What would change it:**
 - The nine recordings get large enough to slow the first load. They're about
   820 KB together, uncompressed. Then the paths move to a generated file.
-- You decide a tool name in a path gives away too much: scenarios 2 and 4
-  show `flag_for_review`. Then the path could stop before the last tool.
+- First-visitor tests show the paths spoil the runs. Then the path could
+  stop before the last tool.
 
