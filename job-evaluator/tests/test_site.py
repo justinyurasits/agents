@@ -21,6 +21,10 @@ REPO_ROOT = os.path.dirname(HERE)
 # this repo on GitHub. Links aren't requests; the page still loads nothing else.
 REPO_URL = "https://github.com/justinyurasits/agents"
 REPO_LINK = re.compile(r'<a href="' + re.escape(REPO_URL) + r'(/blob/main/[\w./-]+)?">')
+# And the page's own published address, in two link-preview meta tags only
+# (#105): crawlers need og:url and og:image as absolute URLs.
+PAGES_URL = "https://justinyurasits.github.io/agents/job-evaluator/site/"
+PAGES_META = re.compile(r'<meta property="og:(url|image)" content="' + re.escape(PAGES_URL) + r'([\w.-]*)">')
 
 
 def read(path):
@@ -92,7 +96,7 @@ class SiteFilesTest(unittest.TestCase):
         # source, apart from <a href> links to this repo on GitHub (#81).
         for name in self.FILES:
             with self.subTest(name):
-                text = REPO_LINK.sub("<a>", read(os.path.join(SITE, name)))
+                text = PAGES_META.sub("<meta>", REPO_LINK.sub("<a>", read(os.path.join(SITE, name))))
                 self.assertIsNone(re.search(r"https?://|//[a-z0-9.-]+\.[a-z]{2,}/", text))
 
     def test_every_github_link_points_at_a_file_in_this_repo(self):
@@ -206,6 +210,44 @@ class PageStructureTest(unittest.TestCase):
                 first = next(e for e in events if e["crossing"] and e["crossing"]["kind"] == "api_request")
                 self.assertEqual(first["payload"]["tools"], self.agent_tools())
 
+
+
+class LinkPreviewTest(unittest.TestCase):
+    """What a shared link shows (#105): description, Open Graph tags, image."""
+
+    HTML = read(os.path.join(SITE, "index.html"))
+
+    def meta(self, attr, name):
+        found = re.findall(rf'<meta {attr}="{re.escape(name)}" content="([^"]*)">', self.HTML)
+        self.assertEqual(len(found), 1, f"{name}: expected exactly one tag")
+        return found[0]
+
+    def test_every_tag_is_there(self):
+        self.assertEqual(self.meta("property", "og:type"), "website")
+        self.assertEqual(self.meta("property", "og:title"), re.search(r"<title>(.*?)</title>", self.HTML).group(1))
+        self.assertEqual(self.meta("name", "twitter:card"), "summary_large_image")
+        self.assertTrue(self.meta("property", "og:image:alt"))
+
+    def test_the_description_and_og_description_match(self):
+        description = self.meta("name", "description")
+        self.assertEqual(self.meta("property", "og:description"), description)
+        self.assertTrue(50 <= len(description) <= 200, f"{len(description)} characters")
+
+    def test_og_url_is_the_published_page(self):
+        self.assertEqual(self.meta("property", "og:url"), PAGES_URL)
+
+    def test_og_image_is_a_committed_1200_by_630_png(self):
+        url = self.meta("property", "og:image")
+        self.assertTrue(url.startswith(PAGES_URL), url)
+        path = os.path.join(SITE, url[len(PAGES_URL):])
+        self.assertTrue(os.path.isfile(path), f"{path} isn't in site/")
+        with open(path, "rb") as f:
+            head = f.read(24)
+        self.assertEqual(head[:8], b"\x89PNG\r\n\x1a\n", "not a PNG")
+        # A PNG's width and height are the 4-byte big-endian numbers at bytes 16-24.
+        size = (int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big"))
+        self.assertEqual(size, (1200, 630))
+        self.assertEqual((int(self.meta("property", "og:image:width")), int(self.meta("property", "og:image:height"))), size)
 
 
 class NumbersTest(unittest.TestCase):

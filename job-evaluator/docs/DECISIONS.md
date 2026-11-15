@@ -774,3 +774,30 @@ precedence may need stating in more than one description), or a run where
 Claude flags without researching (then the order may need enforcing in
 code).
 
+## D43 — Link previews: a generated screenshot, absolute URLs in two meta tags
+
+**Status:** **Proposed** (issue #105)
+**Date:** 2026-11-15
+**Decision:**
+- The page has a meta description and Open Graph tags, plus `twitter:card` =
+  `summary_large_image`, so a shared link shows a card with a title, a
+  description and an image.
+- The image, `site/preview.png` (1200×630), is made by `make_preview.py`,
+  not by hand. It's scenario 6 (a tool fails) in the run view, at the step
+  where the tool's error goes back to Python: the red arrow, "evaluate_job
+  failed", and the four questions. The script finds that step by what happens
+  there, so it survives a re-recording, and only the run view is shown.
+- `og:url` and `og:image` are absolute URLs on the GitHub Pages address,
+  because crawlers need them. Like the GitHub links (D41), this is a narrow
+  exception to "no URLs in the source": the test allows exactly these two
+  meta tags on that address. The page still requests only its own files.
+
+**Reasoning:** the failure moment is the most telling single frame. It shows
+the three parts, the boundary crossing, and an error being handled, which is
+what the page is about. A script means the image can be remade in one command
+whenever the page's look changes.
+**What would change it:**
+- The Pages address changes. Update `PAGES_URL` in the tests and the two tags.
+- A clearer moment for the card, e.g. scenario 4's two tools at once. That's
+  a change to `SCENARIO` and `FIND_STEP` in the script.
+
