@@ -11,6 +11,8 @@ local http server these tests start, and check all nine scenarios:
      and the "Watch it" buttons reach the run, and the page fits a phone.
   5. The scenario cards (#79): grouped and in order, each card's tool path
      matches its recording, and clicking one loads its run.
+  6. Design principles (#80): every Watch it loads its scenario, and guard
+     names come from steps.json.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -328,13 +330,13 @@ class BrowserTest(unittest.TestCase):
     def test_each_watch_it_button_loads_its_scenario_and_scrolls_to_the_run(self):
         page = self.open("?scenario=6")
         self.wait_for_scenario(page, 6)
-        buttons = page.eval_on_selector_all("button.watch", "bs => bs.map(b => Number(b.dataset.scenario))")
+        buttons = page.eval_on_selector_all("#how-it-works button.watch", "bs => bs.map(b => Number(b.dataset.scenario))")
         self.assertEqual(buttons, [1, 3, 4])
         for n in buttons:
             with self.subTest(scenario=n):
                 page.evaluate("window.explorer.show(3)")
                 page.evaluate("window.scrollTo(0, 0)")
-                page.click(f'button.watch[data-scenario="{n}"]')
+                page.click(f'#how-it-works button.watch[data-scenario="{n}"]')
                 self.wait_for_scenario(page, n, f"Watch it, scenario {n}")
                 self.assertTrue(page.url.endswith(f"?scenario={n}"), page.url)
                 self.assertEqual(page.evaluate("window.explorer.state.i"), 0, f"scenario {n}: not at step 1")
@@ -471,6 +473,37 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual(len(set(lefts)), 1, f"cards aren't in one column: {lefts}")
         self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), 390)
         self.assertEqual(self.errors, [])
+
+
+    # --- design principles (#80) -------------------------------------------
+
+    def test_every_principles_watch_it_loads_its_scenario_and_scrolls_to_the_run(self):
+        page = self.open("?scenario=5")
+        self.wait_for_scenario(page, 5)
+        buttons = page.eval_on_selector_all("#principles button.watch",
+                                            "bs => bs.map((b, i) => [i, Number(b.dataset.scenario), b.textContent])")
+        self.assertEqual(len(buttons), 12)   # 8 for the principles (two for one row), 4 for demonstrated guards
+        for i, n, label in buttons:
+            with self.subTest(button=label, scenario=n):
+                page.evaluate("window.explorer.show(2); window.scrollTo(0, 0)")
+                page.locator("#principles button.watch").nth(i).click()
+                self.wait_for_scenario(page, n, f"principles button {label!r}")
+                self.assertTrue(page.url.endswith(f"?scenario={n}"), page.url)
+                self.assertEqual(page.evaluate("window.explorer.state.i"), 0, f"{label!r}: not at step 1")
+                top = self.top_of(page, "#run-view")
+                self.assertLessEqual(abs(top - 64), 60, f"{label!r}: run view is at {top}px")
+        self.assertEqual(self.errors, [])
+
+    def test_guard_names_come_from_steps_json(self):
+        steps = json.load(open(os.path.join(HERE, "site", "steps.json"), encoding="utf-8"))["steps"]
+        page = self.open()
+        self.wait_for_scenario(page, 1)
+        shown = page.eval_on_selector_all("#principles li[data-guard]",
+                                          "ls => ls.map(l => [l.dataset.guard, l.querySelector('.guard-name').textContent])")
+        self.assertEqual(len(shown), 9)
+        for step, name in shown:
+            with self.subTest(step):
+                self.assertEqual(name, f"{steps[step]['number']} · {steps[step]['title']}")
 
 
 if __name__ == "__main__":

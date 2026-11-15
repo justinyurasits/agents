@@ -93,6 +93,21 @@ html { scroll-behavior: smooth; }
 
 .run-view { display: flex; flex-direction: column; gap: 18px; }
 
+/* Design principles (#80): a table; on a phone each row stacks. */
+.principles { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55; }
+.principles th, .principles td { text-align: left; vertical-align: top; padding: 14px 12px; border-top: 1px solid var(--line); }
+.principles thead th { border-top: 0; padding-top: 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.principle-name { width: 24%; font-weight: 600; color: var(--text); }
+.principle-feature { color: var(--body); }
+.principle-feature code, .guard-list code { font-family: var(--mono); font-size: 12.5px; color: var(--orange); }
+.principle-watch { width: 1%; white-space: nowrap; }
+.principle-watch .btn + .btn { margin-left: 6px; }
+.guard-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.guard-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 10px; border-radius: 8px; background: var(--well); border: 1px solid var(--line); font-size: 13px; }
+.guard-name { font-weight: 500; color: var(--text); }
+.tested { color: var(--muted); font-size: 12.5px; min-width: 0; overflow-wrap: anywhere; }   /* long test names wrap on a phone */
+.btn.watch-small { min-height: 32px; height: auto; padding: 4px 10px; font-size: 12px; }
+
 /* Scenario cards (#79). */
 .card-group { display: flex; flex-direction: column; gap: 10px; }
 .card-group + .card-group { margin-top: 10px; }
@@ -292,6 +307,11 @@ pre .ln { color: var(--faint); user-select: none; display: inline-block; min-wid
   .hero h1 { font-size: 30px; }
   .section { padding: 20px 16px; }
   .loop li:not(:last-child)::after { display: none; }
+  .principles thead { display: none; }
+  .principles, .principles tbody, .principles tr, .principles th, .principles td { display: block; width: auto; }
+  .principles tr { padding: 12px 0; border-top: 1px solid var(--line); }
+  .principles th, .principles td { border: 0; padding: 4px 0; }
+  .principle-watch { white-space: normal; }
   .map { padding: 18px 16px; }
   .map-row { flex-direction: column; }
   .box { min-height: 0; }

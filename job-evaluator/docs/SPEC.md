@@ -8,10 +8,19 @@ Issue links point to [the repo's issues](https://github.com/justinyurasits/agent
 
 ## Design principles
 
-The six principles the page demonstrates (D33), and where each one shows in the code or a run:
+The seven principles the page demonstrates (#80, D36), the part of the agent that applies each one, and the guards that serve it. The page's Design principles table lists the same seven, guards and Watch it scenarios; `test_site.PrinciplesTest` fails if the two drift. Two earlier principles moved: "Claude decides; Python executes" is in the page's What's an agent section, and "Show what happened; label everything else" goes in How it was built (#81).
 
-| Principle | Shown in the code | Watch it |
-|---|---|---|
+| Principle | In this agent | Guards | Watch it |
+|---|---|---|---|
+| **The model for judgment, code for rules** | `hard_screens` checks `REQUIRE_REMOTE` and `MIN_BASE` in code before the grader is asked; `RATING_FOR_ANSWER` turns the grader's yes/no into a rating (section 6, D28) | none | Scenario 5: a rule in code rejects the posting before the grader is asked |
+| **Tool choice is intent classification, so state precedence** | Each tool's `description` in `tools` says when to use it (section 4). `research_company` and `flag_for_review` both cover a posting with no pay, and neither says which comes first: Claude researches first on its own (#65) | none | Scenarios 2 and 3: no pay listed, so Claude researches the company first, then flags the posting (2, not on file) or rates it (3, on file) |
+| **Errors go back to the model as information** | The `try / except` around each tool in `run_agent` sends the error back as an `is_error` tool result (section 5, D18) | E1 `tool_failed` (scenario 6); E5 `grader_cut_off`, E8 `invalid_grade` (tested, not demonstrated) | Scenario 6: the grader's reply is broken, the error goes back to Claude, and Claude retries |
+| **Fail closed on the unknown** | An unknown tool gets an error listing the real tools (D19); a cut-off reply or an unhandled stop reason ends the run instead of being acted on (D22, D29) | E2 `unknown_tool` (scenario 7), E3 `reply_cut_off` (scenario 9); E9 `unexpected_stop`, E6 `api_call_failed`, E7 `no_final_answer` (tested, not demonstrated) | Scenario 7: Python answers a request for a tool that doesn't exist |
+| **Bound the loop** | `MAX_PASSES` caps the outer calls to Claude; scenario 8 lowers it to 2 (D27) | E4 `pass_cap` (scenario 8) | Scenario 8: the tool always fails and the cap ends the run |
+| **Smaller questions get more reliable answers** | The grader's `RUBRIC` asks one yes/no question about the work; pay and location are checked in code (D28) | none | Scenario 1: the grader's one question and its answer |
+| **The conversation is the memory** | `messages` in `run_agent`: sent whole on every call (`send_to_claude`), and appended at `save_turn` and `results_back` (section 3) | none | Scenario 1: messages grows from 1 to 3 between the two calls |
+
+---|---|---|
 | **The model for judgment, code for rules** | `hard_screens` with `MIN_BASE` and `REQUIRE_REMOTE`, and `RATING_FOR_ANSWER`, in [`agent.py`](../agent.py); the grader's `RUBRIC` asks only the one question that needs judgment (section 6, D28) | Scenario 5: a rule in code rejects the posting before the grader is asked |
 | **A guard turns a crash into information the model can act on** | The `try / except` around each tool in `run_agent` (`# STEP: tool_failed`, E1) sends the error back as an `is_error` tool result (section 5, D18) | Scenario 6: the grader's reply is broken, the error goes back to Claude, and Claude retries |
 | **Claude decides; Python executes** | `run_agent`: Python calls Claude, reads `stop_reason`, and runs the tools; step 4 (`claude_decides`) has no code because it happens on Anthropic's servers (section 3, [STEPS.md](STEPS.md)) | Any run |
@@ -356,7 +365,7 @@ Page v0 ([#57](https://github.com/justinyurasits/agents/issues/57)) replays a re
 3. How this agent works.
 4. Scenarios: nine cards (#79, D39).
 5. The run view: everything below in this section.
-6. Design principles (placeholder until #80).
+6. Design principles: seven principles, each guard under one (#80).
 7. How it was built (placeholder until #81).
 8. Footer (placeholder until #81).
 
