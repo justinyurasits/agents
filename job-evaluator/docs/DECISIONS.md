@@ -718,3 +718,34 @@ it's on.
 Watch it), or a guard whose effect changes, e.g. E6 retrying instead of
 stopping.
 
+## D41 — How it was built: numbers counted from the repo, links to GitHub
+
+**Status:** **Proposed** (issue #81)
+**Date:** 2026-11-14
+**Decision:**
+- Every number in How it was built comes from `build_numbers.py`, written to
+  `site/numbers.json` and filled in by the page. The counts:
+  - **Tests:** test cases unittest finds.
+  - **Scenarios:** by group.
+  - **Guards:** E-steps, and how many a recording shows caught.
+  - **Decisions:** entries in this file, and how many say Approved or
+    Proposed. 16 early entries have no Status line, and one says "closed by
+    D28", so the page shows logged, approved and proposed.
+  - **Merged pull requests:** `Merge pull request #` commits before HEAD.
+    Leaving HEAD out means the count a PR commits still matches once it's
+    merged, because its merge commit is then HEAD.
+- Every PR reruns the script (CLAUDE.md). A test fails if the file and a
+  fresh count differ.
+- The page may link to this repo on GitHub, in `<a href>` only, and only to
+  files that exist in it. Links aren't requests: D31's "loads nothing but its
+  own files" still holds, and a test enforces both.
+- The footer has no contact link yet (your call in #81).
+
+**Reasoning:** numbers typed by hand go stale silently. Counting from the
+repo, and testing the count, keeps the page honest as it grows.
+**What would change it:**
+- Squash merges, which leave no "Merge pull request" commit. Then count with
+  the GitHub API at build time.
+- The repo staying private at launch. Then the links come out, or copies of
+  the docs ship with the page.
+

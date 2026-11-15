@@ -46,7 +46,8 @@ The script prints a line at each point in the loop, labelled with its step id fr
 
 ```bash
 cd job-evaluator
-python build_steps.py               # after editing docs/STEPS.md: rebuild site/steps.json
+python build_steps.py               # after editing docs/STEPS.md: rebuild site/steps.json (and site/numbers.json)
+python build_numbers.py             # recount the numbers on the page; needed in every PR (see CLAUDE.md)
 python -m http.server 8000          # then open localhost:8000/site/
 ```
 

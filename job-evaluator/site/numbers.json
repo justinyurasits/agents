@@ -6,9 +6,9 @@
     "break": 4
   },
   "decisions": {
-    "logged": 40,
+    "logged": 41,
     "approved": 23,
-    "proposed": 0,
+    "proposed": 1,
     "other_status": 1,
     "no_status": 16
   },

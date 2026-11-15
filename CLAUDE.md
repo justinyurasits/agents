@@ -33,6 +33,10 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
 - docs/STEPS.md if a step was added, removed, or renamed.
 - docs/DECISIONS.md if a design choice was made. Add it marked
   **Proposed**; Justin approves it in review.
+- job-evaluator/site/numbers.json: run `python build_numbers.py` from
+  job-evaluator/ last, after your other changes. It counts tests,
+  decisions and merged PRs, so almost every PR changes it, and
+  `test_committed_numbers_json_matches_the_repo` fails until it's rerun.
 - You can suggest writing for BUILD_LOG.md and LEARNINGS.md which is in the Agents folder. Do this after each PR.
 
 ## Ask before
