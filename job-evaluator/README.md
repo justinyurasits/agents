@@ -50,7 +50,7 @@ python build_steps.py               # after editing docs/STEPS.md: rebuild site/
 python -m http.server 8000          # then open localhost:8000/site/
 ```
 
-The page (`site/`) replays any of the nine recorded scenarios step by step (pick one from the list, or open `/site/?scenario=3`): who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
+The page (`site/`) explains what an agent is and how this one works, then replays any of the nine recorded scenarios step by step (pick one from the list, or open `/site/?scenario=3`): who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
 
 ## Test it
 

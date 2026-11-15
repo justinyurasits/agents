@@ -1,6 +1,11 @@
 // Page v0 (#57): replay a recorded run in the Execution Explorer (D15). Any of
 // the nine scenarios can be picked (#71).
 //
+// The page around the run (#78, D36) is mostly static HTML. This file adds two
+// things to it: the tool list in "How this agent works", read from a
+// recording, and the "Watch it" buttons, which load a scenario and scroll to
+// the run.
+//
 // Everything shown is driven by two files:
 //   - the recording (../recordings/scenario-0N.json): one event per step, made
 //     by record.py from a real run. The map, the four questions, the timeline
@@ -45,6 +50,14 @@ const STEPS = "steps.json";
 const SCENARIOS = "../scenarios/scenarios.json";
 const STEP_MS = 2500;          // at 1×, per the issue
 const DEFAULT_SCENARIO = 1;
+// "How this agent works" (#78): one line per tool on when Claude uses it,
+// written for this page. The tool names and their count come from the
+// recording, never from here; a test fails if these keys and agent.py's tools differ.
+const TOOL_LINES = {
+  evaluate_job: "for a posting it can rate: checks your hard rules in code, then asks the grader one yes/no question about the work, and returns a rating.",
+  flag_for_review: "when something the rating needs is missing: hands the posting to a person, saying what's missing.",
+  research_company: "when a posting doesn't list pay: looks the company up in stored demo data, including typical base pay for the role level.",
+};
 // The chooser's two groups, in D21's order: normal runs, then break-the-agent runs.
 const GROUPS = [["normal", "Normal runs"], ["break", "Break the agent"]];
 const SEE_RESPONSE = "‹Claude's words: see the Claude's response tab›";
@@ -669,6 +682,10 @@ function wireControls() {
   }
   document.addEventListener("keydown", (ev) => {
     if ($("run").hidden || ev.target.tagName === "SELECT") return;   // no run shown, or the chooser has the keys
+    // The page is long now (#78): the keys drive the run only while it's on
+    // screen, so Space still scrolls the page everywhere else.
+    const box = $("run-view").getBoundingClientRect();
+    if (box.bottom < 0 || box.top > window.innerHeight) return;
     if (ev.target.closest && ev.target.closest("button") && ev.key === " ") return;
     if (ev.key === "ArrowRight") { show(state.i + 1); restartTimer(); }
     else if (ev.key === "ArrowLeft") { show(state.i - 1); restartTimer(); }
@@ -702,13 +719,43 @@ function fillChooser() {
   const none = el("option", { value: "", disabled: true, hidden: true }, "Choose a scenario");
   select.replaceChildren(none, ...groups);
   select.disabled = false;
-  select.addEventListener("change", () => {
-    const id = Number(select.value);
-    history.pushState({ scenario: id }, "", `?scenario=${id}`);   // a new history entry: Back returns here
-    loadScenario(id);
+  select.addEventListener("change", () => chooseScenario(Number(select.value)));
+  // Back and Forward: the URL has already changed; load what it names. A nav
+  // link also adds a history entry (#how-it-works); going back over one of
+  // those leaves the scenario as it is, so the run isn't reset (#78).
+  window.addEventListener("popstate", () => {
+    const id = scenarioFromUrl();
+    if (!state.scenario || id !== state.scenario.id || !$("load-error").hidden) loadScenario(id);
   });
-  // Back and Forward: the URL has already changed; load what it names.
-  window.addEventListener("popstate", () => loadScenario(scenarioFromUrl()));
+}
+
+// Pick a scenario: from the chooser or a "Watch it" button. Adds a history
+// entry, so Back returns to the scenario before.
+function chooseScenario(id) {
+  history.pushState({ scenario: id }, "", `?scenario=${id}`);
+  return loadScenario(id);
+}
+
+// "Watch it" buttons (#78): load the scenario and scroll to the run view.
+function wireWatchButtons() {
+  for (const b of document.querySelectorAll("button.watch[data-scenario]")) {
+    b.addEventListener("click", async () => {
+      const id = Number(b.dataset.scenario);
+      if (!state.scenario || state.scenario.id !== id) await chooseScenario(id);
+      else { setPlaying(false); show(0); }   // already loaded: back to step 1
+      $("run-view").scrollIntoView();
+    });
+  }
+}
+
+// "How this agent works": the tools, by name, from the recording's first
+// request to Claude (the tools it offered), each with its line from TOOL_LINES.
+function fillTools(trace) {
+  const request = trace.events.find((e) => e.crossing && e.crossing.kind === "api_request");
+  const names = (request && request.payload.tools) || [];
+  $("tools-intro").replaceChildren(el("strong", {}, "The tools."), ` Claude can choose from ${plural(names.length, "tool")}:`);
+  $("tool-list").replaceChildren(...names.map((name) => el("li", {},
+    el("code", { class: "tool" }, name), " ", TOOL_LINES[name] || "")));
 }
 
 // Show a short message in place of the run (an unknown id, a missing file).
@@ -778,7 +825,10 @@ async function start() {
   }
   fillChooser();
   wireControls();
+  wireWatchButtons();
   window.explorer = { show, state, setPlaying, loadScenario };   // for checking the page by hand from the console
+  // The tool list reads scenario 1's recording, whatever scenario is shown.
+  getJSON(recordingUrl(DEFAULT_SCENARIO)).then(fillTools).catch(() => $("tools-intro").remove());
   await loadScenario(scenarioFromUrl());
 }
 

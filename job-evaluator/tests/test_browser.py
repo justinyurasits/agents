@@ -7,6 +7,8 @@ local http server these tests start, and check all nine scenarios:
      the State change, Code and Payload tabs at every step (D38).
   2. Every scenario plays from step 1 to its last step without errors.
   3. The URL: an unknown id, picking a scenario, and Back.
+  4. The page structure (#78): the nav reaches each section, "Watch it run"
+     and the "Watch it" buttons reach the run, and the page fits a phone.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -171,10 +173,11 @@ class BrowserTest(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
 
-    def open(self, query=""):
+    def open(self, query="", width=1440):
         """A fresh page at site/<query>, collecting console errors and uncaught
-        exceptions in self.errors."""
-        page = self.browser.new_page(viewport={"width": 1440, "height": 1000})
+        exceptions in self.errors. Reduced motion, so links jump instead of
+        scrolling smoothly and positions can be read straight away."""
+        page = self.browser.new_page(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
         self.addCleanup(page.close)
         self.errors = []
         page.on("console", lambda m: m.type == "error" and self.errors.append(m.text))
@@ -277,6 +280,85 @@ class BrowserTest(unittest.TestCase):
         self.wait_for_scenario(page, 5, "Back after picking 3")
         self.assertTrue(page.url.endswith("?scenario=5"), page.url)
         self.assertEqual(page.input_value("#scenario"), "5")
+        self.assertEqual(self.errors, [])
+
+
+    # --- page structure (#78) ----------------------------------------------
+
+    def top_of(self, page, selector):
+        """Where an element's top sits in the window, in pixels."""
+        return page.evaluate("s => document.querySelector(s).getBoundingClientRect().top", selector)
+
+    def test_each_nav_link_reaches_its_section(self):
+        page = self.open("?scenario=1")
+        self.wait_for_scenario(page, 1)
+        links = page.eval_on_selector_all(".nav a", "as => as.map(a => a.getAttribute('href'))")
+        self.assertEqual(len(links), 8)
+        for href in links:
+            with self.subTest(href):
+                self.assertEqual(page.locator(href).count(), 1, f"nav link {href}: no section with that id")
+                page.click(f'.nav a[href="{href}"]')
+                top = self.top_of(page, href)
+                # Just below the sticky nav (about 50px), or as high as the page can scroll.
+                at_bottom = page.evaluate("innerHeight + scrollY >= document.documentElement.scrollHeight - 2")
+                self.assertTrue(0 <= top <= 120 or at_bottom, f"{href} is at {top}px after its nav link")
+        self.assertEqual(self.errors, [])
+
+    def test_watch_it_run_reaches_the_run_view(self):
+        page = self.open()
+        self.wait_for_scenario(page, 1)
+        page.click(".hero-cta")
+        self.assertLessEqual(abs(self.top_of(page, "#run-view") - 64), 60)
+        self.assertEqual(self.errors, [])
+
+    def test_each_watch_it_button_loads_its_scenario_and_scrolls_to_the_run(self):
+        page = self.open("?scenario=6")
+        self.wait_for_scenario(page, 6)
+        buttons = page.eval_on_selector_all("button.watch", "bs => bs.map(b => Number(b.dataset.scenario))")
+        self.assertEqual(buttons, [1, 3, 4])
+        for n in buttons:
+            with self.subTest(scenario=n):
+                page.evaluate("window.explorer.show(3)")
+                page.evaluate("window.scrollTo(0, 0)")
+                page.click(f'button.watch[data-scenario="{n}"]')
+                self.wait_for_scenario(page, n, f"Watch it, scenario {n}")
+                self.assertTrue(page.url.endswith(f"?scenario={n}"), page.url)
+                self.assertEqual(page.evaluate("window.explorer.state.i"), 0, f"scenario {n}: not at step 1")
+                top = self.top_of(page, "#run-view")
+                self.assertLessEqual(abs(top - 64), 60, f"scenario {n}: run view is at {top}px")
+        page.go_back()
+        self.wait_for_scenario(page, 3, "Back after the Watch it buttons")
+        self.assertEqual(self.errors, [])
+
+    def test_back_over_a_nav_link_keeps_the_run_where_it_was(self):
+        page = self.open("?scenario=2")
+        self.wait_for_scenario(page, 2)
+        page.evaluate("window.explorer.show(5)")
+        page.click('.nav a[href="#how-it-works"]')
+        page.go_back()
+        page.wait_for_timeout(300)
+        self.assertEqual(page.evaluate("[window.explorer.state.scenario.id, window.explorer.state.i]"), [2, 5])
+
+    def test_space_drives_the_run_only_while_it_is_on_screen(self):
+        page = self.open("?scenario=1")
+        self.wait_for_scenario(page, 1)
+        page.evaluate("window.scrollTo(0, 0)")   # the hero: the run is below the fold
+        page.keyboard.press("Space")
+        self.assertFalse(page.evaluate("window.explorer.state.playing"), "Space started the run from the hero")
+        page.evaluate("document.getElementById('run-view').scrollIntoView()")
+        page.keyboard.press("Space")
+        self.assertTrue(page.evaluate("window.explorer.state.playing"), "Space didn't play with the run on screen")
+
+    def test_every_section_fits_a_phone(self):
+        page = self.open("?scenario=4", width=390)
+        self.wait_for_scenario(page, 4)
+        width = page.evaluate("document.documentElement.scrollWidth")
+        self.assertLessEqual(width, 390, "the page scrolls sideways at phone width")
+        for selector in ["#hero", "#what-is-an-agent", "#how-it-works", "#scenarios", "#run-view",
+                         "#principles", "#how-it-was-built", "#footer"]:
+            with self.subTest(selector):
+                box = page.eval_on_selector(selector, "e => e.getBoundingClientRect().right")
+                self.assertLessEqual(box, 390)
         self.assertEqual(self.errors, [])
 
 

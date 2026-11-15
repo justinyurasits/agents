@@ -14,12 +14,80 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- Page structure (#78, D36): eight sections, in this order. The header bar
+     links to each. Sections 4, 6, 7 and 8 are placeholders until #79-#81. -->
+<nav class="nav" aria-label="Sections">
+  <a class="nav-home" href="#hero">Inside the agent loop</a>
+  <div class="nav-links">
+    <a href="#what-is-an-agent">What's an agent</a>
+    <a href="#how-it-works">How this agent works</a>
+    <a href="#scenarios">Scenarios</a>
+    <a href="#run-view">The run</a>
+    <a href="#principles">Design principles</a>
+    <a href="#how-it-was-built">How it was built</a>
+    <a href="#footer">About</a>
+  </div>
+</nav>
+
 <div class="page">
 
+<!-- 1. Hero -->
+<header class="hero" id="hero">
+  <div class="eyebrow">AN AI AGENT, ONE STEP AT A TIME</div>
+  <h1>Inside the agent loop</h1>
+  <p class="hero-line">A small AI agent that rates job postings, recorded from real runs so you can watch every step: what Claude decides, and what the code does with it.</p>
+  <p class="hero-by">Built by Justin Yurasits.</p>
+  <a class="btn primary hero-cta" href="#run-view">Watch it run ↓</a>
+  <div class="written">Written for this page</div>
+</header>
+
+<!-- 2. What's an agent -->
+<section class="section" id="what-is-an-agent" aria-labelledby="h-agent">
+  <h2 id="h-agent">What's an agent</h2>
+  <p>An agent is a language model in a loop. Each turn it decides the next step, usually a request to use a tool. Code carries the step out and hands back the result, and it repeats until the model says the job is done.</p>
+  <ol class="loop" aria-label="The agent loop">
+    <li><span class="loop-who who-claude">The model</span> decides the next step</li>
+    <li><span class="loop-who who-python">Code</span> runs the tool it asked for</li>
+    <li><span class="loop-who who-python">The result</span> goes back to the model</li>
+    <li class="loop-repeat">Repeat until the model says it's done</li>
+  </ol>
+  <p class="principle"><strong>Claude decides; Python executes.</strong> In this agent the model is Claude and the code is Python. Claude never runs anything itself: it can only ask, and Python decides whether and how to carry the request out.</p>
+  <div class="written">Written for this page</div>
+</section>
+
+<!-- 3. How this agent works -->
+<section class="section" id="how-it-works" aria-labelledby="h-works">
+  <h2 id="h-works">How this agent works</h2>
+  <p>It reads a job posting and rates it for one candidate. Four parts take part in every run:</p>
+  <dl class="actors">
+    <div><dt class="who-python">Python</dt><dd>The agent loop. It calls Claude, runs the tools Claude asks for, and keeps the conversation.</dd></div>
+    <div><dt class="who-claude">Claude</dt><dd>The model in the main conversation. It reads the posting and every result so far, then asks for a tool or writes its final answer.</dd></div>
+    <div><dt class="who-tool">The tools</dt><dd>Python functions that do the work. Claude picks them by name; Python runs them.</dd></div>
+    <div><dt class="who-claude">The grader</dt><dd>A second, separate call to Claude, made from inside <code class="tool">evaluate_job</code>. It answers one yes/no question about the work, has no tools, and never sees the main conversation.</dd></div>
+  </dl>
+  <p><strong>The loop.</strong> Each pass, Python sends the whole conversation to Claude. If Claude asks for tools, Python runs them, adds the results to the conversation, and sends it again. When Claude answers without asking for a tool, the run ends. The conversation is the agent's only memory.</p>
+  <p id="tools-intro"><strong>The tools.</strong></p>
+  <ul class="tool-list" id="tool-list"></ul>
+  <div class="watch-row">
+    <button type="button" class="btn watch" data-scenario="1">Watch it: the loop (scenario 1)</button>
+    <button type="button" class="btn watch" data-scenario="3">Watch it: one tool's result feeds the next (scenario 3)</button>
+    <button type="button" class="btn watch" data-scenario="4">Watch it: two tools in one reply (scenario 4)</button>
+  </div>
+  <div class="written">Written for this page · tool names from the recordings</div>
+</section>
+
+<!-- 4. Scenarios (placeholder, #79) -->
+<section class="section placeholder" id="scenarios" aria-labelledby="h-scenarios">
+  <h2 id="h-scenarios">Scenarios</h2>
+  <p>Coming next: a card for each of the nine scenarios (#79). For now, pick one in the run view below.</p>
+</section>
+
+<!-- 5. The run view: the Execution Explorer (D15) -->
+<section class="run-view" id="run-view" aria-labelledby="h-run">
 <header class="top">
   <div class="title">
     <div class="eyebrow" id="eyebrow">LOADING…</div>
-    <h1>Inside the agent loop</h1>
+    <h2 class="run-title" id="h-run">Watch a run</h2>
   </div>
   <div class="controls">
     <label class="sr-only" for="scenario">Scenario</label>
@@ -137,6 +205,24 @@
 </div>
 
 <p class="error" id="load-error" role="alert" hidden></p>
+</section>
+
+<!-- 6. Design principles (placeholder, #80) -->
+<section class="section placeholder" id="principles" aria-labelledby="h-principles">
+  <h2 id="h-principles">Design principles</h2>
+  <p>Coming next: each principle, the feature in this agent that implements it, and a Watch it button (#80).</p>
+</section>
+
+<!-- 7. How it was built (placeholder, #81) -->
+<section class="section placeholder" id="how-it-was-built" aria-labelledby="h-built">
+  <h2 id="h-built">How it was built</h2>
+  <p>Coming next: the workflow, decisions and numbers behind this page (#81).</p>
+</section>
+
+<!-- 8. Footer (placeholder, #81) -->
+<footer class="section placeholder footer" id="footer">
+  <p>Justin Yurasits. Links to the repo and a way to get in touch are coming (#81).</p>
+</footer>
 </div>
 <script src="app.js"></script>
 </body>
