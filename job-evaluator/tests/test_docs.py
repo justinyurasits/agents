@@ -51,6 +51,15 @@ class GuardTableTest(unittest.TestCase):
 
 class BriefTest(unittest.TestCase):
 
+    def test_every_decision_has_its_own_id(self):
+        # Each "## D…" heading is a number with an optional letter (D11a), and
+        # no two share one. Two "## D11" entries made a reference to D11
+        # ambiguous (#93).
+        headings = re.findall(r"^## (D\S*) ", DECISIONS, re.M)
+        self.assertGreaterEqual(len(headings), 40)
+        self.assertEqual([h for h in headings if not re.fullmatch(r"D\d+[a-z]?", h)], [], "malformed ids")
+        self.assertEqual(sorted({h for h in headings if headings.count(h) > 1}), [], "ids used twice")
+
     def test_decided_list_covers_every_approved_decision(self):
         approved = set()
         for number, body in re.findall(r"^## D(\d+) .*?\n(.*?)(?=^## D|\Z)", DECISIONS, re.M | re.S):

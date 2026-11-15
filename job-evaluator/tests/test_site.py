@@ -325,7 +325,7 @@ class PrinciplesTest(unittest.TestCase):
 
     def test_every_decision_cited_exists(self):
         section = re.search(r'<section[^>]* id="principles".*?</section>', self.HTML, re.S).group()
-        decisions = set(re.findall(r"^## (D\d+) ", read(os.path.join(HERE, "docs", "DECISIONS.md")), re.M))
+        decisions = set(re.findall(r"^## (D\d+[a-z]?) ", read(os.path.join(HERE, "docs", "DECISIONS.md")), re.M))
         cited = set(re.findall(r"\bD\d+\b", section))
         self.assertTrue(cited)
         self.assertEqual(cited - decisions, set())
