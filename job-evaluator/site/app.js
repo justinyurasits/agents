@@ -736,15 +736,89 @@ function chooseScenario(id) {
   return loadScenario(id);
 }
 
-// "Watch it" buttons (#78): load the scenario and scroll to the run view.
+// "Watch it" buttons (#78) and scenario cards (#79): load the scenario at
+// step 1 and scroll to the run view.
+async function watch(id) {
+  if (!state.scenario || state.scenario.id !== id || !$("load-error").hidden) await chooseScenario(id);
+  else { setPlaying(false); show(0); }   // already loaded: back to step 1
+  $("run-view").scrollIntoView();
+}
+
 function wireWatchButtons() {
   for (const b of document.querySelectorAll("button.watch[data-scenario]")) {
-    b.addEventListener("click", async () => {
-      const id = Number(b.dataset.scenario);
-      if (!state.scenario || state.scenario.id !== id) await chooseScenario(id);
-      else { setPlaying(false); show(0); }   // already loaded: back to step 1
-      $("run-view").scrollIntoView();
+    b.addEventListener("click", () => watch(Number(b.dataset.scenario)));
+  }
+}
+
+// --- scenario cards (#79) ---------------------------------------------------
+
+// A recording, fetched once: the cards and the run share it.
+const recordings = new Map();
+function getRecording(id) {
+  if (!recordings.has(id)) {
+    // .catch removes a failed fetch, so a later try fetches again.
+    recordings.set(id, getJSON(recordingUrl(id)).catch((err) => { recordings.delete(id); throw err; }));
+  }
+  return recordings.get(id);
+}
+
+// The tools a run called, from its recording: one list per pass, in order,
+// each {tool, error}. Every tool result Python sent back counts, including the
+// error for a tool that doesn't exist (scenario 7).
+function toolPath(trace) {
+  const passes = new Map();
+  for (const e of trace.events) {
+    const p = e.payload;
+    if (e.step_id === "run_tools" && p && typeof p === "object" && "is_error" in p) {
+      if (!passes.has(e.pass)) passes.set(e.pass, []);
+      passes.get(e.pass).push({ tool: p.tool, error: !!p.is_error });
+    }
+  }
+  return [...passes.values()];
+}
+
+// The path as chips: "evaluate_job + research_company → flag_for_review",
+// "evaluate_job → error → evaluate_job".
+function pathChips(passes) {
+  if (!passes.length) return [el("span", { class: "path-none" }, "no tools called")];
+  const out = [];
+  passes.forEach((pass, i) => {
+    if (i) out.push(el("span", { class: "path-arrow" }, " → "));
+    pass.forEach((r, j) => {
+      if (j) out.push(el("span", { class: "path-plus" }, " + "));
+      out.push(el("code", { class: "path-tool" }, r.tool));
+      if (r.error) out.push(el("span", { class: "path-arrow" }, " → "), el("span", { class: "path-error" }, "error"));
     });
+  });
+  return out;
+}
+
+// The nine cards, in two groups (D21), from scenarios.json. Each card's path
+// fills in when its recording arrives.
+function fillCards() {
+  $("cards").replaceChildren(...GROUPS.map(([key, label]) => el("div", { class: "card-group" },
+    el("h3", { class: "card-group-name" }, label),
+    el("div", { class: "card-grid" }, state.scenarios.filter((sc) => sc.group === key).map((sc) => {
+      const card = el("button", { type: "button", class: "scenario-card", "data-scenario": sc.id, "aria-pressed": "false" },
+        el("span", { class: "card-top" }, el("span", { class: "card-num" }, String(sc.id)),
+          el("span", { class: "card-name" }, sc.name),
+          sc.fault ? el("span", { class: "sim card-sim" }, "Simulated failure") : null),
+        el("span", { class: "card-setup" }, sc.setup || ""),
+        el("span", { class: "card-path", "aria-label": "Tools called" }, el("span", { class: "path-none" }, "…")));
+      card.addEventListener("click", () => watch(sc.id));
+      getRecording(sc.id)
+        .then((trace) => card.querySelector(".card-path").replaceChildren(...pathChips(toolPath(trace))))
+        .catch(() => card.querySelector(".card-path").replaceChildren(el("span", { class: "path-none" }, "no recording")));
+      return card;
+    })))));
+}
+
+// Mark the card for the scenario now shown; none for an unknown id.
+function markCard(id) {
+  for (const card of document.querySelectorAll(".scenario-card")) {
+    const on = Number(card.dataset.scenario) === id;
+    card.classList.toggle("selected", on);
+    card.setAttribute("aria-pressed", String(on));
   }
 }
 
@@ -775,6 +849,7 @@ async function loadScenario(id) {
   setPlaying(false);
   const scenario = state.scenarios.find((sc) => sc.id === id) || null;
   $("scenario").value = scenario ? String(id) : "";
+  markCard(scenario ? id : null);
   if (!scenario) {
     const ids = state.scenarios.map((sc) => sc.id);
     showProblem("SCENARIO NOT FOUND", `There's no scenario "${id}". Pick one of the ${ids.length} from the list`
@@ -783,7 +858,7 @@ async function loadScenario(id) {
   }
   let trace;
   try {
-    trace = await getJSON(recordingUrl(id));
+    trace = await getRecording(id);
   } catch (err) {
     if (token !== state.loading) return;
     showProblem(`SCENARIO ${id} · NO RECORDING`, `Scenario ${id} (${scenario.name}) has no recording to play`
@@ -828,7 +903,8 @@ async function start() {
   wireWatchButtons();
   window.explorer = { show, state, setPlaying, loadScenario };   // for checking the page by hand from the console
   // The tool list reads scenario 1's recording, whatever scenario is shown.
-  getJSON(recordingUrl(DEFAULT_SCENARIO)).then(fillTools).catch(() => $("tools-intro").remove());
+  fillCards();
+  getRecording(DEFAULT_SCENARIO).then(fillTools).catch(() => $("tools-intro").remove());
   await loadScenario(scenarioFromUrl());
 }
 

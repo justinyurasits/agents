@@ -9,6 +9,8 @@ local http server these tests start, and check all nine scenarios:
   3. The URL: an unknown id, picking a scenario, and Back.
   4. The page structure (#78): the nav reaches each section, "Watch it run"
      and the "Watch it" buttons reach the run, and the page fits a phone.
+  5. The scenario cards (#79): grouped and in order, each card's tool path
+     matches its recording, and clicking one loads its run.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -139,6 +141,18 @@ def tool_results(trace):
     for e in trace["events"]:
         walk(e["payload"])
     return sorted(set(found), key=len, reverse=True)   # longest first, so none is cut by a shorter one
+
+
+def tool_path(trace):
+    """A run's tool path, worked out here from the recording, independently of
+    the page: one group per pass, tools in a pass joined with " + ", passes
+    with " → ", and " → error" after a tool that failed."""
+    passes = {}
+    for e in trace["events"]:
+        p = e["payload"]
+        if e["step_id"] == "run_tools" and isinstance(p, dict) and "is_error" in p:
+            passes.setdefault(e["pass"], []).append(p["tool"] + (" → error" if p["is_error"] else ""))
+    return " → ".join(" + ".join(tools) for _, tools in sorted(passes.items())) or "no tools called"
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -359,6 +373,103 @@ class BrowserTest(unittest.TestCase):
             with self.subTest(selector):
                 box = page.eval_on_selector(selector, "e => e.getBoundingClientRect().right")
                 self.assertLessEqual(box, 390)
+        self.assertEqual(self.errors, [])
+
+
+    # --- scenario cards (#79) ----------------------------------------------
+
+    def cards_ready(self, page):
+        page.wait_for_function("document.querySelectorAll('.scenario-card').length === 9"
+                               " && [...document.querySelectorAll('.card-path')].every(c => !c.textContent.includes('…'))")
+
+    def selected_cards(self, page):
+        return page.eval_on_selector_all(".scenario-card.selected", "cs => cs.map(c => Number(c.dataset.scenario))")
+
+    def test_the_cards_are_grouped_and_in_order(self):
+        page = self.open()
+        self.cards_ready(page)
+        groups = page.eval_on_selector_all(".card-group", """gs => gs.map(g => [g.querySelector('.card-group-name').textContent,
+            [...g.querySelectorAll('.scenario-card')].map(c => Number(c.dataset.scenario))])""")
+        self.assertEqual(groups, [["Normal runs", [1, 2, 3, 4, 5]], ["Break the agent", [6, 7, 8, 9]]])
+        self.assertEqual(self.errors, [])
+
+    def test_each_cards_tool_path_matches_its_recording(self):
+        page = self.open()
+        self.cards_ready(page)
+        for sc in SCENARIOS:
+            n = sc["id"]
+            with self.subTest(scenario=n):
+                shown = collapse(page.inner_text(f'.scenario-card[data-scenario="{n}"] .card-path'))
+                self.assertEqual(shown, tool_path(recording(n)), f"scenario {n}: card path vs recording")
+
+    def test_break_the_agent_cards_say_the_failure_is_simulated(self):
+        page = self.open()
+        self.cards_ready(page)
+        for sc in SCENARIOS:
+            with self.subTest(scenario=sc["id"]):
+                chip = page.locator(f'.scenario-card[data-scenario="{sc["id"]}"] .card-sim')
+                self.assertEqual(chip.count(), 1 if sc["fault"] else 0)
+                if sc["fault"]:
+                    self.assertEqual(chip.inner_text(), "Simulated failure")
+
+    # A rating, or saying there was one. (?i:...) ignores case for that part only.
+    RATING_WORDS = re.compile(r"\b(STRONG|WORTH REVIEWING|IGNORE)\b|(?i:\brat(ed|ing)\b)")
+
+    def test_no_card_states_the_rating(self):
+        # D39 (PR #89 review): a card's own words never state the rating. Its
+        # own words are everything but the scenario's name and the tool path:
+        # a path may end in flag_for_review, and a break-the-agent name states
+        # its failure, which is the premise, not the ending. (The setup line
+        # is also held to #75's stricter intro rule, in test_docs.)
+        page = self.open()
+        self.cards_ready(page)
+        for sc in SCENARIOS:
+            with self.subTest(scenario=sc["id"]):
+                words = page.eval_on_selector(f'.scenario-card[data-scenario="{sc["id"]}"]', """c => {
+                    const copy = c.cloneNode(true);
+                    copy.querySelectorAll('.card-name, .card-path').forEach(x => x.remove());
+                    return copy.textContent; }""")
+                found = self.RATING_WORDS.search(words)
+                self.assertIsNone(found and found.group(), f"scenario {sc['id']}: {words!r}")
+
+    def test_clicking_a_card_loads_its_run_and_back_returns_to_the_previous_card(self):
+        page = self.open("?scenario=2")
+        self.cards_ready(page)
+        self.wait_for_scenario(page, 2)
+        self.assertEqual(self.selected_cards(page), [2])
+        page.evaluate("window.explorer.show(4); window.scrollTo(0, 0)")
+        page.click('.scenario-card[data-scenario="7"]')
+        self.wait_for_scenario(page, 7, "clicking card 7")
+        self.assertTrue(page.url.endswith("?scenario=7"), page.url)
+        self.assertEqual(page.evaluate("window.explorer.state.i"), 0)
+        self.assertEqual(self.selected_cards(page), [7])
+        self.assertLessEqual(abs(self.top_of(page, "#run-view") - 64), 60, "clicking a card didn't scroll to the run")
+        page.go_back()
+        self.wait_for_scenario(page, 2, "Back after clicking card 7")
+        self.assertEqual(self.selected_cards(page), [2])
+        page.go_forward()
+        self.wait_for_scenario(page, 7, "Forward to card 7")
+        self.assertEqual(self.selected_cards(page), [7])
+        page.select_option("#scenario", "5")   # the drop-down still works, and moves the selection
+        self.wait_for_scenario(page, 5, "picking 5 from the drop-down")
+        self.assertEqual(self.selected_cards(page), [5])
+        self.assertEqual(self.errors, [])
+
+    def test_the_selected_card_on_page_load(self):
+        for query, want in (("", [1]), ("?scenario=5", [5]), ("?scenario=42", [])):
+            with self.subTest(query or "no scenario"):
+                page = self.open(query)
+                self.cards_ready(page)
+                page.wait_for_function("window.explorer && (window.explorer.state.steps.length"
+                                       " || !document.getElementById('load-error').hidden)")
+                self.assertEqual(self.selected_cards(page), want)
+
+    def test_the_cards_stack_on_a_phone(self):
+        page = self.open(width=390)
+        self.cards_ready(page)
+        lefts = page.eval_on_selector_all(".scenario-card", "cs => cs.map(c => Math.round(c.getBoundingClientRect().left))")
+        self.assertEqual(len(set(lefts)), 1, f"cards aren't in one column: {lefts}")
+        self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), 390)
         self.assertEqual(self.errors, [])
 
 

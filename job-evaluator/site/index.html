@@ -76,10 +76,13 @@
   <div class="written">Written for this page · tool names from the recordings</div>
 </section>
 
-<!-- 4. Scenarios (placeholder, #79) -->
-<section class="section placeholder" id="scenarios" aria-labelledby="h-scenarios">
+<!-- 4. Scenarios (#79): one card per scenario, built by app.js from
+     scenarios.json (name, setup) and each recording (the tool path). -->
+<section class="section" id="scenarios" aria-labelledby="h-scenarios">
   <h2 id="h-scenarios">Scenarios</h2>
-  <p>Coming next: a card for each of the nine scenarios (#79). For now, pick one in the run view below.</p>
+  <p>Nine recorded runs. Pick one to watch it below. Each card shows the tools the run calls, in order: tools in the same pass are joined with +.</p>
+  <div id="cards"></div>
+  <div class="written">Setup lines written for this page · tool paths from the recordings</div>
 </section>
 
 <!-- 5. The run view: the Execution Explorer (D15) -->
