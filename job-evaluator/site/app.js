@@ -226,8 +226,12 @@ function hasText(s) {
   }
   if (lookup(s)) return `${lookup(s).found ? "the stored facts" : "no stored facts"} for ${lookup(s).company}`;
   if (unknownToolError(s)) return `an error to send back: there's no tool called ${unknownToolError(s).tool}`;
-  // A guard stopped the run (scenarios 8 and 9): what Python returns instead of an answer.
-  if (s.first.payload && s.first.payload.ended_by && !s.caught) return `what the run returns instead of an answer: "${s.first.payload.text}"`;
+  // A guard stopped the run (scenarios 8 and 9): what Python returns instead of
+  // an answer. That text is Python's. A run that finishes normally also records
+  // ended_by ("end_turn"), but its text is Claude's final answer, which appears
+  // only under Claude's response (D31), so it's left to answer_returned below (#76).
+  const ended = s.first.payload && s.first.payload.ended_by;
+  if (ended && ended !== "end_turn" && !s.caught) return `what the run returns instead of an answer: "${s.first.payload.text}"`;
   switch (s.step_id) {
     case "agent_starts": return "the job posting";
     case "conversation_setup": return `a new conversation with ${plural(s.after.length, "message")}`;
