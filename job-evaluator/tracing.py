@@ -68,14 +68,22 @@ def to_json(obj):
     return data
 
 
-def _git_commit():
+# Files record.py writes itself. Changes to them don't change the code that
+# ran, so they don't make a run "dirty" (#99): otherwise every scenario after
+# the first in `record.py --all` was marked dirty by the recordings before it.
+# ":!path" is git's pathspec for "everything except this".
+NOT_CODE = [":!recordings", ":!docs/SCENARIOS.md"]
+
+
+def _git_commit(here=None):
     """(short commit, has uncommitted changes) for the code that ran, or
-    (None, None) outside a git checkout."""
-    here = os.path.dirname(os.path.abspath(__file__))
+    (None, None) outside a git checkout. here: the folder to check, which
+    defaults to the one this file is in (job-evaluator/)."""
+    here = here or os.path.dirname(os.path.abspath(__file__))
     try:
         commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=here,
                                 capture_output=True, text=True, check=True).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain", "--", "."], cwd=here,
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", ".", *NOT_CODE], cwd=here,
                                capture_output=True, text=True, check=True).stdout.strip()
         return commit, bool(dirty)
     except (OSError, subprocess.CalledProcessError):
