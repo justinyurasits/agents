@@ -176,6 +176,25 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - Wrote issues for the rest of the page: an eight-section structure (#78,
   D36), scenario cards (#79), design principles (#80), and How it was built
   plus the footer (#81).
+- Fixed #76 (PR #83): only runs a guard stopped show Python's message in
+  "Has"; normal runs say "Claude's final answer".
+- Browser tests (#84, PR #85, D38): Playwright for Python, skipped when
+  Chromium isn't installed. They check that Claude's words stay in their tab
+  across State, Code and Payload on every step of all nine scenarios, and
+  that every scenario plays to the end. CLAUDE.md now requires them for any
+  PR that touches `site/`.
+- Built the page out to eight sections (#78–#82, PRs #86, #89, #90, #92,
+  #95): hero, What's an agent, How this agent works, nine scenario cards
+  that load each run, the run view, seven design principles with every
+  guard placed under one, How it was built with numbers counted from the
+  repo, and a footer. BRIEF now describes the page as built.
+- Fixed two docs bugs found along the way: leftover rows of the old
+  principles table in SPEC (#94, PR #96) and two decisions both numbered D11
+  (#93, PR #97).
+- Stated precedence (#91, PR #98, D42): `flag_for_review`'s description now
+  says to try `research_company` first. Re-recorded all nine scenarios; all
+  PASS with the same tools and outcomes. The agent now follows the
+  principle the page names, instead of showing it by its absence.
 
 **Broke**
 
@@ -191,6 +210,19 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   A screenshot taken for #75 showed it. Filed as #76.
 - PR #77 numbered its decision D36, which #78 had already planned for the
   page structure. Renumbered to D37 before merge.
+- The leak check first searched only the default tab. Widening it to
+  Payload failed every scenario at step 1, because Claude's thinking quotes
+  the posting. The fix was to drop text Claude was given from the search
+  list, not to exempt the tab.
+- A tab that crashed left the previous tab on screen, and the leak check
+  passed while searching the wrong one. It now fails unless the tab it
+  clicked is the one showing.
+- Claude Code nearly reset `site/` with `git checkout` to undo a deliberate
+  breakage, before #78's work was committed. A safety check refused it.
+- PR #90's rewrite of SPEC cut at the wrong `---` and left six old rows.
+  Its test only read four-column rows, so it didn't see them.
+- Re-recording scenario 9 for #91: same PASS, but Claude was cut off in the
+  middle of a tool request instead of after a sentence.
 
 **Learned**
 
@@ -204,3 +236,10 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - An automated check only finds what it was written to look for. A rule
   like "Claude's words only under Claude's response" needs its own check.
   The screenshot only caught it by luck.
+- A test only sees the shape it was built to read. The principles test
+  checked four-column rows, so six-column leftovers were invisible to it.
+- Same scenario, same PASS, different run: scenario 9 was cut off at a
+  different point the second time. A PASS checks the outcome, not every
+  step on the way.
+- Writing a principle on the page exposed that the agent didn't follow it.
+  Explaining the system is a way of testing it.
