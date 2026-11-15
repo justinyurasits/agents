@@ -10,6 +10,8 @@ import copy
 import io
 import json
 import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -227,6 +229,37 @@ class ChooseRunTest(unittest.TestCase):
         job, _, _ = agent.choose_run(["--scenario", "4"])
         self.assertEqual(job, agent.scenario_job_text(BY_ID[4]))
         self.assertIsInstance(job, str)
+
+
+
+class CommittedRecordingsTest(unittest.TestCase):
+    """The recordings the page plays (#104): each made from committed code,
+    stamped with a commit in this repo's history, and passing its scenario."""
+
+    def recordings(self):
+        for sc in record.load_scenarios():
+            with open(record.recording_path(sc["id"]), encoding="utf-8") as f:
+                yield sc, json.load(f)
+
+    def test_no_recording_is_marked_uncommitted(self):
+        for sc, trace in self.recordings():
+            with self.subTest(scenario=sc["id"]):
+                self.assertIs(trace["git_dirty"], False, f"scenario {sc['id']} says it ran uncommitted code")
+
+    @unittest.skipIf(shutil.which("git") is None, "git isn't installed")
+    def test_every_recording_names_a_commit_in_this_repos_history(self):
+        for sc, trace in self.recordings():
+            with self.subTest(scenario=sc["id"]):
+                # merge-base --is-ancestor: exit 0 when the commit is in HEAD's history.
+                found = subprocess.run(["git", "merge-base", "--is-ancestor", trace["git_commit"], "HEAD"],
+                                       cwd=os.path.dirname(record.__file__), capture_output=True)
+                self.assertEqual(found.returncode, 0, f"scenario {sc['id']}: {trace['git_commit']} isn't in history")
+
+    def test_every_committed_recording_passes_its_scenario(self):
+        for sc, trace in self.recordings():
+            with self.subTest(scenario=sc["id"]):
+                self.assertEqual(record.differences(sc["expect"], record.actual(trace)), [])
+                self.assertFalse(trace.get("mismatch"))
 
 
 if __name__ == "__main__":
