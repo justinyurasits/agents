@@ -50,6 +50,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - `flag_for_review`'s description now says to try `research_company` first when compensation is missing, and to flag only if research finds no pay. All nine scenarios re-recorded; all PASS. The Design principles row shows the principle applied (#91).
 - A trace's `git_dirty` no longer counts the files `record.py` writes itself (`recordings/`, `docs/SCENARIOS.md`), so `record.py --all` stops marking scenarios 2–9 dirty; any other uncommitted change still counts (#99).
 - All nine recordings re-made after #99, so none says it ran uncommitted code; all PASS. A test fails if a committed recording is marked dirty, names a commit outside the repo's history, or doesn't pass its scenario (#104).
+- Removed the committed macOS `.DS_Store` files (repo root and job-evaluator/) and ignored `.DS_Store` everywhere; a test fails if one is committed again (#106).
 
 ## 0.1.0 — 2026-11-11
 
