@@ -1,0 +1,20 @@
+{
+  "tests": 220,
+  "scenarios": {
+    "total": 9,
+    "normal": 5,
+    "break": 4
+  },
+  "decisions": {
+    "logged": 40,
+    "approved": 23,
+    "proposed": 0,
+    "other_status": 1,
+    "no_status": 16
+  },
+  "guards": {
+    "total": 9,
+    "demonstrated": 4
+  },
+  "merged_prs": 45
+}

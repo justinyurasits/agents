@@ -274,15 +274,41 @@
   <div class="written">Written for this page · guard names from docs/STEPS.md</div>
 </section>
 
-<!-- 7. How it was built (placeholder, #81) -->
-<section class="section placeholder" id="how-it-was-built" aria-labelledby="h-built">
+<!-- 7. How it was built (#81): for people evaluating the work. Every number
+     is filled in from numbers.json, which build_numbers.py counts from the
+     repo; none is typed here. -->
+<section class="section" id="how-it-was-built" aria-labelledby="h-built">
   <h2 id="h-built">How it was built</h2>
-  <p>Coming next: the workflow, decisions and numbers behind this page (#81).</p>
+  <p>Claude Code wrote the code. I wrote the issues, made the decisions, and reviewed every change before it merged. The point was to run an AI coding agent the way you'd run a product team: written specs, logged decisions, and tests on every change.</p>
+  <ol class="workflow">
+    <li>Every change starts as a GitHub issue with acceptance criteria I can check.</li>
+    <li>Claude Code works only from an issue, on its own branch, in its own git worktree.</li>
+    <li>I review and merge every pull request. Nothing merges without me.</li>
+    <li>Design choices are logged as decisions: proposed in a pull request, approved in review.</li>
+    <li>Tests run on every change: unit tests with a fake Claude, and browser tests for this page.</li>
+    <li>When a tool description, prompt or rubric changes, every scenario is re-run against the real API.</li>
+  </ol>
+  <div class="numbers" aria-label="By the numbers">
+    <div class="number"><span class="n" data-number="tests"></span><span class="n-label">tests</span></div>
+    <div class="number"><span class="n" data-number="scenarios.total"></span><span class="n-label">recorded scenarios: <span data-number="scenarios.normal"></span> normal, <span data-number="scenarios.break"></span> break the agent</span></div>
+    <div class="number"><span class="n" data-number="guards.total"></span><span class="n-label">guards: <span data-number="guards.demonstrated"></span> shown in a scenario, the rest tested</span></div>
+    <div class="number"><span class="n" data-number="decisions.logged"></span><span class="n-label">decisions logged: <span data-number="decisions.approved"></span> approved in review, <span data-number="decisions.proposed"></span> proposed</span></div>
+    <div class="number"><span class="n" data-number="merged_prs"></span><span class="n-label">pull requests merged</span></div>
+  </div>
+  <p class="principle"><strong>Show what happened; label everything else.</strong> Every run on this page is a recording of the real agent calling Claude. The failures in the break-the-agent scenarios are injected on purpose and marked "Simulated failure". Text written for the page, like this, is labelled, and Claude's own words appear only under "Claude's response".</p>
+  <ul class="links">
+    <li><a href="https://github.com/justinyurasits/agents">The code on GitHub</a></li>
+    <li><a href="https://github.com/justinyurasits/agents/blob/main/CLAUDE.md">CLAUDE.md</a>: the rules Claude Code follows in this repo</li>
+    <li><a href="https://github.com/justinyurasits/agents/blob/main/job-evaluator/docs/DECISIONS.md">DECISIONS.md</a>: every decision, with the options and reasoning</li>
+    <li><a href="https://github.com/justinyurasits/agents/blob/main/LEARNINGS.md">LEARNINGS.md</a>: what building it taught me</li>
+  </ul>
+  <div class="written">Written for this page · numbers counted from the repo by build_numbers.py</div>
 </section>
 
-<!-- 8. Footer (placeholder, #81) -->
-<footer class="section placeholder footer" id="footer">
-  <p>Justin Yurasits. Links to the repo and a way to get in touch are coming (#81).</p>
+<!-- 8. Footer (#81): name, one line, the repo. A contact link comes later. -->
+<footer class="footer" id="footer">
+  <p><strong>Justin Yurasits</strong> · I built this to learn how agents work, and to show how I work with an AI coding agent.</p>
+  <p><a href="https://github.com/justinyurasits/agents">Code on GitHub</a></p>
 </footer>
 </div>
 <script src="app.js"></script>

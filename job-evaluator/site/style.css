@@ -67,9 +67,6 @@ html { scroll-behavior: smooth; }
 .section p { margin: 0; max-width: 860px; font-size: 15px; line-height: 1.65; color: var(--body); }
 .section code { font-family: var(--mono); font-size: 13px; color: var(--orange); }
 .written { font-size: 12px; color: var(--dim); }
-.placeholder { background: transparent; border-style: dashed; }
-.placeholder p { color: var(--muted); }
-.footer { margin-top: 12px; }
 
 /* The loop diagram: four steps, then back to the start. */
 .loop { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 22px; counter-reset: loop; }
@@ -107,6 +104,17 @@ html { scroll-behavior: smooth; }
 .guard-name { font-weight: 500; color: var(--text); }
 .tested { color: var(--muted); font-size: 12.5px; min-width: 0; overflow-wrap: anywhere; }   /* long test names wrap on a phone */
 .btn.watch-small { min-height: 32px; height: auto; padding: 4px 10px; font-size: 12px; }
+
+/* How it was built and the footer (#81). */
+.workflow { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 860px; font-size: 15px; line-height: 1.55; color: var(--body); }
+.numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.number { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--well); border: 1px solid var(--line); }
+.number .n { font-size: 30px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.n-label { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.links { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; color: var(--body); }
+.section a, .footer a { color: var(--amber); }
+.footer { padding: 24px 0 8px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; scroll-margin-top: 64px; }
+.footer p { margin: 0; font-size: 14px; color: var(--body); }
 
 /* Scenario cards (#79). */
 .card-group { display: flex; flex-direction: column; gap: 10px; }
