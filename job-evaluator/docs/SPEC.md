@@ -137,7 +137,7 @@ Claude #1 never sees `RUBRIC`. Claude #2 never sees the tool descriptions or the
 | Tool | Description (when to use it) | Inputs |
 |---|---|---|
 | `evaluate_job` | "Rate a job posting against Justin's criteria. Use when the posting has enough information to rate: company, role, location/remote status, and compensation." | `company`, `role_title`, `job_description` (required); `location`, `remote` (boolean), `compensation` |
-| `flag_for_review` | "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably." | `company`, `role_title`, `missing_info` (all required) |
+| `flag_for_review` | "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably. If compensation is missing, try research_company first; flag only if research finds no pay." (the last sentence: #91, D42) | `company`, `role_title`, `missing_info` (all required) |
 | `research_company` | "Look up stored facts about a company: size, stage, and typical base pay for a role level. Use when a posting doesn't list compensation." | `company`, `role_level` (both required) |
 
 **Tool results as Claude #1 sees them:**

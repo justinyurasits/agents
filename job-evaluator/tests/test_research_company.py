@@ -7,6 +7,7 @@ SDK types (tests/fakes.py). No API calls.
 Run from job-evaluator/:  python -m unittest discover -s tests -v
 """
 
+import glob
 import json
 import os
 import tempfile
@@ -179,6 +180,32 @@ class RunTest(TraceTestCase):
                                              "typical_base_for_level": "$200,000–$235,000 base",
                                              "source": "stored demo data"})
         self.assertEqual(lookup["code"]["marker"], "research_company")
+
+
+
+class PrecedenceTest(unittest.TestCase):
+    """#91, D42: the tool that should wait says so in its own description."""
+
+    SENTENCE = "If compensation is missing, try research_company first; flag only if research finds no pay."
+
+    def description(self, name):
+        return next(t["description"] for t in agent.tools if t["name"] == name)
+
+    def test_flag_for_review_says_to_research_first(self):
+        self.assertTrue(self.description("flag_for_review").endswith(" " + self.SENTENCE))
+
+    def test_research_companys_description_is_unchanged(self):
+        self.assertEqual(self.description("research_company"),
+                         "Look up stored facts about a company: size, stage, and typical base "
+                         "pay for a role level. Use when a posting doesn't list compensation.")
+
+    def test_every_recording_shows_the_description_claude_now_gets(self):
+        # Recordings store the tools they offered; re-recorded in #91.
+        for path in sorted(glob.glob(os.path.join(os.path.dirname(agent.__file__), "recordings", "*.json"))):
+            with self.subTest(os.path.basename(path)):
+                with open(path, encoding="utf-8") as f:
+                    recorded = {t["name"]: t["description"] for t in json.load(f)["tools"]}
+                self.assertEqual(recorded["flag_for_review"], self.description("flag_for_review"))
 
 
 if __name__ == "__main__":

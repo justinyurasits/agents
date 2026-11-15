@@ -104,7 +104,8 @@ tools = [
         "description": (
             "Flag a posting for manual review. Use when key information "
             "(compensation, remote status) is missing or ambiguous, so the "
-            "job can't be rated reliably."
+            "job can't be rated reliably. If compensation is missing, try "
+            "research_company first; flag only if research finds no pay."
         ),
         "input_schema": {
             "type": "object",
