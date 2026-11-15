@@ -20,14 +20,6 @@ The seven principles the page demonstrates (#80, D36), the part of the agent tha
 | **Smaller questions get more reliable answers** | The grader's `RUBRIC` asks one yes/no question about the work; pay and location are checked in code (D28) | none | Scenario 1: the grader's one question and its answer |
 | **The conversation is the memory** | `messages` in `run_agent`: sent whole on every call (`send_to_claude`), and appended at `save_turn` and `results_back` (section 3) | none | Scenario 1: messages grows from 1 to 3 between the two calls |
 
----|---|---|
-| **The model for judgment, code for rules** | `hard_screens` with `MIN_BASE` and `REQUIRE_REMOTE`, and `RATING_FOR_ANSWER`, in [`agent.py`](../agent.py); the grader's `RUBRIC` asks only the one question that needs judgment (section 6, D28) | Scenario 5: a rule in code rejects the posting before the grader is asked |
-| **A guard turns a crash into information the model can act on** | The `try / except` around each tool in `run_agent` (`# STEP: tool_failed`, E1) sends the error back as an `is_error` tool result (section 5, D18) | Scenario 6: the grader's reply is broken, the error goes back to Claude, and Claude retries |
-| **Claude decides; Python executes** | `run_agent`: Python calls Claude, reads `stop_reason`, and runs the tools; step 4 (`claude_decides`) has no code because it happens on Anthropic's servers (section 3, [STEPS.md](STEPS.md)) | Any run |
-| **The conversation is the memory** | `messages` in `run_agent`: sent whole on every call (`send_to_claude`), and appended at `save_turn` and `results_back` (section 3) | Scenario 1: messages grows from 1 to 3 between the two calls |
-| **Tool descriptions steer the agent** | The `description` of each tool in `tools`, sent to Claude #1 on every call (section 4) | Scenario 2: no compensation, so Claude picks `flag_for_review` |
-| **Show what happened; label everything else** | `tracing.py` records real runs; `faults.py` marks what it injected (`injected: true`); the page labels its own text "Written for this page" and shows Claude's words only under "Claude's response" (section 7 and 8, D27, D31) | The page itself |
-
 ---
 
 ## 1. Overview
