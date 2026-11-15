@@ -47,6 +47,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - BRIEF's "What's on the page" now describes the eight-section page (D36) and the seven principles (#80). Tests fail if its section names drift from the page's nav or its principles from SPEC's table (#82).
 - SPEC's Design principles section holds only the seven-principle table; the old table's leftover rows are gone, and a test fails if a stray row appears (#94).
 - DECISIONS.md: the Streamlit entry is now D11a, so no two decisions share an id; the FastAPI D11 says it supersedes it, and a test fails if an id is ever used twice (#93).
+- `flag_for_review`'s description now says to try `research_company` first when compensation is missing, and to flag only if research finds no pay. All nine scenarios re-recorded; all PASS. The Design principles row shows the principle applied (#91).
 
 ## 0.1.0 — 2026-11-11
 

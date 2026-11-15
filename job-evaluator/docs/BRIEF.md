@@ -67,7 +67,7 @@ it.
    the principle it serves (D40): watch the ones a scenario shows; the rest
    are marked "Tested, not demonstrated" with the test that proves them.
    1. The model for judgment, code for rules (scenario 5)
-   2. Tool choice is intent classification, so state precedence (scenarios 2 and 3)
+   2. Tool choice is intent classification, so state precedence (scenario 2)
    3. Errors go back to the model as information (scenario 6)
    4. Fail closed on the unknown (scenario 7)
    5. Bound the loop (scenario 8)
@@ -148,4 +148,5 @@ The page shows what actually happened and labels everything else.
 - Scenario cards show each run's full tool path, worked out from its recording; a card's own words never state the rating (D39).
 - Each guard is listed once, under the principle it serves: errors go back to the model (E1, E5, E8), fail closed on the unknown (E2, E3, E6, E7, E9), bound the loop (E4) (D40).
 - Every number in How it was built is counted from the repo by `build_numbers.py`, never typed; the page links to this repo on GitHub (D41).
+- Tool precedence goes in the description of the tool that should wait: `flag_for_review` says to try `research_company` first when pay is missing (D42).
 - Browser tests check the page's rules in Chromium (Playwright, a dev-only requirement) and skip when it isn't installed. Claude's words are searched in every tab but its own; the only exemption is tool_result content in Payload (D38).

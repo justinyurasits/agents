@@ -752,3 +752,25 @@ repo, and testing the count, keeps the page honest as it grows.
 - The repo staying private at launch. Then the links come out, or copies of
   the docs ship with the page.
 
+## D42 — Precedence lives in the description of the tool that should wait
+
+**Status:** **Approved** (issue #91, PR #98 review)
+**Date:** 2026-11-14
+**Options:** say nothing and let Claude choose (as before) · say "use this
+first" in `research_company`'s description · say "try research first" in
+`flag_for_review`'s description · enforce the order in code
+**Decision:** `flag_for_review`'s description ends with "If compensation is
+missing, try research_company first; flag only if research finds no pay."
+`research_company`'s description is unchanged.
+**Reasoning:** the order is a judgment about which tool fits, so it belongs
+in what Claude reads, not in code. It goes in the tool that should wait,
+because that's the description Claude reads when it's about to choose too
+early. The instruction ("flag only if research finds no pay") also says when
+waiting ends. Before this, Claude already researched first in scenarios 2 and
+4, but that was the model's preference, not a decision (#65). After it, all
+nine scenarios still PASS with the same tools and outcomes.
+**What would change it:** a third tool that also claims "no pay listed" (then
+precedence may need stating in more than one description), or a run where
+Claude flags without researching (then the order may need enforcing in
+code).
+

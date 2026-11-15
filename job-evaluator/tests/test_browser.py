@@ -231,6 +231,14 @@ class BrowserTest(unittest.TestCase):
     # The tabs searched for Claude's words: every tab but "Claude's response".
     TABS = {"state": "State change", "code": "Code", "payload": "Payload"}
 
+    def test_the_recordings_have_claudes_words_to_search_for(self):
+        # Guards the check below: if the extractor ever finds nothing, that
+        # check would pass without searching. A single scenario can have none
+        # (#91: scenario 9's reply was cut off inside a tool request, before
+        # any text), but most have plenty.
+        found = [sc["id"] for sc in SCENARIOS if pieces(claudes_words(recording(sc["id"])))]
+        self.assertGreaterEqual(len(found), 7, f"Claude's words found only in scenarios {found}")
+
     def test_claudes_words_stay_in_their_tab(self):
         # D31: Claude's own words appear only under "Claude's response".
         for sc in SCENARIOS:
@@ -242,7 +250,6 @@ class BrowserTest(unittest.TestCase):
                 given = given_to_claude(trace)
                 look_for = [p for p in pieces(claudes_words(trace)) if not any(p in g for g in given)]
                 exempt = tool_results(trace)
-                self.assertTrue(look_for, f"scenario {n}: no words of Claude's found in its recording")
                 leaks = []
                 for k in range(self.steps(page)):
                     self.show(page, k, f"scenario {n}, step {k + 1}")
@@ -483,7 +490,7 @@ class BrowserTest(unittest.TestCase):
         self.wait_for_scenario(page, 5)
         buttons = page.eval_on_selector_all("#principles button.watch",
                                             "bs => bs.map((b, i) => [i, Number(b.dataset.scenario), b.textContent])")
-        self.assertEqual(len(buttons), 12)   # 8 for the principles (two for one row), 4 for demonstrated guards
+        self.assertEqual(len(buttons), 11)   # 7 for the principles, 4 for demonstrated guards
         for i, n, label in buttons:
             with self.subTest(button=label, scenario=n):
                 page.evaluate("window.explorer.show(2); window.scrollTo(0, 0)")

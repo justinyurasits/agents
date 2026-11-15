@@ -1,8 +1,8 @@
 {
   "trace_version": 1,
   "scenario": "scenario-4",
-  "started_at": "2026-11-14T22:32:03Z",
-  "git_commit": "30be0ed",
+  "started_at": "2026-11-15T01:59:59Z",
+  "git_commit": "b53fb55",
   "git_dirty": true,
   "model": "claude-sonnet-5-5",
   "limits": {
@@ -45,7 +45,7 @@
     },
     {
       "name": "flag_for_review",
-      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably. If compensation is missing, try research_company first; flag only if research finds no pay.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -102,7 +102,7 @@
       "code": {
         "file": "agent.py",
         "marker": "agent_starts",
-        "line": 764,
+        "line": 765,
         "lines": [
           "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
         ]
@@ -130,7 +130,7 @@
       "code": {
         "file": "agent.py",
         "marker": "conversation_setup",
-        "line": 499,
+        "line": 500,
         "lines": [
           "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
         ]
@@ -153,7 +153,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -208,7 +208,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -237,7 +237,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -279,23 +279,23 @@
             "type": "thinking"
           },
           {
-            "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+            "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Quillmark Learning",
               "role_title": "Director of AI Product",
-              "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+              "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
               "location": "Remote (US)",
-              "remote": true,
-              "compensation": "$190,000–$220,000 base plus bonus"
+              "compensation": "$190,000–$220,000 base plus bonus",
+              "remote": true
             },
             "name": "evaluate_job",
             "type": "tool_use"
           },
           {
-            "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+            "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
             "caller": {
               "type": "direct"
             },
@@ -313,8 +313,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1292,
-        "output": 482
+        "input": 1317,
+        "output": 517
       },
       "guard": null,
       "injected": false
@@ -332,7 +332,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -378,7 +378,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -424,7 +424,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -484,23 +484,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -517,7 +517,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -540,7 +540,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -615,14 +615,14 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+        "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
         "arguments": {
           "company": "Quillmark Learning",
           "role_title": "Director of AI Product",
-          "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+          "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
           "location": "Remote (US)",
-          "remote": true,
-          "compensation": "$190,000–$220,000 base plus bonus"
+          "compensation": "$190,000–$220,000 base plus bonus",
+          "remote": true
         }
       },
       "messages_before": null,
@@ -630,7 +630,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -704,7 +704,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -734,7 +734,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -764,7 +764,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Quillmark Learning\nRole: Director of AI Product\n\nLead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus."
+            "content": "Company: Quillmark Learning\nRole: Director of AI Product\n\nQuillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers."
           }
         ]
       },
@@ -773,7 +773,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -803,7 +803,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}",
             "type": "text"
           }
         ]
@@ -813,7 +813,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -825,8 +825,8 @@
       },
       "parent": "e12",
       "tokens": {
-        "input": 248,
-        "output": 222
+        "input": 278,
+        "output": 230
       },
       "guard": null,
       "injected": false
@@ -844,7 +844,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -879,7 +879,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -914,7 +914,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -989,16 +989,16 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+        "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
         "is_error": false,
-        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1066,7 +1066,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1141,7 +1141,7 @@
       },
       "payload": {
         "tool": "research_company",
-        "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+        "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
         "arguments": {
           "company": "Fernhollow Insurance",
           "role_level": "Lead Product Manager"
@@ -1152,7 +1152,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1226,7 +1226,7 @@
       "code": {
         "file": "agent.py",
         "marker": "research_company",
-        "line": 420,
+        "line": 421,
         "lines": [
           "if name is None:",
           "    result = {\"found\": False, \"source\": RESEARCH_SOURCE}",
@@ -1264,7 +1264,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1339,7 +1339,7 @@
       },
       "payload": {
         "tool": "research_company",
-        "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+        "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
         "is_error": false,
         "content": "{\"found\": false, \"source\": \"stored demo data\"}"
       },
@@ -1348,7 +1348,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1424,23 +1424,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -1467,23 +1467,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -1501,12 +1501,12 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
             },
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "content": "{\"found\": false, \"source\": \"stored demo data\"}"
             }
           ]
@@ -1515,7 +1515,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -1538,7 +1538,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1594,23 +1594,23 @@
                 "type": "thinking"
               },
               {
-                "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Quillmark Learning",
                   "role_title": "Director of AI Product",
-                  "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                  "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                   "location": "Remote (US)",
-                  "remote": true,
-                  "compensation": "$190,000–$220,000 base plus bonus"
+                  "compensation": "$190,000–$220,000 base plus bonus",
+                  "remote": true
                 },
                 "name": "evaluate_job",
                 "type": "tool_use"
               },
               {
-                "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
                 "caller": {
                   "type": "direct"
                 },
@@ -1628,12 +1628,12 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+                "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
               },
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
                 "content": "{\"found\": false, \"source\": \"stored demo data\"}"
               }
             ]
@@ -1645,7 +1645,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1674,7 +1674,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1712,14 +1712,18 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+            "text": "Research found no pay for Fernhollow, so I'm flagging it.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Fernhollow Insurance",
               "role_title": "Lead Product Manager, AI Claims",
-              "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+              "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
             },
             "name": "flag_for_review",
             "type": "tool_use"
@@ -1731,8 +1735,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 2072,
-        "output": 176
+        "input": 2140,
+        "output": 184
       },
       "guard": null,
       "injected": false
@@ -1750,7 +1754,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1796,7 +1800,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1842,7 +1846,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1896,23 +1900,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -1930,12 +1934,12 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
             },
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "content": "{\"found\": false, \"source\": \"stored demo data\"}"
             }
           ]
@@ -1954,23 +1958,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -1988,12 +1992,12 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
             },
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "content": "{\"found\": false, \"source\": \"stored demo data\"}"
             }
           ]
@@ -2002,14 +2006,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "text": "Research found no pay for Fernhollow, so I'm flagging it.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Fernhollow Insurance",
                 "role_title": "Lead Product Manager, AI Claims",
-                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+                "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
               },
               "name": "flag_for_review",
               "type": "tool_use"
@@ -2020,7 +2028,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -2043,7 +2051,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -2118,11 +2126,11 @@
       },
       "payload": {
         "tool": "flag_for_review",
-        "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+        "tool_use_id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
         "arguments": {
           "company": "Fernhollow Insurance",
           "role_title": "Lead Product Manager, AI Claims",
-          "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+          "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
         }
       },
       "messages_before": null,
@@ -2130,7 +2138,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -2198,7 +2206,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -2273,16 +2281,16 @@
       },
       "payload": {
         "tool": "flag_for_review",
-        "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+        "tool_use_id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
         "is_error": false,
-        "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+        "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation is not listed (\\\"discussed during interviews\\\"), and company research found no pay data for this role level. Remote (US) is stated.\"}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -2358,23 +2366,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -2392,12 +2400,12 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
             },
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "content": "{\"found\": false, \"source\": \"stored demo data\"}"
             }
           ]
@@ -2406,14 +2414,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "text": "Research found no pay for Fernhollow, so I'm flagging it.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Fernhollow Insurance",
                 "role_title": "Lead Product Manager, AI Claims",
-                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+                "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
               },
               "name": "flag_for_review",
               "type": "tool_use"
@@ -2434,23 +2446,23 @@
               "type": "thinking"
             },
             {
-              "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+              "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Quillmark Learning",
                 "role_title": "Director of AI Product",
-                "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                 "location": "Remote (US)",
-                "remote": true,
-                "compensation": "$190,000–$220,000 base plus bonus"
+                "compensation": "$190,000–$220,000 base plus bonus",
+                "remote": true
               },
               "name": "evaluate_job",
               "type": "tool_use"
             },
             {
-              "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "caller": {
                 "type": "direct"
               },
@@ -2468,12 +2480,12 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+              "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
             },
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+              "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
               "content": "{\"found\": false, \"source\": \"stored demo data\"}"
             }
           ]
@@ -2482,14 +2494,18 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+              "text": "Research found no pay for Fernhollow, so I'm flagging it.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Fernhollow Insurance",
                 "role_title": "Lead Product Manager, AI Claims",
-                "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+                "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
               },
               "name": "flag_for_review",
               "type": "tool_use"
@@ -2501,8 +2517,8 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
-              "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+              "tool_use_id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
+              "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation is not listed (\\\"discussed during interviews\\\"), and company research found no pay data for this role level. Remote (US) is stated.\"}"
             }
           ]
         }
@@ -2510,7 +2526,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -2533,7 +2549,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2589,23 +2605,23 @@
                 "type": "thinking"
               },
               {
-                "id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
+                "id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Quillmark Learning",
                   "role_title": "Director of AI Product",
-                  "job_description": "Lead product direction for AI tutor and grading assistant for community college tutoring software. Prototype new features hands-on with LLM APIs, work with faculty to define where AI helps students and where instructors stay in the loop. Lead a small team of two PMs, partner with engineering and learning science. Requires 8+ years in product including shipped AI products, hands-on LLM API prototyping, and experience leading PMs. Base plus bonus.",
+                  "job_description": "Quillmark Learning builds tutoring software used by community colleges. Director of AI Product leads the AI tutor and grading assistant: sets product direction for both assistants, prototypes new features hands-on with LLM APIs, works with faculty to define where AI helps students and where an instructor must stay in the loop. Leads a small team of two PMs and partners with engineering and learning science. Requirements: 8+ years in product, including AI products shipped to real users; hands-on prototyping with LLM APIs; experience leading product managers.",
                   "location": "Remote (US)",
-                  "remote": true,
-                  "compensation": "$190,000–$220,000 base plus bonus"
+                  "compensation": "$190,000–$220,000 base plus bonus",
+                  "remote": true
                 },
                 "name": "evaluate_job",
                 "type": "tool_use"
               },
               {
-                "id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
                 "caller": {
                   "type": "direct"
                 },
@@ -2623,12 +2639,12 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01UtFkjaa6xLhn2q8XBqDvp1",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, so the job itself involves direct technical work with AI rather than only managing others.\", \"It centers on owning an AI tutor and grading assistant, which means making real product decisions about how AI is used, including where humans stay in the loop.\", \"Working with faculty, engineering, and learning science on AI features exposes the person to practical deployment questions in a real educational setting.\", \"Caveat: it is a leadership role requiring 8+ years and prior shipped AI products, so some time goes to managing two PMs, but hands-on LLM work is still a stated responsibility.\"]}"
+                "tool_use_id": "toolu_01Q3yJk6z4A5aajzQ3eJUQZS",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly includes prototyping new features hands-on with LLM APIs, and it requires hands-on LLM API prototyping experience.\", \"Justin would own the product direction of two live AI products (an AI tutor and a grading assistant), so he would work directly on shipped AI used by real students and faculty.\", \"Defining with faculty where AI helps and where instructors must stay in the loop builds practical experience with human-in-the-loop design and AI product decisions.\", \"Caveat: it is a director-level role that also involves managing two PMs and setting strategy, so some time goes to leadership rather than building. Hands-on work is still a stated core part of the job.\"]}"
               },
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01Dge33Cq9coaEXXGVqGN4jT",
+                "tool_use_id": "toolu_01F2SjtCUJVY3TBPRt24y2Bu",
                 "content": "{\"found\": false, \"source\": \"stored demo data\"}"
               }
             ]
@@ -2637,14 +2653,18 @@
             "role": "assistant",
             "content": [
               {
-                "id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
+                "text": "Research found no pay for Fernhollow, so I'm flagging it.",
+                "type": "text"
+              },
+              {
+                "id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Fernhollow Insurance",
                   "role_title": "Lead Product Manager, AI Claims",
-                  "missing_info": "Compensation not listed (\"discussed during interviews\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear."
+                  "missing_info": "Compensation is not listed (\"discussed during interviews\"), and company research found no pay data for this role level. Remote (US) is stated."
                 },
                 "name": "flag_for_review",
                 "type": "tool_use"
@@ -2656,8 +2676,8 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_013zqrV5xsGAnkvFseHpvnKV",
-                "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation not listed (\\\"discussed during interviews\\\") and research lookup returned no stored data for the company, so typical base pay couldn't be estimated. Remote (US) status is clear.\"}"
+                "tool_use_id": "toolu_014fyL4ZuvvXuKnenZHZjgKU",
+                "content": "{\"status\": \"flagged\", \"company\": \"Fernhollow Insurance\", \"role_title\": \"Lead Product Manager, AI Claims\", \"missing_info\": \"Compensation is not listed (\\\"discussed during interviews\\\"), and company research found no pay data for this role level. Remote (US) is stated.\"}"
               }
             ]
           }
@@ -2668,7 +2688,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2697,7 +2717,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2735,7 +2755,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it.",
+            "text": "**Quillmark Learning, Director of AI Product: STRONG**\n- It's fully remote (US) and pays $190K–$220K base plus bonus.\n- You'd own the product direction for two live AI products, an AI tutor and a grading assistant.\n- The role is hands-on. You'd prototype with LLM APIs, and the posting requires that experience.\n- You'd work with faculty on where AI helps and where an instructor stays in the loop.\n- Caveat: it's a director role, so some of your time goes to managing two PMs and setting strategy instead of building.\n\n**Fernhollow Insurance, Lead PM, AI Claims: flagged for manual review**\n- The posting gives no pay. It says salary is \"discussed during interviews,\" and my company lookup found no pay data either, so I couldn't rate it.\n- The rest looks relevant. It's remote (US), hands-on with LLM APIs, and focused on document AI and human-review decisions.\n- To rate it, you'd need to get a pay range from the company first.",
             "type": "text"
           }
         ]
@@ -2745,8 +2765,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 2366,
-        "output": 402
+        "input": 2426,
+        "output": 333
       },
       "guard": null,
       "injected": false
@@ -2764,7 +2784,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -2810,7 +2830,7 @@
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2836,14 +2856,14 @@
       "crossing": null,
       "payload": {
         "ended_by": "end_turn",
-        "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it."
+        "text": "**Quillmark Learning, Director of AI Product: STRONG**\n- It's fully remote (US) and pays $190K–$220K base plus bonus.\n- You'd own the product direction for two live AI products, an AI tutor and a grading assistant.\n- The role is hands-on. You'd prototype with LLM APIs, and the posting requires that experience.\n- You'd work with faculty on where AI helps and where an instructor stays in the loop.\n- Caveat: it's a director role, so some of your time goes to managing two PMs and setting strategy instead of building.\n\n**Fernhollow Insurance, Lead PM, AI Claims: flagged for manual review**\n- The posting gives no pay. It says salary is \"discussed during interviews,\" and my company lookup found no pay data either, so I couldn't rate it.\n- The rest looks relevant. It's remote (US), hands-on with LLM APIs, and focused on document AI and human-review decisions.\n- To rate it, you'd need to get a pay range from the company first."
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2856,7 +2876,7 @@
   ],
   "result": {
     "ended_by": "end_turn",
-    "text": "I rated the first posting and flagged the second for manual review.\n\n**1. Quillmark Learning, Director of AI Product: STRONG**\n- The role includes hands-on prototyping with LLM APIs, so it isn't only people management.\n- You would own the product direction for an AI tutor and a grading assistant. That includes deciding where instructors stay in the loop.\n- You would work with faculty, engineering, and learning science on real deployment questions.\n- It's fully remote in the US, and the base is $190–220K plus bonus.\n- One caveat is that it asks for 8+ years of experience and shipped AI products. You would also manage two PMs, which will take some of your time.\n\n**2. Fernhollow Insurance, Lead PM, AI Claims: flagged for review**\n- The posting gives no compensation. It says only that salary will be discussed during interviews.\n- The company lookup returned nothing, so I couldn't estimate typical base pay.\n- The role looks relevant. It covers AI claims intake, extraction and routing prototypes, accuracy targets, and human-review decisions. It's also remote in the US.\n- I couldn't rate it without pay information. You could ask the recruiter for a salary range before deciding whether to pursue it."
+    "text": "**Quillmark Learning, Director of AI Product: STRONG**\n- It's fully remote (US) and pays $190K–$220K base plus bonus.\n- You'd own the product direction for two live AI products, an AI tutor and a grading assistant.\n- The role is hands-on. You'd prototype with LLM APIs, and the posting requires that experience.\n- You'd work with faculty on where AI helps and where an instructor stays in the loop.\n- Caveat: it's a director role, so some of your time goes to managing two PMs and setting strategy instead of building.\n\n**Fernhollow Insurance, Lead PM, AI Claims: flagged for manual review**\n- The posting gives no pay. It says salary is \"discussed during interviews,\" and my company lookup found no pay data either, so I couldn't rate it.\n- The rest looks relevant. It's remote (US), hands-on with LLM APIs, and focused on document AI and human-review decisions.\n- To rate it, you'd need to get a pay range from the company first."
   },
   "mismatch": false,
   "check": {

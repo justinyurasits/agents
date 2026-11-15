@@ -226,8 +226,8 @@
     </tr>
     <tr>
       <th scope="row" class="principle-name">Tool choice is intent classification, so state precedence</th>
-      <td class="principle-feature">Each tool's description says when to use it, and Claude matches the posting against them. <code>research_company</code> and <code>flag_for_review</code> both cover a posting with no pay listed, and neither description says which comes first. Claude researches first on its own (#65).</td>
-      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="2">Scenario 2</button><button type="button" class="btn watch" data-scenario="3">Scenario 3</button></td>
+      <td class="principle-feature">Each tool's description says when to use it, and Claude matches the posting against them. <code>research_company</code> and <code>flag_for_review</code> both cover a posting with no pay listed, so the tool that should wait says so: <code>flag_for_review</code>'s description ends "If compensation is missing, try research_company first; flag only if research finds no pay." (D42).</td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="2">Scenario 2</button></td>
     </tr>
     <tr>
       <th scope="row" class="principle-name">Errors go back to the model as information</th>
