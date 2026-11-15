@@ -16,6 +16,11 @@ import code_refs
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(HERE, "site")
+REPO_ROOT = os.path.dirname(HERE)
+# The one outside address the page may name, in an <a href> link only (#81):
+# this repo on GitHub. Links aren't requests; the page still loads nothing else.
+REPO_URL = "https://github.com/justinyurasits/agents"
+REPO_LINK = re.compile(r'<a href="' + re.escape(REPO_URL) + r'(/blob/main/[\w./-]+)?">')
 
 
 def read(path):
@@ -83,15 +88,27 @@ class SiteFilesTest(unittest.TestCase):
     FILES = ["index.html", "style.css", "app.js"]
 
     def test_the_page_requests_nothing_but_its_own_files(self):
-        # No fonts, scripts or data from anywhere else: not even a URL in the source.
+        # No fonts, scripts or data from anywhere else: not even a URL in the
+        # source, apart from <a href> links to this repo on GitHub (#81).
         for name in self.FILES:
             with self.subTest(name):
-                self.assertIsNone(re.search(r"https?://|//[a-z0-9.-]+\.[a-z]{2,}/", read(os.path.join(SITE, name))))
+                text = REPO_LINK.sub("<a>", read(os.path.join(SITE, name)))
+                self.assertIsNone(re.search(r"https?://|//[a-z0-9.-]+\.[a-z]{2,}/", text))
+
+    def test_every_github_link_points_at_a_file_in_this_repo(self):
+        links = REPO_LINK.findall(read(os.path.join(SITE, "index.html")))
+        self.assertGreaterEqual(len(links), 5)
+        for path in links:
+            with self.subTest(path or "the repo"):
+                if path:
+                    self.assertTrue(os.path.isfile(os.path.join(REPO_ROOT, path[len("/blob/main/"):])), path)
 
     def test_every_file_the_page_loads_exists(self):
         html = read(os.path.join(SITE, "index.html"))
         for ref in re.findall(r'(?:src|href)="([^"]+)"', html):
             if ref.startswith("data:"):
+                continue
+            if ref.startswith(REPO_URL):   # a link to this repo: checked in the test above (#81)
                 continue
             if ref.startswith("#"):   # a link within the page: the id must exist (#78)
                 with self.subTest(ref):
@@ -103,8 +120,8 @@ class SiteFilesTest(unittest.TestCase):
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.join(SITE, ref)))
         app = read(os.path.join(SITE, "app.js"))
-        loads = re.findall(r'^const (?:RECORDING_DIR|STEPS|SCENARIOS) = "([^"]+)";', app, re.M)
-        self.assertEqual(len(loads), 3)
+        loads = re.findall(r'^const (?:RECORDING_DIR|STEPS|SCENARIOS|NUMBERS) = "([^"]+)";', app, re.M)
+        self.assertEqual(len(loads), 4)
         for ref in loads:
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.normpath(os.path.join(SITE, ref))))
@@ -163,6 +180,7 @@ class PageStructureTest(unittest.TestCase):
         md = read(build_steps.STEPS_MD)
         known |= set(build_steps.parse_steps(md)) | set(build_steps.parse_checks(md))
         known |= set(re.findall(r"\b[a-z]+(?:_[a-z]+)+\b", read(os.path.join(HERE, "agent.py"))))
+        known |= {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(HERE, "*.py"))}   # build_numbers
         for path in glob.glob(os.path.join(HERE, "tests", "test_*.py")):
             known.add(os.path.basename(path)[:-3])
             known |= set(re.findall(r"^\s*def (test_\w+)", read(path), re.M))
@@ -188,6 +206,37 @@ class PageStructureTest(unittest.TestCase):
                 first = next(e for e in events if e["crossing"] and e["crossing"]["kind"] == "api_request")
                 self.assertEqual(first["payload"]["tools"], self.agent_tools())
 
+
+
+class NumbersTest(unittest.TestCase):
+    """How it was built (#81): every number shown comes from build_numbers.py."""
+
+    HTML = read(os.path.join(SITE, "index.html"))
+
+    def test_committed_numbers_json_matches_the_repo(self):
+        # Fails when a PR changes a count (a test, a decision, a merge) without
+        # rerunning build_numbers.py (or build_steps.py, which runs it).
+        import build_numbers
+        self.assertEqual(json.loads(read(build_numbers.NUMBERS_JSON)), build_numbers.build())
+
+    def test_every_number_slot_names_a_number_in_the_file(self):
+        import build_numbers
+        numbers = json.loads(read(build_numbers.NUMBERS_JSON))
+        slots = re.findall(r'data-number="([a-z_.]+)"', self.HTML)
+        self.assertEqual(len(slots), 10)
+        for slot in slots:
+            with self.subTest(slot):
+                value = numbers
+                for key in slot.split("."):
+                    value = value[key]
+                self.assertIsInstance(value, int)
+
+    def test_no_number_is_typed_into_the_section(self):
+        # Digits in How it was built may only come from numbers.json.
+        section = re.search(r'<section[^>]* id="how-it-was-built".*?</section>', self.HTML, re.S).group()
+        text = re.sub(r"<!--.*?-->", "", section, flags=re.S)
+        text = re.sub(r"<[^>]+>", " ", text)
+        self.assertEqual(re.findall(r"\d+", text), [])
 
 
 class PrinciplesTest(unittest.TestCase):
