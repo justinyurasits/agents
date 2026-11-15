@@ -156,10 +156,17 @@ class PageStructureTest(unittest.TestCase):
 
     def test_the_page_names_only_tools_in_agent_py(self):
         # Every snake_case word in the page's text must be a tool in agent.py,
-        # a step id, or a guard name. A renamed or invented tool fails here.
+        # a step id, a guard name, a name in agent.py's code (is_error,
+        # hard_screens), or a test file or test name (#80's "Tested, not
+        # demonstrated"). A renamed or invented tool fails here.
         known = set(self.agent_tools())
         md = read(build_steps.STEPS_MD)
         known |= set(build_steps.parse_steps(md)) | set(build_steps.parse_checks(md))
+        known |= set(re.findall(r"\b[a-z]+(?:_[a-z]+)+\b", read(os.path.join(HERE, "agent.py"))))
+        for path in glob.glob(os.path.join(HERE, "tests", "test_*.py")):
+            known.add(os.path.basename(path)[:-3])
+            known |= set(re.findall(r"^\s*def (test_\w+)", read(path), re.M))
+        self.assertNotIn("rate_posting", known, "the made-up tool from scenario 7 must still fail this test")
         text = re.sub(r"<[^>]+>", " ", re.sub(r"<!--.*?-->", " ", self.HTML, flags=re.S))
         words = set(re.findall(r"\b[a-z]+(?:_[a-z]+)+\b", text))
         self.assertTrue(words, "expected tool names in the page text")
@@ -180,6 +187,86 @@ class PageStructureTest(unittest.TestCase):
                 events = json.loads(read(path))["events"]
                 first = next(e for e in events if e["crossing"] and e["crossing"]["kind"] == "api_request")
                 self.assertEqual(first["payload"]["tools"], self.agent_tools())
+
+
+
+class PrinciplesTest(unittest.TestCase):
+    """The Design principles table (#80): the page and SPEC agree, every guard
+    is under a principle, and every claim it makes is checked."""
+
+    HTML = read(os.path.join(SITE, "index.html"))
+    SPEC = read(os.path.join(HERE, "docs", "SPEC.md"))
+    STEPS = build_steps.parse_steps(read(build_steps.STEPS_MD))
+
+    def page_rows(self):
+        """[(principle, [guard step ids], [Watch it scenarios]), ...] from the page."""
+        section = re.search(r'<section[^>]* id="principles".*?</section>', self.HTML, re.S).group()
+        rows = re.findall(r"<tr>\s*<th scope=\"row\"[^>]*>(.*?)</th>(.*?)</tr>", section, re.S)
+        out = []
+        for name, rest in rows:
+            feature, watch = rest.split('<td class="principle-watch">')
+            out.append((name, re.findall(r'data-guard="([a-z_]+)"', feature),
+                        [int(n) for n in re.findall(r'data-scenario="(\d+)"', watch)]))
+        return out
+
+    def spec_rows(self):
+        """The same, from SPEC's Design principles table."""
+        table = self.SPEC.split("## Design principles", 1)[1].split("\n---\n", 1)[0]   # up to the section's rule
+        out = []
+        for line in table.splitlines():
+            m = re.match(r"\| \*\*(.+?)\*\* \| .*? \| (.*?) \| (.*?) \|$", line)
+            if m:
+                guards = re.findall(r"E\d+ `([a-z_]+)`", m.group(2))
+                watch = [int(n) for n in re.findall(r"\d+", m.group(3).split(":")[0])]
+                out.append((m.group(1), guards, watch))
+        return out
+
+    def test_the_page_and_spec_list_the_same_seven_principles(self):
+        page, spec = self.page_rows(), self.spec_rows()
+        self.assertEqual(len(page), 7)
+        self.assertEqual([r[0] for r in page], [r[0] for r in spec])
+        for (name, guards, watch), (_, spec_guards, spec_watch) in zip(page, spec):
+            with self.subTest(name):
+                self.assertEqual(guards, spec_guards, "guards")
+                self.assertEqual(watch, spec_watch, "Watch it scenarios")
+
+    def test_every_guard_is_under_exactly_one_principle(self):
+        guards = [g for _, gs, _ in self.page_rows() for g in gs]
+        e_steps = {sid for sid, step in self.STEPS.items() if step["error"]}
+        self.assertEqual(len(e_steps), 9)
+        self.assertEqual(sorted(guards), sorted(e_steps), "each E-step in STEPS.md once")
+
+    def test_a_demonstrated_guard_is_caught_in_its_scenario(self):
+        # "Watch it (6)" next to E1 is a claim: scenario 6's recording must
+        # have that guard catching something.
+        for step, n in re.findall(r'<li data-guard="([a-z_]+)" data-scenario="(\d+)">', self.HTML):
+            with self.subTest(guard=step, scenario=n):
+                events = json.loads(read(os.path.join(HERE, "recordings", f"scenario-{int(n):02d}.json")))["events"]
+                self.assertTrue(any(e["step_id"] == step and e["guard"] and e["guard"]["caught"] for e in events),
+                                f"{step} isn't caught in scenario {n}'s recording")
+
+    def test_a_tested_guard_names_a_test_that_exists(self):
+        tested = re.findall(r'<li data-guard="([a-z_]+)">.*?<code>tests/([a-z_]+\.py)</code> · <code>(\w+)</code>',
+                            self.HTML)
+        self.assertEqual(len(tested), 5)
+        for step, file, name in tested:
+            with self.subTest(guard=step):
+                source = read(os.path.join(HERE, "tests", file))
+                self.assertTrue(re.search(rf"^\s*(class|def) {name}\b", source, re.M), f"{name} isn't in tests/{file}")
+
+    def test_every_guard_is_demonstrated_or_tested(self):
+        items = re.findall(r'<li data-guard="([a-z_]+)"[^>]*>(.*?)</li>', self.HTML, re.S)
+        self.assertEqual(len(items), 9)
+        for step, body in items:
+            with self.subTest(step):
+                self.assertTrue(("Watch it (" in body) != ("Tested, not demonstrated" in body))
+
+    def test_every_decision_cited_exists(self):
+        section = re.search(r'<section[^>]* id="principles".*?</section>', self.HTML, re.S).group()
+        decisions = set(re.findall(r"^## (D\d+) ", read(os.path.join(HERE, "docs", "DECISIONS.md")), re.M))
+        cited = set(re.findall(r"\bD\d+\b", section))
+        self.assertTrue(cited)
+        self.assertEqual(cited - decisions, set())
 
 
 if __name__ == "__main__":

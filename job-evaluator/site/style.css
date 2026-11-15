@@ -105,7 +105,7 @@ html { scroll-behavior: smooth; }
 .guard-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .guard-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 10px; border-radius: 8px; background: var(--well); border: 1px solid var(--line); font-size: 13px; }
 .guard-name { font-weight: 500; color: var(--text); }
-.tested { color: var(--muted); font-size: 12.5px; }
+.tested { color: var(--muted); font-size: 12.5px; min-width: 0; overflow-wrap: anywhere; }   /* long test names wrap on a phone */
 .btn.watch-small { min-height: 32px; height: auto; padding: 4px 10px; font-size: 12px; }
 
 /* Scenario cards (#79). */
