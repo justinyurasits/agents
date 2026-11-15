@@ -720,7 +720,7 @@ stopping.
 
 ## D41 — How it was built: numbers counted from the repo, links to GitHub
 
-**Status:** **Proposed** (issue #81)
+**Status:** **Approved** (issue #81, PR #92 review)
 **Date:** 2026-11-14
 **Decision:**
 - Every number in How it was built comes from `build_numbers.py`, written to
