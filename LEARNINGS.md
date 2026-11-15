@@ -46,6 +46,9 @@ Newest at the bottom of each section.
 - **A check only finds what it looks for.** The browser scripts for #71 searched every step for "undefined" and "nothing new" and passed. A screenshot for #75 then showed Claude's whole final answer in the "Has" box, which breaks D31, because no script checked where Claude's words appear. Each rule needs its own check. _(#76)_
 - **Tie written text to the recorded data.** The summary card's text is tested against what `record.actual()` reads from each recording (tools and outcome), and the intros are tested for outcome words. If a re-recording takes a different path, the stale summary fails the test instead of misleading visitors. _(#75, PR #77)_
 - **One PASS isn't proof.** The model varies run to run. Reliability means pass rates over many runs, which is next. _(open)_
+- **Testing on one example only tests what that example reaches.** The page was built and checked against scenario 6 alone. Playing the other eight found four kinds of step it had no words for, and one that leaked Claude's final answer. _(#72, #76)_
+- **A test needs its own check that it looked where it meant to.** A tab that crashed left the previous tab on screen, and the leak check passed while searching the wrong one. Now it fails unless the tab it clicked is the one showing. _(PR #85)_
+- **Check every view, not just the default.** The leak check first searched only the tab the inspector opens on; the raw payloads, where a leak is likeliest, were a click away and unchecked. _(PR #85)_
 
 ## Building with an AI coding agent
 
@@ -56,3 +59,4 @@ Newest at the bottom of each section.
 - **Two workers can't share one checkout.** The coding agent's uncommitted work rode along when I switched branches and landed in the wrong PR. Fix: the agent always works in its own git worktree. _(PR #39)_
 - **A pushed key is a leaked key.** Revoke it; deleting it from the file doesn't remove it from history. And a stale key in the shell can silently override `.env`. _(day one)_
 - **Define the product before writing issues.** Issues written ahead of the brief kept raising "what is this for?" Once the brief existed, every issue could be checked against it. _(BRIEF)_
+- **Commit before you break things on purpose.** Claude Code nearly reset `site/` with `git checkout` to undo a deliberate breakage, before the real work was committed. A safety check refused the command. Commit first, then break, then reset. _(PR #86)_
