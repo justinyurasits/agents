@@ -222,7 +222,7 @@ Every recorded run writes a **trace**: one JSON event per step, which the page (
 |---|---|
 | `trace_version` | `1` |
 | `scenario`, `started_at` | Scenario name; UTC start time |
-| `git_commit`, `git_dirty` | The commit that ran, and whether `job-evaluator/` had uncommitted changes. Lets the page link code references to the exact version. |
+| `git_commit`, `git_dirty` | The commit that ran, and whether `job-evaluator/` had uncommitted changes. Lets the page link code references to the exact version. `git_dirty` doesn't count the files `record.py` writes itself, `recordings/` and `docs/SCENARIOS.md`: they don't change the code that ran (#99). |
 | `fault` | The injected fault's name, or `null` |
 | `model`, `limits` | `claude-sonnet-5-5`; `{"max_passes": 10, "max_tokens": 2000}` |
 | `tools` | The full tool definitions, stored once |
