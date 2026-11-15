@@ -595,11 +595,22 @@ what the page shows by default
   browser.
 - `tests/test_browser.py` is plain `unittest`. It starts its own local server
   and skips with a one-line reason when Playwright or Chromium is missing.
-- The "Claude's words" check (D31) searches everything visible at each step
-  with the inspector on its default tab, State change, the same scope as the
-  check run by hand on #83. The Payload tab shows tool results as data. The
-  grader's reasons travel inside evaluate_job's result, so they would match
-  there by design.
+- The "Claude's words" check (D31) searches the State change, Code and
+  Payload tabs at every step, along with everything else on the page. A tab
+  that fails to draw, or a console error, fails the check, so it can't
+  search the wrong tab by mistake.
+- **One exemption, in Payload only:** the content of a tool_result. A tool's
+  result is data, even when it carries the grader's reasons inside
+  evaluate_job's rating. The test removes exactly the recorded
+  tool_result content strings from Payload's text before searching. Nothing
+  else on any tab is exempt.
+- Claude often repeats its input: a line of the posting, or the
+  job_description it passed to evaluate_job. A piece of Claude's words that
+  also appears in the posting, in what Python sends Claude (system prompt,
+  tool definitions, user messages other than tool results), or in Claude's
+  tool request arguments (data, D31) isn't searched for. It would match the
+  input, not a leak. Between 92% and 100% of each scenario's pieces are still
+  searched.
 - The tests read the page's state through `window.explorer`, which the page
   already exposes for checking by hand.
 **Reasoning:** the page's rules (D31, every scenario plays) were checked by
@@ -607,4 +618,6 @@ hand on each PR and a gap slipped through (#76). A dev file keeps the agent's
 install small; skipping keeps a fresh checkout's tests green while CLAUDE.md
 makes a skipped suite not count for a `site/` PR.
 **What would change it:** a CI runner with Chromium (then the suite always
-runs), or the Payload tab rendering Claude's text that isn't tool data.
+runs). A new tab, which gets added to the searched tabs. Claude's words
+reaching a tool_result through some new path (then the exemption needs
+narrowing).

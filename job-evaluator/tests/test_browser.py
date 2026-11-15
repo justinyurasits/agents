@@ -3,7 +3,8 @@ every page PR.
 
 They load site/ in headless Chromium, through Playwright for Python, from a
 local http server these tests start, and check all nine scenarios:
-  1. Claude's words stay in the "Claude's response" tab (D31).
+  1. Claude's words stay in the "Claude's response" tab (D31): searched in
+     the State change, Code and Payload tabs at every step (D38).
   2. Every scenario plays from step 1 to its last step without errors.
   3. The URL: an unknown id, picking a scenario, and Back.
 
@@ -58,14 +59,84 @@ def claudes_words(trace):
     return words
 
 
+def collapse(text):
+    """Whitespace runs as one space, the way a browser shows visible text."""
+    return " ".join(text.split())
+
+
+def as_json(text):
+    """text as it appears inside a JSON string on the Payload tab: quotes and
+    newlines escaped. [1:-1] drops json.dumps's surrounding quotes."""
+    return json.dumps(text, ensure_ascii=False)[1:-1]
+
+
 def pieces(words):
-    """Claude's words as overlapping 30-character pieces, whitespace collapsed
-    the way a browser collapses it in visible text."""
+    """Claude's words as overlapping 30-character pieces, both as written and
+    as they'd appear inside Payload's JSON (escaped), whitespace collapsed."""
     out = set()
     for w in words:
-        text = " ".join(w.split())
-        out.update(text[k:k + PIECE] for k in range(0, len(text) - PIECE + 1, STRIDE))
+        for text in (collapse(w), collapse(as_json(w))):
+            out.update(text[k:k + PIECE] for k in range(0, len(text) - PIECE + 1, STRIDE))
     return sorted(out)
+
+
+def given_to_claude(trace):
+    """Text in the recording that isn't Claude's own, though Claude may repeat
+    it: the posting, what Python sends Claude (system prompt, tool
+    definitions, user messages other than tool results), and the arguments of
+    Claude's tool requests, which D31 treats as data. A piece of Claude's
+    words that also appears here proves nothing, so it isn't searched for."""
+    texts = []
+
+    def strings(value):
+        if isinstance(value, str):
+            texts.append(value)
+        elif isinstance(value, dict):
+            for v in value.values():
+                strings(v)
+        elif isinstance(value, list):
+            for v in value:
+                strings(v)
+
+    for e in trace["events"]:
+        p = e["payload"]
+        if not isinstance(p, dict):
+            continue
+        kind = (e["crossing"] or {}).get("kind")
+        if e["step_id"] == "agent_starts":
+            strings(p)
+        if kind in ("api_request", "inner_api_request"):
+            strings(p.get("system"))
+            strings(p.get("tools"))
+            for m in p.get("messages", []):
+                if m["role"] == "user" and isinstance(m["content"], str):
+                    texts.append(m["content"])
+        if kind == "tool_call":
+            strings(p.get("arguments"))
+        if e["actor"] == "claude" and isinstance(p.get("content"), list):
+            strings([b.get("input") for b in p["content"] if b["type"] == "tool_use"])
+    return [form for t in texts for form in (collapse(t), collapse(as_json(t)))]
+
+
+def tool_results(trace):
+    """The content of every tool_result in the recording, as it appears in
+    Payload's JSON. The one exemption (D38): a tool's result is data, even
+    when it carries the grader's reasons inside evaluate_job's rating."""
+    found = []
+
+    def walk(value):
+        if isinstance(value, dict):
+            if "tool_use_id" in value and isinstance(value.get("content"), str):
+                found.append(collapse(as_json(value["content"])))
+            for v in value.values():
+                walk(v)
+        elif isinstance(value, list):
+            for v in value:
+                walk(v)
+
+    for e in trace["events"]:
+        walk(e["payload"])
+    return sorted(set(found), key=len, reverse=True)   # longest first, so none is cut by a shorter one
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -133,9 +204,12 @@ class BrowserTest(unittest.TestCase):
         return page.evaluate("window.explorer.state.steps.length")
 
     def visible_text(self, page):
-        # innerText is only what's rendered: the inspector shows the State
-        # change tab, so the Claude's response tab's content isn't in it.
-        return " ".join(page.inner_text(".page").split())
+        # innerText is only what's rendered: the inspector shows one tab at a
+        # time, so only that tab's content is in it.
+        return collapse(page.inner_text(".page"))
+
+    # The tabs searched for Claude's words: every tab but "Claude's response".
+    TABS = {"state": "State change", "code": "Code", "payload": "Payload"}
 
     def test_claudes_words_stay_in_their_tab(self):
         # D31: Claude's own words appear only under "Claude's response".
@@ -144,13 +218,26 @@ class BrowserTest(unittest.TestCase):
             with self.subTest(scenario=n):
                 page = self.open(f"?scenario={n}")
                 self.wait_for_scenario(page, n)
-                look_for = pieces(claudes_words(recording(n)))
+                trace = recording(n)
+                given = given_to_claude(trace)
+                look_for = [p for p in pieces(claudes_words(trace)) if not any(p in g for g in given)]
+                exempt = tool_results(trace)
                 self.assertTrue(look_for, f"scenario {n}: no words of Claude's found in its recording")
                 leaks = []
                 for k in range(self.steps(page)):
                     self.show(page, k, f"scenario {n}, step {k + 1}")
-                    text = self.visible_text(page)
-                    leaks += [f"step {k + 1}: {p!r}" for p in look_for if p in text][:1]
+                    for tab, name in self.TABS.items():
+                        where = f"scenario {n}, step {k + 1}, {name} tab"
+                        page.click(f'#tabs [data-tab="{tab}"]')
+                        # A tab that fails to draw leaves the last one on screen,
+                        # so check the right tab is showing before searching it.
+                        self.assertEqual(self.errors, [], f"{where}: console errors")
+                        self.assertEqual(page.get_attribute(f'#tabs [data-tab="{tab}"]', "aria-selected"), "true", where)
+                        text = self.visible_text(page)
+                        if tab == "payload":
+                            for content in exempt:
+                                text = text.replace(content, "<tool_result content>")
+                        leaks += [f"step {k + 1}, {name} tab: {p!r}" for p in look_for if p in text][:1]
                 self.assertEqual(leaks, [], f"scenario {n}: Claude's words outside the Claude's response tab")
 
     def test_every_scenario_plays_to_the_end(self):
