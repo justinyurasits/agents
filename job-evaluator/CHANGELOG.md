@@ -45,6 +45,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - Design principles on the page: seven principles, the part of the agent that applies each one, Watch it buttons, and every guard listed under one, demonstrated by a scenario or tested. SPEC's table matches; tests fail if they drift or a claim is wrong (#80).
 - How it was built and the footer: the workflow, numbers counted from the repo by `build_numbers.py` (tests, scenarios, guards, decisions, merged PRs), and links to the repo on GitHub. Tests fail if a number drifts or a link points at a missing file (#81).
 - BRIEF's "What's on the page" now describes the eight-section page (D36) and the seven principles (#80). Tests fail if its section names drift from the page's nav or its principles from SPEC's table (#82).
+- SPEC's Design principles section holds only the seven-principle table; the old table's leftover rows are gone, and a test fails if a stray row appears (#94).
 
 ## 0.1.0 — 2026-11-11
 
