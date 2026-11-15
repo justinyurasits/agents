@@ -1,8 +1,8 @@
 {
   "trace_version": 1,
   "scenario": "scenario-7",
-  "started_at": "2026-11-14T22:32:36Z",
-  "git_commit": "30be0ed",
+  "started_at": "2026-11-15T02:00:33Z",
+  "git_commit": "b53fb55",
   "git_dirty": true,
   "model": "claude-sonnet-5-5",
   "limits": {
@@ -45,7 +45,7 @@
     },
     {
       "name": "flag_for_review",
-      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably. If compensation is missing, try research_company first; flag only if research finds no pay.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -102,7 +102,7 @@
       "code": {
         "file": "agent.py",
         "marker": "agent_starts",
-        "line": 764,
+        "line": 765,
         "lines": [
           "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
         ]
@@ -130,7 +130,7 @@
       "code": {
         "file": "agent.py",
         "marker": "conversation_setup",
-        "line": 499,
+        "line": 500,
         "lines": [
           "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
         ]
@@ -153,7 +153,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -208,7 +208,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -237,7 +237,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -275,21 +275,17 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-            "type": "text"
-          },
-          {
-            "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+            "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Corvalis Payments",
               "role_title": "Principal Product Manager, Applied AI",
+              "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
               "location": "Remote (US)",
               "remote": true,
-              "compensation": "$210,000–$245,000 base plus equity",
-              "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+              "compensation": "$210,000–$245,000 base plus equity"
             },
             "name": "evaluate_job",
             "type": "tool_use"
@@ -301,8 +297,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1116,
-        "output": 492
+        "input": 1141,
+        "output": 462
       },
       "guard": null,
       "injected": false
@@ -320,7 +316,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -366,7 +362,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -412,7 +408,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -464,7 +460,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -497,21 +493,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -522,7 +514,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -545,7 +537,7 @@
       "code": {
         "file": "agent.py",
         "marker": "unknown_tool",
-        "line": 654,
+        "line": 655,
         "lines": [
           "raise ValueError(",
           "    f\"Unknown tool {tool_block.name!r}. Available tools: \"",
@@ -573,7 +565,7 @@
       "crossing": null,
       "payload": {
         "tool": "rate_posting",
-        "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+        "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
         "is_error": true,
         "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company."
       },
@@ -582,7 +574,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -654,21 +646,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -685,21 +673,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -711,7 +695,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
               "is_error": true
             }
@@ -721,7 +705,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -744,7 +728,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -796,21 +780,17 @@
             "role": "assistant",
             "content": [
               {
-                "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-                "type": "text"
-              },
-              {
-                "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+                "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Corvalis Payments",
                   "role_title": "Principal Product Manager, Applied AI",
+                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
-                  "compensation": "$210,000–$245,000 base plus equity",
-                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                  "compensation": "$210,000–$245,000 base plus equity"
                 },
                 "name": "rate_posting",
                 "type": "tool_use"
@@ -822,7 +802,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+                "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
                 "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
                 "is_error": true
               }
@@ -835,7 +815,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -864,7 +844,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -902,17 +882,17 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+            "id": "toolu_01EboMvDxqC9ja187ik8NUrf",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Corvalis Payments",
               "role_title": "Principal Product Manager, Applied AI",
+              "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
               "location": "Remote (US)",
               "remote": true,
-              "compensation": "$210,000–$245,000 base plus equity",
-              "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+              "compensation": "$210,000–$245,000 base plus equity"
             },
             "name": "evaluate_job",
             "type": "tool_use"
@@ -924,7 +904,7 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1661,
+        "input": 1656,
         "output": 462
       },
       "guard": null,
@@ -943,7 +923,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -989,7 +969,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1035,7 +1015,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1085,21 +1065,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -1111,7 +1087,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
               "is_error": true
             }
@@ -1127,21 +1103,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -1153,7 +1125,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
               "is_error": true
             }
@@ -1163,17 +1135,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+              "id": "toolu_01EboMvDxqC9ja187ik8NUrf",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -1184,7 +1156,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -1207,7 +1179,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1282,14 +1254,14 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+        "tool_use_id": "toolu_01EboMvDxqC9ja187ik8NUrf",
         "arguments": {
           "company": "Corvalis Payments",
           "role_title": "Principal Product Manager, Applied AI",
+          "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
           "location": "Remote (US)",
           "remote": true,
-          "compensation": "$210,000–$245,000 base plus equity",
-          "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+          "compensation": "$210,000–$245,000 base plus equity"
         }
       },
       "messages_before": null,
@@ -1297,7 +1269,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1371,7 +1343,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -1401,7 +1373,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -1431,7 +1403,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Corvalis Payments\nRole: Principal Product Manager, Applied AI\n\nCorvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+            "content": "Company: Corvalis Payments\nRole: Principal Product Manager, Applied AI\n\nCorvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity."
           }
         ]
       },
@@ -1440,7 +1412,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1470,7 +1442,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"You would define evaluation sets and release criteria with the risk team, which gives practical experience in testing and judging AI output quality.\", \"You would decide where AI drafts and where a person must approve, and measure time saved per merchant, so you work through real design tradeoffs and see results from AI features in production.\", \"The role leads features through launch to paying customers, which gives end-to-end experience shipping AI. The 10+ years and prior shipped-AI requirements make it senior, so it may be a stretch if Justin lacks that background.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"Defining evaluation sets and release criteria with the risk team gives practical experience in testing and validating AI output quality.\", \"Deciding where AI drafts versus where a person must approve, and measuring time saved per merchant, builds real experience with human-in-the-loop design and impact measurement.\", \"The work goes through to launch with paying customers on concrete use cases (dispute responses, payout questions, fraud review notes), so the experience comes from shipped production features.\", \"Caveat: it requires 10+ years in product and prior shipped AI features, so it's a senior role that expects existing AI experience, but the day-to-day work still builds more hands-on skill.\"]}",
             "type": "text"
           }
         ]
@@ -1480,7 +1452,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1493,7 +1465,7 @@
       "parent": "e24",
       "tokens": {
         "input": 376,
-        "output": 237
+        "output": 281
       },
       "guard": null,
       "injected": false
@@ -1511,7 +1483,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1546,7 +1518,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1581,7 +1553,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1656,16 +1628,16 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+        "tool_use_id": "toolu_01EboMvDxqC9ja187ik8NUrf",
         "is_error": false,
-        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"You would define evaluation sets and release criteria with the risk team, which gives practical experience in testing and judging AI output quality.\", \"You would decide where AI drafts and where a person must approve, and measure time saved per merchant, so you work through real design tradeoffs and see results from AI features in production.\", \"The role leads features through launch to paying customers, which gives end-to-end experience shipping AI. The 10+ years and prior shipped-AI requirements make it senior, so it may be a stretch if Justin lacks that background.\"]}"
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"Defining evaluation sets and release criteria with the risk team gives practical experience in testing and validating AI output quality.\", \"Deciding where AI drafts versus where a person must approve, and measuring time saved per merchant, builds real experience with human-in-the-loop design and impact measurement.\", \"The work goes through to launch with paying customers on concrete use cases (dispute responses, payout questions, fraud review notes), so the experience comes from shipped production features.\", \"Caveat: it requires 10+ years in product and prior shipped AI features, so it's a senior role that expects existing AI experience, but the day-to-day work still builds more hands-on skill.\"]}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1737,21 +1709,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -1763,7 +1731,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
               "is_error": true
             }
@@ -1773,17 +1741,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+              "id": "toolu_01EboMvDxqC9ja187ik8NUrf",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -1800,21 +1768,17 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "rate_posting",
               "type": "tool_use"
@@ -1826,7 +1790,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+              "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
               "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
               "is_error": true
             }
@@ -1836,17 +1800,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+              "id": "toolu_01EboMvDxqC9ja187ik8NUrf",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Corvalis Payments",
                 "role_title": "Principal Product Manager, Applied AI",
+                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "$210,000–$245,000 base plus equity",
-                "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                "compensation": "$210,000–$245,000 base plus equity"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -1858,8 +1822,8 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"You would define evaluation sets and release criteria with the risk team, which gives practical experience in testing and judging AI output quality.\", \"You would decide where AI drafts and where a person must approve, and measure time saved per merchant, so you work through real design tradeoffs and see results from AI features in production.\", \"The role leads features through launch to paying customers, which gives end-to-end experience shipping AI. The 10+ years and prior shipped-AI requirements make it senior, so it may be a stretch if Justin lacks that background.\"]}"
+              "tool_use_id": "toolu_01EboMvDxqC9ja187ik8NUrf",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"Defining evaluation sets and release criteria with the risk team gives practical experience in testing and validating AI output quality.\", \"Deciding where AI drafts versus where a person must approve, and measuring time saved per merchant, builds real experience with human-in-the-loop design and impact measurement.\", \"The work goes through to launch with paying customers on concrete use cases (dispute responses, payout questions, fraud review notes), so the experience comes from shipped production features.\", \"Caveat: it requires 10+ years in product and prior shipped AI features, so it's a senior role that expects existing AI experience, but the day-to-day work still builds more hands-on skill.\"]}"
             }
           ]
         }
@@ -1867,7 +1831,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -1890,7 +1854,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1942,21 +1906,17 @@
             "role": "assistant",
             "content": [
               {
-                "text": "The posting has the company, role, location, remote status, and compensation, so I'll rate it now.",
-                "type": "text"
-              },
-              {
-                "id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+                "id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Corvalis Payments",
                   "role_title": "Principal Product Manager, Applied AI",
+                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
-                  "compensation": "$210,000–$245,000 base plus equity",
-                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                  "compensation": "$210,000–$245,000 base plus equity"
                 },
                 "name": "rate_posting",
                 "type": "tool_use"
@@ -1968,7 +1928,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01XdJTvxtudvCfXEF1WCNKrb",
+                "tool_use_id": "toolu_01Vanv9sZf58J36CvQ4sV4QB",
                 "content": "ValueError: Unknown tool 'rate_posting'. Available tools: evaluate_job, flag_for_review, research_company.",
                 "is_error": true
               }
@@ -1978,17 +1938,17 @@
             "role": "assistant",
             "content": [
               {
-                "id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
+                "id": "toolu_01EboMvDxqC9ja187ik8NUrf",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Corvalis Payments",
                   "role_title": "Principal Product Manager, Applied AI",
+                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000-$245,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
-                  "compensation": "$210,000–$245,000 base plus equity",
-                  "job_description": "Corvalis Payments processes payments for small online merchants. The Applied AI team builds features that cut merchants' busywork: dispute responses, payout questions, and fraud review notes. As Principal PM for Applied AI, you'll find the merchant tasks where AI saves the most time, build working prototypes yourself, and lead them through launch with engineering and risk. Responsibilities: prototype AI features hands-on with LLM APIs and tool use; define evaluation sets and release criteria with the risk team; decide where AI drafts and where a person must approve; measure time saved per merchant. Requirements: 10+ years in product, with AI features shipped to paying customers; hands-on building experience; payments or fintech experience preferred. Remote within the US. Base salary $210,000–$245,000 plus equity."
+                  "compensation": "$210,000–$245,000 base plus equity"
                 },
                 "name": "evaluate_job",
                 "type": "tool_use"
@@ -2000,8 +1960,8 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_011Qa3fH8oKUiBoeCFhPyMb1",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"You would define evaluation sets and release criteria with the risk team, which gives practical experience in testing and judging AI output quality.\", \"You would decide where AI drafts and where a person must approve, and measure time saved per merchant, so you work through real design tradeoffs and see results from AI features in production.\", \"The role leads features through launch to paying customers, which gives end-to-end experience shipping AI. The 10+ years and prior shipped-AI requirements make it senior, so it may be a stretch if Justin lacks that background.\"]}"
+                "tool_use_id": "toolu_01EboMvDxqC9ja187ik8NUrf",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building working prototypes yourself with LLM APIs and tool use, which is direct hands-on AI work rather than just managing others who build.\", \"Defining evaluation sets and release criteria with the risk team gives practical experience in testing and validating AI output quality.\", \"Deciding where AI drafts versus where a person must approve, and measuring time saved per merchant, builds real experience with human-in-the-loop design and impact measurement.\", \"The work goes through to launch with paying customers on concrete use cases (dispute responses, payout questions, fraud review notes), so the experience comes from shipped production features.\", \"Caveat: it requires 10+ years in product and prior shipped AI features, so it's a senior role that expects existing AI experience, but the day-to-day work still builds more hands-on skill.\"]}"
               }
             ]
           }
@@ -2012,7 +1972,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2041,7 +2001,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2079,7 +2039,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI.** Remote (US), $210K–$245K base plus equity.\n\n**Why it rates well:**\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you help judge AI output quality.\n- **Design tradeoffs:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant, so you see the results in production.\n- **End-to-end ownership:** You lead features through launch to paying customers.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features already shipped to paying customers, so it may be a stretch if you don't have that background. Fintech or payments experience is preferred but not required.\n\nThe posting lists compensation and remote status, so nothing needed manual review.",
+            "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI** (Remote US, $210K–$245K base plus equity)\n\nWhy it rated strong:\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you get practical experience validating AI output quality.\n- **Human-in-the-loop design:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant.\n- **Shipped to production:** The use cases are concrete and go to paying customers: dispute responses, payout questions, and fraud review notes.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features you've already shipped to paying customers. Payments or fintech experience is preferred but not required.\n\nThe pay is listed and the role is remote, so nothing needs manual review.",
             "type": "text"
           }
         ]
@@ -2089,8 +2049,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 2365,
-        "output": 326
+        "input": 2404,
+        "output": 328
       },
       "guard": null,
       "injected": false
@@ -2108,7 +2068,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -2154,7 +2114,7 @@
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2180,14 +2140,14 @@
       "crossing": null,
       "payload": {
         "ended_by": "end_turn",
-        "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI.** Remote (US), $210K–$245K base plus equity.\n\n**Why it rates well:**\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you help judge AI output quality.\n- **Design tradeoffs:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant, so you see the results in production.\n- **End-to-end ownership:** You lead features through launch to paying customers.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features already shipped to paying customers, so it may be a stretch if you don't have that background. Fintech or payments experience is preferred but not required.\n\nThe posting lists compensation and remote status, so nothing needed manual review."
+        "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI** (Remote US, $210K–$245K base plus equity)\n\nWhy it rated strong:\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you get practical experience validating AI output quality.\n- **Human-in-the-loop design:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant.\n- **Shipped to production:** The use cases are concrete and go to paying customers: dispute responses, payout questions, and fraud review notes.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features you've already shipped to paying customers. Payments or fintech experience is preferred but not required.\n\nThe pay is listed and the role is remote, so nothing needs manual review."
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2200,7 +2160,7 @@
   ],
   "result": {
     "ended_by": "end_turn",
-    "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI.** Remote (US), $210K–$245K base plus equity.\n\n**Why it rates well:**\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you help judge AI output quality.\n- **Design tradeoffs:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant, so you see the results in production.\n- **End-to-end ownership:** You lead features through launch to paying customers.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features already shipped to paying customers, so it may be a stretch if you don't have that background. Fintech or payments experience is preferred but not required.\n\nThe posting lists compensation and remote status, so nothing needed manual review."
+    "text": "**Rating: STRONG**\n\n**Corvalis Payments, Principal Product Manager, Applied AI** (Remote US, $210K–$245K base plus equity)\n\nWhy it rated strong:\n- **Hands-on building:** You build working prototypes yourself with LLM APIs and tool use. You aren't only managing the people who build.\n- **Evaluation work:** You define evaluation sets and release criteria with the risk team, so you get practical experience validating AI output quality.\n- **Human-in-the-loop design:** You decide where AI drafts and where a person must approve. You also measure time saved per merchant.\n- **Shipped to production:** The use cases are concrete and go to paying customers: dispute responses, payout questions, and fraud review notes.\n\n**Caveat:** The role is senior. It asks for 10+ years in product and AI features you've already shipped to paying customers. Payments or fintech experience is preferred but not required.\n\nThe pay is listed and the role is remote, so nothing needs manual review."
   },
   "mismatch": false,
   "check": {

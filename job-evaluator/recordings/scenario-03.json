@@ -1,8 +1,8 @@
 {
   "trace_version": 1,
   "scenario": "scenario-3",
-  "started_at": "2026-11-14T22:31:52Z",
-  "git_commit": "30be0ed",
+  "started_at": "2026-11-15T01:59:48Z",
+  "git_commit": "b53fb55",
   "git_dirty": true,
   "model": "claude-sonnet-5-5",
   "limits": {
@@ -45,7 +45,7 @@
     },
     {
       "name": "flag_for_review",
-      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably. If compensation is missing, try research_company first; flag only if research finds no pay.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -102,7 +102,7 @@
       "code": {
         "file": "agent.py",
         "marker": "agent_starts",
-        "line": 764,
+        "line": 765,
         "lines": [
           "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
         ]
@@ -130,7 +130,7 @@
       "code": {
         "file": "agent.py",
         "marker": "conversation_setup",
-        "line": 499,
+        "line": 500,
         "lines": [
           "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
         ]
@@ -153,7 +153,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -208,7 +208,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -237,7 +237,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -279,11 +279,11 @@
             "type": "thinking"
           },
           {
-            "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+            "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
             "type": "text"
           },
           {
-            "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+            "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
             "caller": {
               "type": "direct"
             },
@@ -301,8 +301,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1147,
-        "output": 180
+        "input": 1172,
+        "output": 164
       },
       "guard": null,
       "injected": false
@@ -320,7 +320,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -366,7 +366,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -412,7 +412,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -472,11 +472,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -493,7 +493,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -516,7 +516,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -591,7 +591,7 @@
       },
       "payload": {
         "tool": "research_company",
-        "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+        "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
         "arguments": {
           "company": "Marrowstone Logistics",
           "role_level": "Principal Product Manager"
@@ -602,7 +602,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -676,7 +676,7 @@
       "code": {
         "file": "agent.py",
         "marker": "research_company",
-        "line": 420,
+        "line": 421,
         "lines": [
           "if name is None:",
           "    result = {\"found\": False, \"source\": RESEARCH_SOURCE}",
@@ -714,7 +714,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -789,7 +789,7 @@
       },
       "payload": {
         "tool": "research_company",
-        "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+        "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
         "is_error": false,
         "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
       },
@@ -798,7 +798,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -874,11 +874,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -905,11 +905,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -927,7 +927,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
             }
           ]
@@ -936,7 +936,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -959,7 +959,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1015,11 +1015,11 @@
                 "type": "thinking"
               },
               {
-                "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+                "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
                 "type": "text"
               },
               {
-                "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+                "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
                 "caller": {
                   "type": "direct"
                 },
@@ -1037,7 +1037,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+                "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
                 "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
               }
             ]
@@ -1049,7 +1049,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1078,7 +1078,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1116,17 +1116,17 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+            "id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Marrowstone Logistics",
               "role_title": "Principal Product Manager, Agentic Operations",
-              "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+              "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
               "location": "Remote (US)",
               "remote": true,
-              "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+              "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
             },
             "name": "evaluate_job",
             "type": "tool_use"
@@ -1138,8 +1138,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1457,
-        "output": 461
+        "input": 1466,
+        "output": 468
       },
       "guard": null,
       "injected": false
@@ -1157,7 +1157,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1203,7 +1203,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1249,7 +1249,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1303,11 +1303,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -1325,7 +1325,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
             }
           ]
@@ -1344,11 +1344,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -1366,7 +1366,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
             }
           ]
@@ -1375,17 +1375,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+              "id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Marrowstone Logistics",
                 "role_title": "Principal Product Manager, Agentic Operations",
-                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+                "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -1396,7 +1396,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -1419,7 +1419,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1494,14 +1494,14 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+        "tool_use_id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
         "arguments": {
           "company": "Marrowstone Logistics",
           "role_title": "Principal Product Manager, Agentic Operations",
-          "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+          "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
           "location": "Remote (US)",
           "remote": true,
-          "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+          "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
         }
       },
       "messages_before": null,
@@ -1509,7 +1509,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1583,7 +1583,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -1613,7 +1613,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -1643,7 +1643,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Marrowstone Logistics\nRole: Principal Product Manager, Agentic Operations\n\nPrincipal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers."
+            "content": "Company: Marrowstone Logistics\nRole: Principal Product Manager, Agentic Operations\n\nPrincipal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers."
           }
         ]
       },
@@ -1652,7 +1652,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1682,7 +1682,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role explicitly requires building first versions of agents hands-on (tools, prompts, structured outputs, retries) before handing off to engineering for scale.\", \"Responsibilities include prototyping agents and building evaluation and monitoring, which means working directly with how the systems behave and fail.\", \"Requirements call for comfort reading traces and diagnosing failures, which is practical, in-the-weeds AI work.\", \"Defining autonomy levels, approval rules, and human handoffs with operations leaders gives exposure to deploying agents with real users in production.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role expects the PM to build first versions of agents personally, working with tools, prompts, structured outputs, and retries before handing off to engineering to scale.\", \"Responsibilities include building evaluation and monitoring for agents, and the requirements call for reading traces and diagnosing failures, which is practical, ongoing work with live AI systems.\", \"The PM sets autonomy levels and approval rules with operations leaders, so they deal directly with real-world agent behavior and human handoffs in production.\", \"The requirement of experience shipping agents or LLM features to real users means the role continues that hands-on work. One caveat is that it is a principal-level role that demands prior AI experience, so it suits someone who already has some.\"]}",
             "type": "text"
           }
         ]
@@ -1692,7 +1692,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1704,8 +1704,8 @@
       },
       "parent": "e26",
       "tokens": {
-        "input": 354,
-        "output": 197
+        "input": 361,
+        "output": 246
       },
       "guard": null,
       "injected": false
@@ -1723,7 +1723,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1758,7 +1758,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -1793,7 +1793,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1868,16 +1868,16 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+        "tool_use_id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
         "is_error": false,
-        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building first versions of agents hands-on (tools, prompts, structured outputs, retries) before handing off to engineering for scale.\", \"Responsibilities include prototyping agents and building evaluation and monitoring, which means working directly with how the systems behave and fail.\", \"Requirements call for comfort reading traces and diagnosing failures, which is practical, in-the-weeds AI work.\", \"Defining autonomy levels, approval rules, and human handoffs with operations leaders gives exposure to deploying agents with real users in production.\", \"base estimated from stored company data\"]}"
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role expects the PM to build first versions of agents personally, working with tools, prompts, structured outputs, and retries before handing off to engineering to scale.\", \"Responsibilities include building evaluation and monitoring for agents, and the requirements call for reading traces and diagnosing failures, which is practical, ongoing work with live AI systems.\", \"The PM sets autonomy levels and approval rules with operations leaders, so they deal directly with real-world agent behavior and human handoffs in production.\", \"The requirement of experience shipping agents or LLM features to real users means the role continues that hands-on work. One caveat is that it is a principal-level role that demands prior AI experience, so it suits someone who already has some.\", \"base estimated from stored company data\"]}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1953,11 +1953,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -1975,7 +1975,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
             }
           ]
@@ -1984,17 +1984,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+              "id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Marrowstone Logistics",
                 "role_title": "Principal Product Manager, Agentic Operations",
-                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+                "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -2015,11 +2015,11 @@
               "type": "thinking"
             },
             {
-              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+              "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
               "type": "text"
             },
             {
-              "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "caller": {
                 "type": "direct"
               },
@@ -2037,7 +2037,7 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+              "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
               "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
             }
           ]
@@ -2046,17 +2046,17 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+              "id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Marrowstone Logistics",
                 "role_title": "Principal Product Manager, Agentic Operations",
-                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+                "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
                 "location": "Remote (US)",
                 "remote": true,
-                "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+                "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
               },
               "name": "evaluate_job",
               "type": "tool_use"
@@ -2068,8 +2068,8 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building first versions of agents hands-on (tools, prompts, structured outputs, retries) before handing off to engineering for scale.\", \"Responsibilities include prototyping agents and building evaluation and monitoring, which means working directly with how the systems behave and fail.\", \"Requirements call for comfort reading traces and diagnosing failures, which is practical, in-the-weeds AI work.\", \"Defining autonomy levels, approval rules, and human handoffs with operations leaders gives exposure to deploying agents with real users in production.\", \"base estimated from stored company data\"]}"
+              "tool_use_id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role expects the PM to build first versions of agents personally, working with tools, prompts, structured outputs, and retries before handing off to engineering to scale.\", \"Responsibilities include building evaluation and monitoring for agents, and the requirements call for reading traces and diagnosing failures, which is practical, ongoing work with live AI systems.\", \"The PM sets autonomy levels and approval rules with operations leaders, so they deal directly with real-world agent behavior and human handoffs in production.\", \"The requirement of experience shipping agents or LLM features to real users means the role continues that hands-on work. One caveat is that it is a principal-level role that demands prior AI experience, so it suits someone who already has some.\", \"base estimated from stored company data\"]}"
             }
           ]
         }
@@ -2077,7 +2077,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -2100,7 +2100,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2156,11 +2156,11 @@
                 "type": "thinking"
               },
               {
-                "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay for this level first.",
+                "text": "The posting doesn't list compensation, so I'll look up Marrowstone's typical pay first.",
                 "type": "text"
               },
               {
-                "id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+                "id": "toolu_01GchdzD3deFZoSsucwpHXCs",
                 "caller": {
                   "type": "direct"
                 },
@@ -2178,7 +2178,7 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_012q5GfpCC5szYu1RUGiF9jW",
+                "tool_use_id": "toolu_01GchdzD3deFZoSsucwpHXCs",
                 "content": "{\"found\": true, \"company\": \"Marrowstone Logistics\", \"size\": \"About 600 employees\", \"stage\": \"Series C, profitable operations business\", \"role_level\": \"Principal Product Manager\", \"typical_base_for_level\": \"$200,000\\u2013$235,000 base\", \"note\": \"Stored demo data, written for this scenario. Not a real company.\", \"source\": \"stored demo data\"}"
               }
             ]
@@ -2187,17 +2187,17 @@
             "role": "assistant",
             "content": [
               {
-                "id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
+                "id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Marrowstone Logistics",
                   "role_title": "Principal Product Manager, Agentic Operations",
-                  "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick high-value agent tasks; prototype agents; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, occasional visits to operations centers.",
+                  "job_description": "Principal PM for Agentic Operations at a freight brokerage/carrier operations company (~600 employees, Series C, profitable operations business). Decide which operations tasks agents should own, design human handoffs, and build first versions hands-on (tools, prompts, structured outputs, retries) before scaling with engineering. Responsibilities: map operations workflows and pick highest-value agent tasks; prototype agents hands-on; define autonomy levels and approval rules with operations leaders; build evaluation and monitoring. Requirements: 10+ years in product including hands-on AI/automation work; experience shipping agents or LLM features to real users; comfort reading traces and diagnosing failures. Remote within the US, with occasional visits to operations centers.",
                   "location": "Remote (US)",
                   "remote": true,
-                  "compensation": "Not listed in posting; stored company data suggests typical base of $200,000–$235,000 for Principal PM level"
+                  "compensation": "Not listed in posting; research estimate of typical base for level: $200,000–$235,000 (stored demo data)"
                 },
                 "name": "evaluate_job",
                 "type": "tool_use"
@@ -2209,8 +2209,8 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_011DXvxWJ9NF5WUhfraWt8nH",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role explicitly requires building first versions of agents hands-on (tools, prompts, structured outputs, retries) before handing off to engineering for scale.\", \"Responsibilities include prototyping agents and building evaluation and monitoring, which means working directly with how the systems behave and fail.\", \"Requirements call for comfort reading traces and diagnosing failures, which is practical, in-the-weeds AI work.\", \"Defining autonomy levels, approval rules, and human handoffs with operations leaders gives exposure to deploying agents with real users in production.\", \"base estimated from stored company data\"]}"
+                "tool_use_id": "toolu_01CcbjSqTCQYbbpQ8mYHQGsa",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role expects the PM to build first versions of agents personally, working with tools, prompts, structured outputs, and retries before handing off to engineering to scale.\", \"Responsibilities include building evaluation and monitoring for agents, and the requirements call for reading traces and diagnosing failures, which is practical, ongoing work with live AI systems.\", \"The PM sets autonomy levels and approval rules with operations leaders, so they deal directly with real-world agent behavior and human handoffs in production.\", \"The requirement of experience shipping agents or LLM features to real users means the role continues that hands-on work. One caveat is that it is a principal-level role that demands prior AI experience, so it suits someone who already has some.\", \"base estimated from stored company data\"]}"
               }
             ]
           }
@@ -2221,7 +2221,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2250,7 +2250,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -2288,7 +2288,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "**Rating: STRONG**\n\n**Marrowstone Logistics, Principal Product Manager, Agentic Operations (Remote, US)**\n\n**Why it rates well**\n- **Hands-on building:** You build the first agent versions yourself, including tools, prompts, structured outputs, and retries. Engineering takes over to scale them afterward.\n- **Close to system behavior:** You prototype agents and build evaluation and monitoring, so you work directly with how the systems behave and fail.\n- **Practical AI work:** The role asks for comfort reading traces and diagnosing failures.\n- **Real deployment:** You define autonomy levels, approval rules, and human handoffs with operations leaders. That means agents running in production with real users.\n\n**Compensation**\n- The posting doesn't list pay.\n- Stored company data puts typical base for this level at **$200K–$235K**. That figure is an estimate, not an offer. The research tool says its data is stored demo data for this scenario, and Marrowstone is not a real company.\n\n**Company**\n- It has about 600 employees and is a Series C company with a profitable operations business.\n\n**Next step**\n- Confirm the actual pay range with the recruiter early, since the rating relies on the estimate.",
+            "text": "**Rating: STRONG**\n\n**Role:** Principal Product Manager, Agentic Operations at Marrowstone Logistics. It's remote within the US, with occasional visits to operations centers.\n\n**Compensation:** The posting doesn't list pay. A company lookup estimated a base of $200K–$235K for this level. That figure comes from stored demo data, so it isn't a confirmed number.\n\n**Why it rates strong:**\n- **Hands-on building:** You'd build the first versions of the agents yourself, including tools, prompts, structured outputs, and retries. Engineering joins to scale them afterward.\n- **Evaluation and monitoring:** You'd build the evaluation and monitoring for agent output. The role also expects you to read traces and diagnose failures, so you'd work on live AI systems regularly.\n- **Real-world agent behavior:** You'd set autonomy levels and approval rules with operations leaders, and design how agents hand off to people in production.\n- **Shipping experience:** The role builds on experience shipping agents or LLM features to real users.\n\n**Caveat:** This is a principal-level role that requires 10+ years in product and prior hands-on AI work. It suits someone who already has that experience.\n\n**Company:** About 600 employees, Series C, with a profitable operations business.",
             "type": "text"
           }
         ]
@@ -2298,8 +2298,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 2132,
-        "output": 401
+        "input": 2197,
+        "output": 424
       },
       "guard": null,
       "injected": false
@@ -2317,7 +2317,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -2363,7 +2363,7 @@
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2389,14 +2389,14 @@
       "crossing": null,
       "payload": {
         "ended_by": "end_turn",
-        "text": "**Rating: STRONG**\n\n**Marrowstone Logistics, Principal Product Manager, Agentic Operations (Remote, US)**\n\n**Why it rates well**\n- **Hands-on building:** You build the first agent versions yourself, including tools, prompts, structured outputs, and retries. Engineering takes over to scale them afterward.\n- **Close to system behavior:** You prototype agents and build evaluation and monitoring, so you work directly with how the systems behave and fail.\n- **Practical AI work:** The role asks for comfort reading traces and diagnosing failures.\n- **Real deployment:** You define autonomy levels, approval rules, and human handoffs with operations leaders. That means agents running in production with real users.\n\n**Compensation**\n- The posting doesn't list pay.\n- Stored company data puts typical base for this level at **$200K–$235K**. That figure is an estimate, not an offer. The research tool says its data is stored demo data for this scenario, and Marrowstone is not a real company.\n\n**Company**\n- It has about 600 employees and is a Series C company with a profitable operations business.\n\n**Next step**\n- Confirm the actual pay range with the recruiter early, since the rating relies on the estimate."
+        "text": "**Rating: STRONG**\n\n**Role:** Principal Product Manager, Agentic Operations at Marrowstone Logistics. It's remote within the US, with occasional visits to operations centers.\n\n**Compensation:** The posting doesn't list pay. A company lookup estimated a base of $200K–$235K for this level. That figure comes from stored demo data, so it isn't a confirmed number.\n\n**Why it rates strong:**\n- **Hands-on building:** You'd build the first versions of the agents yourself, including tools, prompts, structured outputs, and retries. Engineering joins to scale them afterward.\n- **Evaluation and monitoring:** You'd build the evaluation and monitoring for agent output. The role also expects you to read traces and diagnose failures, so you'd work on live AI systems regularly.\n- **Real-world agent behavior:** You'd set autonomy levels and approval rules with operations leaders, and design how agents hand off to people in production.\n- **Shipping experience:** The role builds on experience shipping agents or LLM features to real users.\n\n**Caveat:** This is a principal-level role that requires 10+ years in product and prior hands-on AI work. It suits someone who already has that experience.\n\n**Company:** About 600 employees, Series C, with a profitable operations business."
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -2409,7 +2409,7 @@
   ],
   "result": {
     "ended_by": "end_turn",
-    "text": "**Rating: STRONG**\n\n**Marrowstone Logistics, Principal Product Manager, Agentic Operations (Remote, US)**\n\n**Why it rates well**\n- **Hands-on building:** You build the first agent versions yourself, including tools, prompts, structured outputs, and retries. Engineering takes over to scale them afterward.\n- **Close to system behavior:** You prototype agents and build evaluation and monitoring, so you work directly with how the systems behave and fail.\n- **Practical AI work:** The role asks for comfort reading traces and diagnosing failures.\n- **Real deployment:** You define autonomy levels, approval rules, and human handoffs with operations leaders. That means agents running in production with real users.\n\n**Compensation**\n- The posting doesn't list pay.\n- Stored company data puts typical base for this level at **$200K–$235K**. That figure is an estimate, not an offer. The research tool says its data is stored demo data for this scenario, and Marrowstone is not a real company.\n\n**Company**\n- It has about 600 employees and is a Series C company with a profitable operations business.\n\n**Next step**\n- Confirm the actual pay range with the recruiter early, since the rating relies on the estimate."
+    "text": "**Rating: STRONG**\n\n**Role:** Principal Product Manager, Agentic Operations at Marrowstone Logistics. It's remote within the US, with occasional visits to operations centers.\n\n**Compensation:** The posting doesn't list pay. A company lookup estimated a base of $200K–$235K for this level. That figure comes from stored demo data, so it isn't a confirmed number.\n\n**Why it rates strong:**\n- **Hands-on building:** You'd build the first versions of the agents yourself, including tools, prompts, structured outputs, and retries. Engineering joins to scale them afterward.\n- **Evaluation and monitoring:** You'd build the evaluation and monitoring for agent output. The role also expects you to read traces and diagnose failures, so you'd work on live AI systems regularly.\n- **Real-world agent behavior:** You'd set autonomy levels and approval rules with operations leaders, and design how agents hand off to people in production.\n- **Shipping experience:** The role builds on experience shipping agents or LLM features to real users.\n\n**Caveat:** This is a principal-level role that requires 10+ years in product and prior hands-on AI work. It suits someone who already has that experience.\n\n**Company:** About 600 employees, Series C, with a profitable operations business."
   },
   "mismatch": false,
   "check": {

@@ -1,8 +1,8 @@
 {
   "trace_version": 1,
   "scenario": "scenario-1",
-  "started_at": "2026-11-14T22:31:37Z",
-  "git_commit": "30be0ed",
+  "started_at": "2026-11-15T01:59:33Z",
+  "git_commit": "b53fb55",
   "git_dirty": false,
   "model": "claude-sonnet-5-5",
   "limits": {
@@ -45,7 +45,7 @@
     },
     {
       "name": "flag_for_review",
-      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably.",
+      "description": "Flag a posting for manual review. Use when key information (compensation, remote status) is missing or ambiguous, so the job can't be rated reliably. If compensation is missing, try research_company first; flag only if research finds no pay.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -102,7 +102,7 @@
       "code": {
         "file": "agent.py",
         "marker": "agent_starts",
-        "line": 764,
+        "line": 765,
         "lines": [
           "final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))"
         ]
@@ -130,7 +130,7 @@
       "code": {
         "file": "agent.py",
         "marker": "conversation_setup",
-        "line": 499,
+        "line": 500,
         "lines": [
           "messages = [{\"role\": \"user\", \"content\": f\"Evaluate this job posting:\\n\\n{job_text}\"}]"
         ]
@@ -153,7 +153,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -208,7 +208,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -237,7 +237,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -275,18 +275,14 @@
         "stop_reason": "tool_use",
         "content": [
           {
-            "text": "The posting lists the company, role, remote status, and compensation, so I'll rate it now.",
-            "type": "text"
-          },
-          {
-            "id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+            "id": "toolu_018A5c8u688jZVR3fWziaCrz",
             "caller": {
               "type": "direct"
             },
             "input": {
               "company": "Northwind Labs",
               "role_title": "AI Agent Architect",
-              "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+              "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
               "location": "Remote (US)",
               "remote": true,
               "compensation": "$200,000–$240,000 base plus equity"
@@ -301,8 +297,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1191,
-        "output": 550
+        "input": 1216,
+        "output": 503
       },
       "guard": null,
       "injected": false
@@ -320,7 +316,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -366,7 +362,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -412,7 +408,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -468,18 +464,14 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting lists the company, role, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+              "id": "toolu_018A5c8u688jZVR3fWziaCrz",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Northwind Labs",
                 "role_title": "AI Agent Architect",
-                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$200,000–$240,000 base plus equity"
@@ -493,7 +485,7 @@
       "code": {
         "file": "agent.py",
         "marker": "save_turn",
-        "line": 620,
+        "line": 621,
         "lines": [
           "messages.append({\"role\": \"assistant\", \"content\": response.content})"
         ]
@@ -516,7 +508,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -591,11 +583,11 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+        "tool_use_id": "toolu_018A5c8u688jZVR3fWziaCrz",
         "arguments": {
           "company": "Northwind Labs",
           "role_title": "AI Agent Architect",
-          "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+          "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
           "location": "Remote (US)",
           "remote": true,
           "compensation": "$200,000–$240,000 base plus equity"
@@ -606,7 +598,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -680,7 +672,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -710,7 +702,7 @@
       "code": {
         "file": "agent.py",
         "marker": "hard_screen",
-        "line": 325,
+        "line": 326,
         "lines": [
           "if failed:",
           "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
@@ -740,7 +732,7 @@
         "messages": [
           {
             "role": "user",
-            "content": "Company: Northwind Labs\nRole: AI Agent Architect\n\nNorthwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity."
+            "content": "Company: Northwind Labs\nRole: AI Agent Architect\n\nNorthwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity."
           }
         ]
       },
@@ -749,7 +741,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -779,7 +771,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role has you prototype hands-on with LLM APIs and coding agents, and build working prototypes before handing them to engineering.\", \"You design agent workflows end to end, including tool definitions, tool boundaries, and human-in-the-loop checkpoints, which is direct practice with agentic systems.\", \"You own evaluation work: writing golden sets, reviewing traces on failures, and setting the release quality bar. This builds practical skill in judging and improving AI behavior.\", \"You take the strongest prototypes to production with two engineering teams and work with enterprise customers on real use cases, so you get experience shipping AI features, not only experimenting.\"]}",
+            "text": "{\"answer\": \"yes\", \"reasons\": [\"The role is explicitly hands-on: it requires prototyping directly with LLM APIs and coding agents, and building working prototypes before handing off to engineering.\", \"It covers the practical work of building agents end to end: defining tools and tool boundaries, designing human-in-the-loop checkpoints, and deciding what an agent should and shouldn't do.\", \"It owns evaluation work (golden sets, failure review, trace review, release quality bar), which builds applied experience in making agents reliable.\", \"Shipping prototypes to production with two engineering teams and enterprise customers gives real-world deployment exposure, not just experimentation.\", \"The requirement of hands-on LLM API and tool-use experience plus prior shipped AI/ML features means the work is practitioner-level rather than purely strategic or advisory.\"]}",
             "type": "text"
           }
         ]
@@ -789,7 +781,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -801,8 +793,8 @@
       },
       "parent": "e12",
       "tokens": {
-        "input": 435,
-        "output": 226
+        "input": 417,
+        "output": 280
       },
       "guard": null,
       "injected": false
@@ -820,7 +812,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -855,7 +847,7 @@
       "code": {
         "file": "agent.py",
         "marker": "inner_grader",
-        "line": 339,
+        "line": 340,
         "lines": [
           "eval_response = client.messages.create(",
           "    model=MODEL,",
@@ -890,7 +882,7 @@
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -965,16 +957,16 @@
       },
       "payload": {
         "tool": "evaluate_job",
-        "tool_use_id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+        "tool_use_id": "toolu_018A5c8u688jZVR3fWziaCrz",
         "is_error": false,
-        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role has you prototype hands-on with LLM APIs and coding agents, and build working prototypes before handing them to engineering.\", \"You design agent workflows end to end, including tool definitions, tool boundaries, and human-in-the-loop checkpoints, which is direct practice with agentic systems.\", \"You own evaluation work: writing golden sets, reviewing traces on failures, and setting the release quality bar. This builds practical skill in judging and improving AI behavior.\", \"You take the strongest prototypes to production with two engineering teams and work with enterprise customers on real use cases, so you get experience shipping AI features, not only experimenting.\"]}"
+        "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role is explicitly hands-on: it requires prototyping directly with LLM APIs and coding agents, and building working prototypes before handing off to engineering.\", \"It covers the practical work of building agents end to end: defining tools and tool boundaries, designing human-in-the-loop checkpoints, and deciding what an agent should and shouldn't do.\", \"It owns evaluation work (golden sets, failure review, trace review, release quality bar), which builds applied experience in making agents reliable.\", \"Shipping prototypes to production with two engineering teams and enterprise customers gives real-world deployment exposure, not just experimentation.\", \"The requirement of hands-on LLM API and tool-use experience plus prior shipped AI/ML features means the work is practitioner-level rather than purely strategic or advisory.\"]}"
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "run_tools",
-        "line": 631,
+        "line": 632,
         "lines": [
           "for tool_block in (b for b in response.content if b.type == \"tool_use\"):",
           "    print(f\"[run_tools] dispatching {tool_block.name}(**{tool_block.input})\")  # (terminal only)",
@@ -1046,18 +1038,14 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting lists the company, role, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+              "id": "toolu_018A5c8u688jZVR3fWziaCrz",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Northwind Labs",
                 "role_title": "AI Agent Architect",
-                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$200,000–$240,000 base plus equity"
@@ -1077,18 +1065,14 @@
           "role": "assistant",
           "content": [
             {
-              "text": "The posting lists the company, role, remote status, and compensation, so I'll rate it now.",
-              "type": "text"
-            },
-            {
-              "id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+              "id": "toolu_018A5c8u688jZVR3fWziaCrz",
               "caller": {
                 "type": "direct"
               },
               "input": {
                 "company": "Northwind Labs",
                 "role_title": "AI Agent Architect",
-                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+                "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
                 "location": "Remote (US)",
                 "remote": true,
                 "compensation": "$200,000–$240,000 base plus equity"
@@ -1103,8 +1087,8 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01DMm8wPvewXCicHmGYMreE4",
-              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role has you prototype hands-on with LLM APIs and coding agents, and build working prototypes before handing them to engineering.\", \"You design agent workflows end to end, including tool definitions, tool boundaries, and human-in-the-loop checkpoints, which is direct practice with agentic systems.\", \"You own evaluation work: writing golden sets, reviewing traces on failures, and setting the release quality bar. This builds practical skill in judging and improving AI behavior.\", \"You take the strongest prototypes to production with two engineering teams and work with enterprise customers on real use cases, so you get experience shipping AI features, not only experimenting.\"]}"
+              "tool_use_id": "toolu_018A5c8u688jZVR3fWziaCrz",
+              "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role is explicitly hands-on: it requires prototyping directly with LLM APIs and coding agents, and building working prototypes before handing off to engineering.\", \"It covers the practical work of building agents end to end: defining tools and tool boundaries, designing human-in-the-loop checkpoints, and deciding what an agent should and shouldn't do.\", \"It owns evaluation work (golden sets, failure review, trace review, release quality bar), which builds applied experience in making agents reliable.\", \"Shipping prototypes to production with two engineering teams and enterprise customers gives real-world deployment exposure, not just experimentation.\", \"The requirement of hands-on LLM API and tool-use experience plus prior shipped AI/ML features means the work is practitioner-level rather than purely strategic or advisory.\"]}"
             }
           ]
         }
@@ -1112,7 +1096,7 @@
       "code": {
         "file": "agent.py",
         "marker": "results_back",
-        "line": 681,
+        "line": 682,
         "lines": [
           "messages.append({\"role\": \"user\", \"content\": tool_results})"
         ]
@@ -1135,7 +1119,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1187,18 +1171,14 @@
             "role": "assistant",
             "content": [
               {
-                "text": "The posting lists the company, role, remote status, and compensation, so I'll rate it now.",
-                "type": "text"
-              },
-              {
-                "id": "toolu_01DMm8wPvewXCicHmGYMreE4",
+                "id": "toolu_018A5c8u688jZVR3fWziaCrz",
                 "caller": {
                   "type": "direct"
                 },
                 "input": {
                   "company": "Northwind Labs",
                   "role_title": "AI Agent Architect",
-                  "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces on failures. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before handoff to engineering; own evaluation (golden sets, failure review, quality bar for release); partner with enterprise customers to understand where agents save real time. Requirements: 8+ years in product, with at least two shipping AI or ML features; hands-on experience building with LLM APIs and tool use; clear written communication and documented decisions. Fully remote within the US. Base salary $200,000–$240,000 plus equity.",
+                  "job_description": "Northwind Labs builds workflow software used by mid-size operations teams. Adding agentic features across the product; needs an AI Agent Architect to lead the work. Design and ship agent workflows end to end: deciding what an agent should and shouldn't do, defining tools, writing evaluation sets, reviewing traces. Prototype hands-on with LLM APIs and coding agents, then work with two engineering teams to take the strongest prototypes to production. Responsibilities: design agent workflows with clear tool boundaries and human-in-the-loop checkpoints; build working prototypes before engineering; own evaluation (golden sets, failure review, release quality bar); partner with enterprise customers. Requirements: 8+ years in product, at least two shipping AI/ML features; hands-on experience building with LLM APIs and tool use; clear written communication and decision documentation. Fully remote within the US. Base salary $200,000-$240,000 plus equity.",
                   "location": "Remote (US)",
                   "remote": true,
                   "compensation": "$200,000–$240,000 base plus equity"
@@ -1213,8 +1193,8 @@
             "content": [
               {
                 "type": "tool_result",
-                "tool_use_id": "toolu_01DMm8wPvewXCicHmGYMreE4",
-                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role has you prototype hands-on with LLM APIs and coding agents, and build working prototypes before handing them to engineering.\", \"You design agent workflows end to end, including tool definitions, tool boundaries, and human-in-the-loop checkpoints, which is direct practice with agentic systems.\", \"You own evaluation work: writing golden sets, reviewing traces on failures, and setting the release quality bar. This builds practical skill in judging and improving AI behavior.\", \"You take the strongest prototypes to production with two engineering teams and work with enterprise customers on real use cases, so you get experience shipping AI features, not only experimenting.\"]}"
+                "tool_use_id": "toolu_018A5c8u688jZVR3fWziaCrz",
+                "content": "{\"rating\": \"STRONG\", \"reasons\": [\"The role is explicitly hands-on: it requires prototyping directly with LLM APIs and coding agents, and building working prototypes before handing off to engineering.\", \"It covers the practical work of building agents end to end: defining tools and tool boundaries, designing human-in-the-loop checkpoints, and deciding what an agent should and shouldn't do.\", \"It owns evaluation work (golden sets, failure review, trace review, release quality bar), which builds applied experience in making agents reliable.\", \"Shipping prototypes to production with two engineering teams and enterprise customers gives real-world deployment exposure, not just experimentation.\", \"The requirement of hands-on LLM API and tool-use experience plus prior shipped AI/ML features means the work is practitioner-level rather than purely strategic or advisory.\"]}"
               }
             ]
           }
@@ -1225,7 +1205,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1254,7 +1234,7 @@
       "code": {
         "file": "agent.py",
         "marker": "send_to_claude",
-        "line": 520,
+        "line": 521,
         "lines": [
           "response = client.messages.create(",
           "    model=MODEL,",
@@ -1292,7 +1272,7 @@
         "stop_reason": "end_turn",
         "content": [
           {
-            "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200–240K base plus equity)\n\nWhy it rated strong:\n- **Hands-on prototyping:** You build working prototypes with LLM APIs and coding agents before anything goes to engineering.\n- **End-to-end agent design:** You define tools, tool boundaries, and human-in-the-loop checkpoints.\n- **Evaluation ownership:** You write golden sets, review traces when the agent fails, and set the release quality bar.\n- **Path to production:** You work with two engineering teams and with enterprise customers, so the work ships and isn't only experimental.\n\n**Fit check:** The posting asks for 8+ years in product, at least two shipped AI or ML features, hands-on LLM API and tool-use experience, and clear written communication. Compensation and remote status both meet the criteria. The posting doesn't say how much equity is offered.",
+            "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200K–$240K base plus equity)\n\nWhy it rated strongly:\n- **Hands-on building:** You prototype directly with LLM APIs and coding agents, and you build working prototypes before engineering gets involved.\n- **End-to-end agent design:** You define tools and tool boundaries, set human-in-the-loop checkpoints, and decide what an agent should and shouldn't do.\n- **Evaluation ownership:** You own golden sets, trace and failure review, and the release quality bar.\n- **Production exposure:** You work with two engineering teams and enterprise customers to ship, so it goes beyond experimentation.\n- **Practitioner-level role:** The posting requires hands-on LLM API and tool-use experience and at least two shipped AI/ML features. That suggests the work is practical, not just strategy or advice.\n\nThe posting lists both remote status and compensation, so I didn't need to research the company or flag it for review.",
             "type": "text"
           }
         ]
@@ -1302,8 +1282,8 @@
       "code": null,
       "parent": null,
       "tokens": {
-        "input": 1972,
-        "output": 310
+        "input": 2004,
+        "output": 338
       },
       "guard": null,
       "injected": false
@@ -1321,7 +1301,7 @@
       "code": {
         "file": "agent.py",
         "marker": "check_reply",
-        "line": 566,
+        "line": 567,
         "lines": [
           "if response.stop_reason == \"end_turn\":",
           "    print(f\"\\n[claude_done] end_turn → done. \"",
@@ -1367,7 +1347,7 @@
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -1393,14 +1373,14 @@
       "crossing": null,
       "payload": {
         "ended_by": "end_turn",
-        "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200–240K base plus equity)\n\nWhy it rated strong:\n- **Hands-on prototyping:** You build working prototypes with LLM APIs and coding agents before anything goes to engineering.\n- **End-to-end agent design:** You define tools, tool boundaries, and human-in-the-loop checkpoints.\n- **Evaluation ownership:** You write golden sets, review traces when the agent fails, and set the release quality bar.\n- **Path to production:** You work with two engineering teams and with enterprise customers, so the work ships and isn't only experimental.\n\n**Fit check:** The posting asks for 8+ years in product, at least two shipped AI or ML features, hands-on LLM API and tool-use experience, and clear written communication. Compensation and remote status both meet the criteria. The posting doesn't say how much equity is offered."
+        "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200K–$240K base plus equity)\n\nWhy it rated strongly:\n- **Hands-on building:** You prototype directly with LLM APIs and coding agents, and you build working prototypes before engineering gets involved.\n- **End-to-end agent design:** You define tools and tool boundaries, set human-in-the-loop checkpoints, and decide what an agent should and shouldn't do.\n- **Evaluation ownership:** You own golden sets, trace and failure review, and the release quality bar.\n- **Production exposure:** You work with two engineering teams and enterprise customers to ship, so it goes beyond experimentation.\n- **Practitioner-level role:** The posting requires hands-on LLM API and tool-use experience and at least two shipped AI/ML features. That suggests the work is practical, not just strategy or advice.\n\nThe posting lists both remote status and compensation, so I didn't need to research the company or flag it for review."
       },
       "messages_before": null,
       "messages_after": null,
       "code": {
         "file": "agent.py",
         "marker": "answer_returned",
-        "line": 572,
+        "line": 573,
         "lines": [
           "answer = next((b.text for b in response.content if b.type == \"text\"), None)"
         ]
@@ -1413,7 +1393,7 @@
   ],
   "result": {
     "ended_by": "end_turn",
-    "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200–240K base plus equity)\n\nWhy it rated strong:\n- **Hands-on prototyping:** You build working prototypes with LLM APIs and coding agents before anything goes to engineering.\n- **End-to-end agent design:** You define tools, tool boundaries, and human-in-the-loop checkpoints.\n- **Evaluation ownership:** You write golden sets, review traces when the agent fails, and set the release quality bar.\n- **Path to production:** You work with two engineering teams and with enterprise customers, so the work ships and isn't only experimental.\n\n**Fit check:** The posting asks for 8+ years in product, at least two shipped AI or ML features, hands-on LLM API and tool-use experience, and clear written communication. Compensation and remote status both meet the criteria. The posting doesn't say how much equity is offered."
+    "text": "**Rating: STRONG**\n\n**Northwind Labs, AI Agent Architect** (Remote US, $200K–$240K base plus equity)\n\nWhy it rated strongly:\n- **Hands-on building:** You prototype directly with LLM APIs and coding agents, and you build working prototypes before engineering gets involved.\n- **End-to-end agent design:** You define tools and tool boundaries, set human-in-the-loop checkpoints, and decide what an agent should and shouldn't do.\n- **Evaluation ownership:** You own golden sets, trace and failure review, and the release quality bar.\n- **Production exposure:** You work with two engineering teams and enterprise customers to ship, so it goes beyond experimentation.\n- **Practitioner-level role:** The posting requires hands-on LLM API and tool-use experience and at least two shipped AI/ML features. That suggests the work is practical, not just strategy or advice.\n\nThe posting lists both remote status and compensation, so I didn't need to research the company or flag it for review."
   },
   "mismatch": false,
   "check": {

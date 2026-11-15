@@ -67,7 +67,7 @@ it.
    the principle it serves (D40): watch the ones a scenario shows; the rest
    are marked "Tested, not demonstrated" with the test that proves them.
    1. The model for judgment, code for rules (scenario 5)
-   2. Tool choice is intent classification, so state precedence (scenarios 2 and 3)
+   2. Tool choice is intent classification, so state precedence (scenario 2)
    3. Errors go back to the model as information (scenario 6)
    4. Fail closed on the unknown (scenario 7)
    5. Bound the loop (scenario 8)
