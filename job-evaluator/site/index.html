@@ -210,10 +210,68 @@
 <p class="error" id="load-error" role="alert" hidden></p>
 </section>
 
-<!-- 6. Design principles (placeholder, #80) -->
-<section class="section placeholder" id="principles" aria-labelledby="h-principles">
+<!-- 6. Design principles (#80, D36): principle → the feature in this agent
+     that implements it → Watch it. Every guard (E-step) is listed under the
+     principle it serves; its name and number are filled in from steps.json. -->
+<section class="section" id="principles" aria-labelledby="h-principles">
   <h2 id="h-principles">Design principles</h2>
-  <p>Coming next: each principle, the feature in this agent that implements it, and a Watch it button (#80).</p>
+  <p>Seven principles this agent is built on, the part of the agent that applies each one, and a run where you can watch it. Every guard is listed under the principle it serves: watch the ones a scenario shows; the rest are proven by a test.</p>
+  <table class="principles">
+    <thead><tr><th scope="col">Principle</th><th scope="col">In this agent</th><th scope="col">Watch it</th></tr></thead>
+    <tbody>
+    <tr>
+      <th scope="row" class="principle-name">The model for judgment, code for rules</th>
+      <td class="principle-feature">Your hard rules (remote, and a minimum base salary, <code>MIN_BASE</code>) are checked in code, in <code>hard_screens</code>, before the grader is asked. The grader answers one yes/no question, and code turns its answer into a rating with <code>RATING_FOR_ANSWER</code> (D28).</td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="5">Scenario 5</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">Tool choice is intent classification, so state precedence</th>
+      <td class="principle-feature">Each tool's description says when to use it, and Claude matches the posting against them. <code>research_company</code> and <code>flag_for_review</code> both cover a posting with no pay listed, and neither description says which comes first. Claude researches first on its own (#65).</td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="2">Scenario 2</button><button type="button" class="btn watch" data-scenario="3">Scenario 3</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">Errors go back to the model as information</th>
+      <td class="principle-feature">When a tool fails, Python sends the error back to Claude as a tool result marked <code>is_error</code>, instead of crashing, and Claude decides what to do next (D18).
+        <ul class="guard-list" aria-label="Guards">
+          <li data-guard="tool_failed" data-scenario="6"><span class="guard-name"></span> <button type="button" class="btn watch watch-small" data-scenario="6">Watch it (6)</button></li>
+          <li data-guard="grader_cut_off"><span class="guard-name"></span> <span class="tested">Tested, not demonstrated: <code>tests/test_max_tokens.py</code> · <code>test_cut_off_grader_reply_is_reported_as_cut_off_not_invalid_json</code></span></li>
+          <li data-guard="invalid_grade"><span class="guard-name"></span> <span class="tested">Tested, not demonstrated: <code>tests/test_grade_validation.py</code> · <code>ThroughTheAgentTest</code></span></li>
+        </ul></td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="6">Scenario 6</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">Fail closed on the unknown</th>
+      <td class="principle-feature">A request for a tool that doesn't exist gets an error listing the real tools (D19). A reply that's cut off, or that stops for a reason the agent doesn't handle, ends the run instead of being acted on (D22, D29).
+        <ul class="guard-list" aria-label="Guards">
+          <li data-guard="unknown_tool" data-scenario="7"><span class="guard-name"></span> <button type="button" class="btn watch watch-small" data-scenario="7">Watch it (7)</button></li>
+          <li data-guard="reply_cut_off" data-scenario="9"><span class="guard-name"></span> <button type="button" class="btn watch watch-small" data-scenario="9">Watch it (9)</button></li>
+          <li data-guard="unexpected_stop"><span class="guard-name"></span> <span class="tested">Tested, not demonstrated: <code>tests/test_unexpected_stop.py</code> · <code>StopsTest</code></span></li>
+          <li data-guard="api_call_failed"><span class="guard-name"></span> <span class="tested">Tested, not demonstrated: <code>tests/test_api_errors.py</code> · <code>OuterApiErrorTest</code></span></li>
+          <li data-guard="no_final_answer"><span class="guard-name"></span> <span class="tested">Tested, not demonstrated: <code>tests/test_final_text.py</code> · <code>NoTextBlockTest</code></span></li>
+        </ul></td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="7">Scenario 7</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">Bound the loop</th>
+      <td class="principle-feature">The loop ends after <code>MAX_PASSES</code> calls to Claude, whatever happens. Scenario 8 lowers the cap to 2 so you can see it (D27).
+        <ul class="guard-list" aria-label="Guards">
+          <li data-guard="pass_cap" data-scenario="8"><span class="guard-name"></span> <button type="button" class="btn watch watch-small" data-scenario="8">Watch it (8)</button></li>
+        </ul></td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="8">Scenario 8</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">Smaller questions get more reliable answers</th>
+      <td class="principle-feature">The grader gets one yes/no question about the work, not a list of criteria to weigh: pay and location are already checked in code (D28).</td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="1">Scenario 1</button></td>
+    </tr>
+    <tr>
+      <th scope="row" class="principle-name">The conversation is the memory</th>
+      <td class="principle-feature"><code>messages</code> holds everything Claude knows about the run. Python sends it whole on every call and adds Claude's request and each result to it.</td>
+      <td class="principle-watch"><button type="button" class="btn watch" data-scenario="1">Scenario 1</button></td>
+    </tr>
+    </tbody>
+  </table>
+  <div class="written">Written for this page · guard names from docs/STEPS.md</div>
 </section>
 
 <!-- 7. How it was built (placeholder, #81) -->

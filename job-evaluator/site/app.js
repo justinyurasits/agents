@@ -813,6 +813,15 @@ function fillCards() {
     })))));
 }
 
+// Design principles (#80): each guard's number and title, from steps.json
+// (built from docs/STEPS.md), e.g. "E1 · A tool fails".
+function fillGuardNames() {
+  for (const li of document.querySelectorAll("#principles li[data-guard]")) {
+    const step = state.text[li.dataset.guard];
+    li.querySelector(".guard-name").textContent = step ? `${step.number} · ${step.title}` : li.dataset.guard;
+  }
+}
+
 // Mark the card for the scenario now shown; none for an unknown id.
 function markCard(id) {
   for (const card of document.querySelectorAll(".scenario-card")) {
@@ -904,6 +913,7 @@ async function start() {
   window.explorer = { show, state, setPlaying, loadScenario };   // for checking the page by hand from the console
   // The tool list reads scenario 1's recording, whatever scenario is shown.
   fillCards();
+  fillGuardNames();
   getRecording(DEFAULT_SCENARIO).then(fillTools).catch(() => $("tools-intro").remove());
   await loadScenario(scenarioFromUrl());
 }
