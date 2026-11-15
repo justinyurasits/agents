@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS Finder metadata, in any folder (#106)
+.DS_Store
