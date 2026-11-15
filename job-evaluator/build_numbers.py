@@ -70,13 +70,13 @@ def count_guards():
     return {"total": len(e_steps), "demonstrated": len(e_steps & caught)}
 
 
-def git(*args):
-    return subprocess.run(["git", *args], cwd=HERE, capture_output=True, text=True, check=True).stdout.strip()
+def git(*args, cwd=HERE):
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True).stdout.strip()
 
 
-def count_merged_prs():
-    merges = int(git("rev-list", "--count", f"--grep={MERGE}", "HEAD"))
-    head_is_a_merge = re.match(MERGE[1:], git("log", "-1", "--format=%s"))
+def count_merged_prs(cwd=HERE):
+    merges = int(git("rev-list", "--count", f"--grep={MERGE}", "HEAD", cwd=cwd))
+    head_is_a_merge = re.match(MERGE[1:], git("log", "-1", "--format=%s", cwd=cwd))
     return merges - (1 if head_is_a_merge else 0)
 
 
