@@ -93,6 +93,10 @@ class SiteFilesTest(unittest.TestCase):
         for ref in re.findall(r'(?:src|href)="([^"]+)"', html):
             if ref.startswith("data:"):
                 continue
+            if ref.startswith("#"):   # a link within the page: the id must exist (#78)
+                with self.subTest(ref):
+                    self.assertIn(f'id="{ref[1:]}"', html)
+                continue
             with self.subTest(ref):
                 self.assertTrue(os.path.exists(os.path.join(SITE, ref)))
         for ref in re.findall(r'url\("([^"]+)"\)', read(os.path.join(SITE, "style.css"))):
@@ -127,6 +131,55 @@ class SiteFilesTest(unittest.TestCase):
 
     def test_playback_is_two_and_a_half_seconds_per_step_at_1x(self):
         self.assertIn("const STEP_MS = 2500;", read(os.path.join(SITE, "app.js")))
+
+
+class PageStructureTest(unittest.TestCase):
+    """The eight sections and the tool names on the page (#78, D36)."""
+
+    SECTIONS = ["hero", "what-is-an-agent", "how-it-works", "scenarios", "run-view",
+                "principles", "how-it-was-built", "footer"]
+    HTML = read(os.path.join(SITE, "index.html"))
+    APP = read(os.path.join(SITE, "app.js"))
+
+    @staticmethod
+    def agent_tools():
+        import agent   # here, not at the top: the other tests in this file don't need it
+        return [t["name"] for t in agent.tools]
+
+    def test_the_eight_sections_are_in_order(self):
+        ids = re.findall(r'<(?:header|section|footer)[^>]* id="([a-z-]+)"', self.HTML)
+        self.assertEqual([i for i in ids if i in self.SECTIONS], self.SECTIONS)
+
+    def test_the_nav_links_to_each_section_in_order(self):
+        nav = re.search(r'<nav class="nav".*?</nav>', self.HTML, re.S).group()
+        self.assertEqual(re.findall(r'href="#([a-z-]+)"', nav), self.SECTIONS)
+
+    def test_the_page_names_only_tools_in_agent_py(self):
+        # Every snake_case word in the page's text must be a tool in agent.py,
+        # a step id, or a guard name. A renamed or invented tool fails here.
+        known = set(self.agent_tools())
+        md = read(build_steps.STEPS_MD)
+        known |= set(build_steps.parse_steps(md)) | set(build_steps.parse_checks(md))
+        text = re.sub(r"<[^>]+>", " ", re.sub(r"<!--.*?-->", " ", self.HTML, flags=re.S))
+        words = set(re.findall(r"\b[a-z]+(?:_[a-z]+)+\b", text))
+        self.assertTrue(words, "expected tool names in the page text")
+        self.assertEqual(words - known, set())
+        for name in re.findall(r'<code class="tool">([^<]+)</code>', self.HTML):
+            with self.subTest(name):
+                self.assertIn(name, self.agent_tools())
+
+    def test_every_tool_has_a_line_and_every_line_is_a_tool(self):
+        block = re.search(r"^const TOOL_LINES = \{(.*?)^\};", self.APP, re.M | re.S).group(1)
+        self.assertEqual(sorted(re.findall(r"^\s*([a-z_]+):", block, re.M)), sorted(self.agent_tools()))
+
+    def test_the_recordings_offer_exactly_agent_pys_tools(self):
+        # The page lists the tools from a recording's first request, so the
+        # recordings must match the code.
+        for path in sorted(glob.glob(os.path.join(HERE, "recordings", "*.json"))):
+            with self.subTest(os.path.basename(path)):
+                events = json.loads(read(path))["events"]
+                first = next(e for e in events if e["crossing"] and e["crossing"]["kind"] == "api_request")
+                self.assertEqual(first["payload"]["tools"], self.agent_tools())
 
 
 if __name__ == "__main__":
