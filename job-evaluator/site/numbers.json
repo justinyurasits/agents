@@ -7,8 +7,8 @@
   },
   "decisions": {
     "logged": 42,
-    "approved": 24,
-    "proposed": 1,
+    "approved": 25,
+    "proposed": 0,
     "other_status": 1,
     "no_status": 16
   },

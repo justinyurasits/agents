@@ -754,7 +754,7 @@ repo, and testing the count, keeps the page honest as it grows.
 
 ## D42 — Precedence lives in the description of the tool that should wait
 
-**Status:** **Proposed** (issue #91)
+**Status:** **Approved** (issue #91, PR #98 review)
 **Date:** 2026-11-14
 **Options:** say nothing and let Claude choose (as before) · say "use this
 first" in `research_company`'s description · say "try research first" in
