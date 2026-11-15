@@ -1,33 +1,42 @@
 # agents
 
-Agents I'm building to learn how agent loops work — each one small, traced, and documented.
+Small agents built to learn, and to show, how agent loops work. One folder per agent: each one small, traced and documented.
 
-Every agent lives in its own folder with its own code, spec, decision log, build log, and changelog. Work is tracked on the [project board](../../projects) as issues and merged through pull requests.
+## The job evaluator
 
-## Agents
+[job-evaluator](job-evaluator/) is an agent that reads a job posting and rates it. Claude decides which tool to use (rate it, look up the company, or flag it for a person), and Python runs the tools, applies the hard rules in code, and keeps the conversation. Nine scenarios, five normal runs and four where a failure is injected on purpose, were recorded from real runs. A page replays them step by step: who's executing, what crossed between Claude, Python and the tools, and how each failure was handled.
 
-| Agent | What it does | Status |
-|---|---|---|
-| [job-evaluator](job-evaluator/) | Rates a job posting against my criteria using tool calls; flags postings with missing info | Agent, guards and tracing built; scenario 6 recorded and replayed by page v0; full page next |
+**Watch it:** [justinyurasits.github.io/agents/job-evaluator/site/](https://justinyurasits.github.io/agents/job-evaluator/site/)
 
-## How each agent is documented
+## Run it locally
 
-| File | Purpose |
-|---|---|
-| `README.md` | What the agent does and how to run it |
-| `docs/BRIEF.md` | Product brief: what it's for, who it's for, what's on the page |
-| `docs/SPEC.md` | Design doc: how the agent works and why (loop, tools, what the model sees, guards, rules, trace format, the page) |
-| `docs/STEPS.md` | Every step of a run in plain English, as the page shows it; the source of the page's explanations |
-| `docs/SCENARIOS.md` | The prepared scenarios, generated from `scenarios/scenarios.json` |
-| `docs/DECISIONS.md` | Design log: each decision, the options, the reasoning, and what would change it |
-| `docs/BUILD_LOG.md` | Dated working log: what I did, what broke, what I learned |
-| `CHANGELOG.md` | What changed in each version |
+You need Python 3.12 and your own Anthropic API key.
 
-Across all agents, [`LEARNINGS.md`](LEARNINGS.md) collects what building them has taught me.
+```bash
+git clone https://github.com/justinyurasits/agents.git
+cd agents/job-evaluator
+python3 -m venv .venv
+source .venv/bin/activate              # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env                   # then put your key in .env
+```
 
-## How work happens
+`.env` holds your key and is ignored by git. Never commit it.
 
-1. Every change starts as an issue on the board, with acceptance criteria.
-2. Work happens on a branch named for the issue.
-3. A pull request closes the issue (`Closes #N`), updates the changelog, and logs any decision.
-4. Merge moves the card to Done.
+```bash
+python agent.py                        # rate the built-in sample posting, step by step
+python record.py 1                     # record scenario 1 (real API calls) and check it
+python -m http.server 8000             # then open localhost:8000/site/ to watch the recorded runs
+python -m unittest discover -s tests   # the tests: no API calls, no key needed
+```
+
+The page plays the committed recordings and makes no API calls. For the browser tests, `pip install -r requirements-dev.txt` and `python -m playwright install chromium`. [job-evaluator/README.md](job-evaluator/README.md) has the rest.
+
+## How it's built
+
+I wrote the first version of the agent by hand, to learn the loop. After that, Claude Code wrote the code from GitHub issues I wrote, and I made the decisions and reviewed every change before it merged.
+
+- [CLAUDE.md](CLAUDE.md): the rules Claude Code follows in this repo.
+- [DECISIONS.md](job-evaluator/docs/DECISIONS.md): every design decision, with the options and the reasoning.
+- [LEARNINGS.md](LEARNINGS.md): what building these agents has taught me.
+- [BUILD_LOG.md](job-evaluator/docs/BUILD_LOG.md): the dated working log of what I did, what broke, and what I learned.
