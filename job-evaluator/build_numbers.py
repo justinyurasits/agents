@@ -11,9 +11,12 @@ Each number, and where it comes from:
                Approved, Proposed, another status (e.g. "closed by D28"), or
                none (most early entries were written before the Status line)
   guards       E-steps in docs/STEPS.md, and how many a recording shows caught
-  merged_prs   "Merge pull request #" commits in git history, not counting
-               HEAD itself, so the count a PR commits still matches once it's
-               merged (its own merge commit is HEAD then)
+  merged_prs   "Merge pull request #" commits in git history: the PRs merged
+               before this one. On main (or a detached checkout of it), HEAD
+               itself isn't counted when it's a merge: it's the merge of the
+               PR whose number this is. On any other branch it is counted: a
+               new branch with no commits yet starts at the previous PR's
+               merge (#108). So a branch and main after its merge agree.
 
 A test (tests/test_site.py) fails if the committed file and a fresh count
 differ: rerun this script in any PR that changes one of these.
@@ -77,7 +80,9 @@ def git(*args, cwd=HERE):
 def count_merged_prs(cwd=HERE):
     merges = int(git("rev-list", "--count", f"--grep={MERGE}", "HEAD", cwd=cwd))
     head_is_a_merge = re.match(MERGE[1:], git("log", "-1", "--format=%s", cwd=cwd))
-    return merges - (1 if head_is_a_merge else 0)
+    # The branch name: "main", "HEAD" for a detached checkout, or a feature branch.
+    on_main = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd) in ("main", "HEAD")
+    return merges - (1 if head_is_a_merge and on_main else 0)
 
 
 def build():

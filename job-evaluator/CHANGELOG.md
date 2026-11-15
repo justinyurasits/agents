@@ -52,6 +52,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - All nine recordings re-made after #99, so none says it ran uncommitted code; all PASS. A test fails if a committed recording is marked dirty, names a commit outside the repo's history, or doesn't pass its scenario (#104).
 - Removed the committed macOS `.DS_Store` files (repo root and job-evaluator/) and ignored `.DS_Store` everywhere; a test fails if one is committed again (#106).
 - Link previews: a meta description, Open Graph and Twitter card tags, and `site/preview.png` (1200×630, made by `make_preview.py`), so a shared link shows a card instead of a bare URL (#105).
+- `build_numbers.py` no longer undercounts merged PRs on a branch with no commits yet: it leaves out HEAD's merge only on main (#108).
 
 ## 0.1.0 — 2026-11-11
 
