@@ -137,4 +137,5 @@ The page shows what actually happened and labels everything else.
 - Each run has an intro before it (setup, watch for, never the outcome) and a summary card on its last step, both tested against the recordings (D37).
 - Page structure: eight sections, with principles after the run; "Watch it" loads a scenario at step 1, paused, and scrolls to the run (D36).
 - Scenario cards show each run's full tool path, worked out from its recording; a card's own words never state the rating (D39).
+- Each guard is listed once, under the principle it serves: errors go back to the model (E1, E5, E8), fail closed on the unknown (E2, E3, E6, E7, E9), bound the loop (E4) (D40).
 - Browser tests check the page's rules in Chromium (Playwright, a dev-only requirement) and skip when it isn't installed. Claude's words are searched in every tab but its own; the only exemption is tool_result content in Payload (D38).

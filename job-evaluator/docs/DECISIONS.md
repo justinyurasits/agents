@@ -693,7 +693,7 @@ path with one worked out separately in Python.
 
 ## D40 — Which principle each guard serves
 
-**Status:** **Proposed** (issue #80)
+**Status:** **Approved** (issue #80, PR #90)
 **Date:** 2026-11-14
 **Decision:** every guard (E-step) is listed once, under the principle it
 serves:
