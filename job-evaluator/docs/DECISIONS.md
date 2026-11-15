@@ -691,3 +691,30 @@ path with one worked out separately in Python.
 - First-visitor tests show the paths spoil the runs. Then the path could
   stop before the last tool.
 
+## D40 — Which principle each guard serves
+
+**Status:** **Proposed** (issue #80)
+**Date:** 2026-11-14
+**Decision:** every guard (E-step) is listed once, under the principle it
+serves:
+- **Errors go back to the model as information:** E1 `tool_failed`
+  (scenario 6), E5 `grader_cut_off`, E8 `invalid_grade`. All three end as an
+  `is_error` tool result Claude can act on.
+- **Fail closed on the unknown:** E2 `unknown_tool` (scenario 7), E3
+  `reply_cut_off` (scenario 9), E9 `unexpected_stop`, E6 `api_call_failed`,
+  E7 `no_final_answer`. Each meets something the agent can't safely act on and
+  ends the run, or refuses the request, with a clear message instead of
+  guessing.
+- **Bound the loop:** E4 `pass_cap` (scenario 8).
+
+A guard a scenario shows gets a Watch it button. Tests check that its
+scenario's recording really catches it. The other five are marked "Tested,
+not demonstrated", with a test that's checked to exist.
+**Reasoning:** "Errors go back" is about what Claude gets to see; "fail
+closed" is about what the agent refuses to do. E3 sits under fail closed,
+not bound the loop: a cut-off reply is never acted on (D22), whatever pass
+it's on.
+**What would change it:** a scenario added for a tested guard (it gets a
+Watch it), or a guard whose effect changes, e.g. E6 retrying instead of
+stopping.
+
