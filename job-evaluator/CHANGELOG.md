@@ -46,6 +46,7 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 - How it was built and the footer: the workflow, numbers counted from the repo by `build_numbers.py` (tests, scenarios, guards, decisions, merged PRs), and links to the repo on GitHub. Tests fail if a number drifts or a link points at a missing file (#81).
 - BRIEF's "What's on the page" now describes the eight-section page (D36) and the seven principles (#80). Tests fail if its section names drift from the page's nav or its principles from SPEC's table (#82).
 - SPEC's Design principles section holds only the seven-principle table; the old table's leftover rows are gone, and a test fails if a stray row appears (#94).
+- DECISIONS.md: the Streamlit entry is now D11a, so no two decisions share an id; the FastAPI D11 says it supersedes it, and a test fails if an id is ever used twice (#93).
 
 ## 0.1.0 — 2026-11-11
 

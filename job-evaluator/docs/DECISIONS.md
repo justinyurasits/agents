@@ -76,7 +76,7 @@ is saved or logged.
 **Reasoning:** anyone can try it; worst-case cost is the cap.
 **What would change it:** cap hit regularly → raise it or require own keys.
 
-## D11 — Streamlit, hosted on Streamlit Community Cloud
+## D11a — Streamlit, hosted on Streamlit Community Cloud
 
 **Date:** 2026-11-12
 **Options:** Streamlit · Gradio on Hugging Face Spaces · custom web app
@@ -88,6 +88,9 @@ GitHub repo; built-in status and expander components fit a step-by-step trace.
 ## D11 — FastAPI server + custom web page
 
 **Date:** 2026-11-12
+**Supersedes:** D11a (Streamlit), the same day. The two entries were both
+numbered D11 until #93; the Streamlit one became D11a so D12's reference to
+"D11 (FastAPI)" still holds.
 **Options:** Streamlit · Gradio on Hugging Face Spaces · FastAPI + custom HTML/JS page
 **Decision:** FastAPI + custom page.
 **Reasoning:** the audience is people judging my work, so the step-by-step view has

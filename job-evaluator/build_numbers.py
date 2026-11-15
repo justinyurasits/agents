@@ -7,7 +7,7 @@ Each number, and where it comes from:
   tests        test cases unittest finds in tests/ (browser tests included,
                whether or not Chromium is installed)
   scenarios    entries in scenarios/scenarios.json, by group
-  decisions    "## D<n>" entries in docs/DECISIONS.md, by their Status line:
+  decisions    "## D<n>" entries (and "## D11a") in docs/DECISIONS.md, by their Status line:
                Approved, Proposed, another status (e.g. "closed by D28"), or
                none (most early entries were written before the Status line)
   guards       E-steps in docs/STEPS.md, and how many a recording shows caught
@@ -50,7 +50,7 @@ def count_scenarios():
 
 def count_decisions():
     # Split the log into entries at each "## D<n>" heading; read each one's Status.
-    entries = re.split(r"^## D\d+ ", read("docs", "DECISIONS.md"), flags=re.M)[1:]
+    entries = re.split(r"^## D\d+[a-z]? ", read("docs", "DECISIONS.md"), flags=re.M)[1:]   # D11a too (#93)
     words = []
     for e in entries:
         line = re.search(r"^\*\*Status:\*\*(.*)$", e, re.M)
