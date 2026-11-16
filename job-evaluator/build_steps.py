@@ -26,24 +26,33 @@ What it writes:
 
 "error" is true for the steps under "When something goes wrong" (E1, E2, ...).
 
-It also reads two tables at the end of STEPS.md (#115). "Checks": one row
-per guard check and the step it runs at,
+It also reads two tables at the end of STEPS.md (#115, #118). "Checks": one
+row per guard check and the step it runs at,
 
-    | `pass_count` | `send_to_claude` | `pass_cap` | Checks this run hasn't ... |
+    | `pass_count` | `send_to_claude` | `pass_cap` | Checks this run ... | The run is ... | Python stops ... |
 
 written as "checks": [{"check": "pass_count", "runs_at": ["send_to_claude"],
-"caught_as": "pass_cap", "text": "Checks this run ..."}, ...] ("none" in
-"Caught as" becomes null). And "Rules": one row per hard rule,
+"caught_as": "pass_cap", "text": "Checks this run ...", "passed": "The run is
+...", "on_catch": "Python stops ..."}, ...] ("none" in "Caught as" becomes
+null). And "Rules": one row per hard rule,
 
-    | `comp_floor` | Salary floor | The lowest base ... | Code rates it IGNORE ... |
+    | `comp_floor` | Salary floor | `hard_screen` | The lowest base ... | Code rates it IGNORE ... |
 
-written as "rules": {"comp_floor": {"name": "Salary floor", "text": ...,
-"fails": ...}}. The page builds each check's card from these and the steps.
+written as "rules": {"comp_floor": {"name": "Salary floor", "code_at":
+"hard_screen", "text": ..., "fails": ...}}.
+
+Last, "code": the code each check card shows, looked up in agent.py by
+code_refs from each caught-as step's (or rule's) `# STEP:` marker:
+{"pass_cap": {"file": "agent.py", "marker": "pass_cap", "line": 512, "lines": [...]}}.
+So steps.json changes when agent.py does: rerun this after editing either.
+The page builds each check's card from all of these.
 """
 
 import json
 import os
 import re
+
+import code_refs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STEPS_MD = os.path.join(HERE, "docs", "STEPS.md")
@@ -121,12 +130,13 @@ def table_rows(markdown, section):
 
 def parse_checks(markdown):
     """Each guard check, from the "Checks" table: a list of
-    {check, runs_at, caught_as, text}, one per check and place it runs."""
+    {check, runs_at, caught_as, text, passed, on_catch}, one per check and
+    place it runs."""
     checks = []
-    for check, runs_at, caught_as, text in table_rows(markdown, "CHECKS"):
+    for check, runs_at, caught_as, text, passed, on_catch in table_rows(markdown, "CHECKS"):
         row = {"check": CODE.fullmatch(check).group(1), "runs_at": CODE.findall(runs_at),
                "caught_as": None if caught_as == "none" else CODE.fullmatch(caught_as).group(1),
-               "text": text}
+               "text": text, "passed": passed, "on_catch": on_catch}
         for other in checks:
             if other["check"] == row["check"] and set(other["runs_at"]) & set(row["runs_at"]):
                 raise ValueError(f"check {row['check']!r} at {row['runs_at']} appears twice in STEPS.md")
@@ -135,28 +145,45 @@ def parse_checks(markdown):
 
 
 def parse_rules(markdown):
-    """Each hard rule, from the "Rules" table: {rule: {name, text, fails}}."""
+    """Each hard rule, from the "Rules" table: {rule: {name, code_at, text, fails}}."""
     rules = {}
-    for rule, name, text, fails in table_rows(markdown, "RULES"):
+    for rule, name, code_at, text, fails in table_rows(markdown, "RULES"):
         rule = CODE.fullmatch(rule).group(1)
         if rule in rules:
             raise ValueError(f"rule {rule!r} appears twice in STEPS.md")
-        rules[rule] = {"name": name, "text": text, "fails": fails}
+        rules[rule] = {"name": name, "code_at": CODE.fullmatch(code_at).group(1), "text": text, "fails": fails}
     return rules
 
 
-def build(markdown):
-    """The steps.json document for this STEPS.md text."""
+def guard_code_step(row):
+    """The step whose `# STEP:` marker labels a check's code: the E-step it's
+    caught as, or, for a check that only routes, the step it runs at."""
+    return row["caught_as"] or row["runs_at"][0]
+
+
+def guard_code(checks, rules, source):
+    """The code each check card shows (#118), from agent.py's markers via
+    code_refs: {step_id: {file, marker, line, lines}}. Raises MarkerError if
+    a check's or rule's marker is missing."""
+    wanted = {guard_code_step(r) for r in checks} | {r["code_at"] for r in rules.values()}
+    return {step: code_refs.code_ref(step, source) for step in sorted(wanted)}
+
+
+def build(markdown, source=None):
+    """The steps.json document for this STEPS.md text and agent.py source
+    (read from disk if not given)."""
+    checks, rules = parse_checks(markdown), parse_rules(markdown)
     return {"source": "docs/STEPS.md",
-            "generated_by": "build_steps.py: edit docs/STEPS.md, then rerun it",
+            "generated_by": "build_steps.py: edit docs/STEPS.md or agent.py, then rerun it",
             "steps": parse_steps(markdown),
-            "checks": parse_checks(markdown),
-            "rules": parse_rules(markdown)}
+            "checks": checks,
+            "rules": rules,
+            "code": guard_code(checks, rules, code_refs.load_source() if source is None else source)}
 
 
-def render(markdown):
+def render(markdown, source=None):
     """steps.json as text, exactly as it's written to disk."""
-    return json.dumps(build(markdown), indent=2, ensure_ascii=False) + "\n"
+    return json.dumps(build(markdown, source), indent=2, ensure_ascii=False) + "\n"
 
 
 def main(src=STEPS_MD, dest=STEPS_JSON):
@@ -166,7 +193,7 @@ def main(src=STEPS_MD, dest=STEPS_JSON):
         f.write(text)
     data = json.loads(text)
     print(f"Wrote {os.path.relpath(dest, HERE)}: {len(data['steps'])} steps and "
-          f"{len(data['checks'])} checks and {len(data['rules'])} rules from {os.path.relpath(src, HERE)}")
+          f"{len(data['checks'])} checks and {len(data['rules'])} rules, and {len(data['code'])} guards' code from agent.py and {os.path.relpath(src, HERE)}")
 
 
 if __name__ == "__main__":

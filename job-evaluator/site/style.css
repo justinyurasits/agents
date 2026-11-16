@@ -306,11 +306,14 @@ pre { margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--well)
 .check-card.rule.skipped { border-left-color: var(--faint); }
 .check-card p { margin: 4px 0 0; }
 .check-head { color: var(--text); }
-.check-k { color: var(--faint); }
-.show-data { margin-top: 6px; }
-.show-data summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); }
-.show-data summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
-.show-data pre { margin-top: 6px; }
+.check-line { color: var(--body); }
+.check-detail { margin-top: 6px; }
+.check-detail summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); }
+.check-detail summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+.check-detail dl { margin: 8px 0 0; }
+.check-detail dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--faint); margin-top: 10px; }
+.check-detail dd { margin: 2px 0 0; }
+.check-detail .where { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-bottom: 4px; }
 /* The tool definitions under a request's payload (#114), collapsed by default. */
 .tool-defs { margin-top: 8px; }
 .tool-defs summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); padding: 4px 0; }

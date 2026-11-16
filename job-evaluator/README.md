@@ -46,7 +46,7 @@ The script prints a line at each point in the loop, labelled with its step id fr
 
 ```bash
 cd job-evaluator
-python build_steps.py               # after editing docs/STEPS.md: rebuild site/steps.json (and site/numbers.json)
+python build_steps.py               # after editing docs/STEPS.md or agent.py: rebuild site/steps.json (and site/numbers.json)
 python build_numbers.py             # recount the numbers on the page; needed in every PR (see CLAUDE.md)
 python make_preview.py              # remake site/preview.png, the link-preview image (needs requirements-dev.txt)
 python -m http.server 8000          # then open localhost:8000/site/
@@ -66,7 +66,7 @@ The tests use a fake Claude client, so they make no API calls and need no `.env`
 
 ### Browser tests
 
-`tests/test_browser.py` loads the page in a real browser (headless Chromium, through Playwright for Python) and checks all nine scenarios: Claude's words appear only under "Claude's response", searched in the State change, Code and Payload tabs at every step (D31, D38), every request's tool definitions match the recording (#114), every check and rule is a card worded from STEPS.md (#115), every scenario plays to its last step with no console errors and no `undefined` on screen, and `?scenario=` and Back work. The tests start their own local server. One-time setup:
+`tests/test_browser.py` loads the page in a real browser (headless Chromium, through Playwright for Python) and checks all nine scenarios: Claude's words appear only under "Claude's response", searched in the State change, Code and Payload tabs at every step (D31, D38), every request's tool definitions match the recording (#114), every check and rule is a card worded from STEPS.md, with its real E-number and its code (#115, #118), every scenario plays to its last step with no console errors and no `undefined` on screen, and `?scenario=` and Back work. The tests start their own local server. One-time setup:
 
 ```bash
 pip install -r requirements-dev.txt     # the agent's requirements, plus Playwright

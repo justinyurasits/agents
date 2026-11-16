@@ -71,7 +71,7 @@ const GROUPED = new Set(["hard_screen", "inner_grader"]);
 // Python reading Claude's "I'm done" and ending the loop (PR #60 review).
 const ROUTING = new Set(["claude_done"]);
 
-const state = { scenarios: [], scenario: null, loading: 0, trace: null, text: {}, checks: [], rules: {}, steps: [], i: 0,
+const state = { scenarios: [], scenario: null, loading: 0, trace: null, text: {}, checks: [], rules: {}, code: {}, steps: [], i: 0,
   playing: false, speed: 1, timer: null, tab: "state" };
 
 // --- small helpers --------------------------------------------------------------
@@ -542,7 +542,7 @@ function buildTimeline(list) {
     const color = { python: "var(--green)", claude: "var(--violet)", tool: "var(--orange)" }[s.actor];
     const row = el("button", {
       type: "button", class: "tl-step" + (s.parent ? " nested" : "") + (s.bad ? " bad" : ""),
-      "data-index": j, style: `--c: ${color}`, title: `${s.events.map((e) => e.id).join(", ")} · ${s.step_id}`,
+      "data-index": j, style: `--c: ${color}`, title: `${s.events.length === 1 ? "event" : "events"} ${s.events.map((e) => e.id).join(", ")} · ${s.step_id}`,
     }, el("span", { class: "dot" }), el("span", { class: "lbl" }, stepLabel(s)),
     s.injected ? el("span", { class: "sim-mark", title: "Simulated failure" }, "simulated") : null);
     row.addEventListener("click", () => { show(j); restartTimer(); });
@@ -621,10 +621,14 @@ function toolDefinitions(e) {
     el("pre", {}, JSON.stringify(defs, null, 2)));
 }
 
-// --- checks as cards (#115) -----------------------------------------------------------
-// Each guard check and each rule gets a card instead of raw JSON. Every word
-// on it comes from steps.json (built from STEPS.md's Checks and Rules tables
-// and its steps) or from the recording; the raw data stays behind "Show data".
+// --- checks as cards (#115, #118) -----------------------------------------------------
+// Each guard check and each rule gets a card instead of raw JSON: a heading
+// with the guard's real E-number and title, one line saying what happened,
+// and a "Details" drop-down (what it protects against, when it runs, its code,
+// what happens if it catches something, Watch it fail, and the raw data).
+// Every word comes from steps.json (built from STEPS.md's tables and steps,
+// and agent.py's markers) or from the recording. Event ids (e1, e2, ...) only
+// appear in the raw data, labelled "event", so none reads as a guard number.
 
 // The Checks row an event is worded from: its guard's name, at the step it
 // ran at or was caught as (max_tokens has two rows: the main reply, the grader's).
@@ -635,8 +639,8 @@ function checkRow(e) {
 
 const capitalized = (name) => spaced(name).replace(/^./, (c) => c.toUpperCase());
 const stepName = (id) => (state.text[id] ? `${state.text[id].number} · ${state.text[id].title}` : id);
-// "Checked: pass <= MAX_PASSES (10) · value 1", from the recording.
-const checkedLine = (checked, value) => `Checked: ${checked}` + (value === null || value === undefined ? "" : ` · value ${JSON.stringify(value)}`);
+// "pass <= MAX_PASSES (10) · value 1", from the recording.
+const checkedLine = (checked, value) => checked + (value === null || value === undefined ? "" : ` · value ${JSON.stringify(value)}`);
 
 // The scenario Design principles links for an E-step, if one demonstrates it.
 function demonstratedIn(eStep) {
@@ -644,49 +648,67 @@ function demonstratedIn(eStep) {
   return li ? Number(li.dataset.scenario) : null;
 }
 
-function showData(data) {
-  return el("details", { class: "show-data" }, el("summary", {}, "Show data"), el("pre", {}, JSON.stringify(data, null, 2)));
+// A check's code, drawn like the Code tab, from steps.json's "code" (looked up
+// in agent.py from the step's # STEP: marker when steps.json was built).
+function guardCode(step) {
+  const c = state.code[step];
+  if (!c) return el("p", { class: "note" }, `No code found for # STEP: ${step}.`);
+  return [el("div", { class: "where" }, `${c.file}:${c.line} · marker # STEP: ${c.marker}`),
+    el("pre", {}, c.lines.map((text, n) => [el("span", { class: "ln" }, String(c.line + n)), text, "\n"]))];
+}
+
+// The drop-down: label/content pairs, skipping any with no content.
+function checkDetail(rows) {
+  return el("details", { class: "check-detail" }, el("summary", {}, "Details"),
+    el("dl", {}, rows.filter(([, v]) => v).map(([k, v]) => [el("dt", {}, k), el("dd", {}, v)])));
 }
 
 function checkCard(e) {
   if (isRule(e)) {
     const p = e.payload;
-    const rule = state.rules[p.rule] || { name: spaced(p.rule), text: "", fails: "" };
+    const rule = state.rules[p.rule] || { name: spaced(p.rule), code_at: "hard_screen", text: "", fails: "" };
     // A rule rejecting a posting is the agent working as intended (D28), so
     // it's "rejected", never "failed" or "caught".
     const outcome = { passed: "passed", failed: "rejected", skipped: "skipped" }[p.outcome] || p.outcome;
-    const said = { passed: "passed", rejected: "rejected the posting", skipped: "skipped" }[outcome] || outcome;
+    const said = { passed: "rule passed", rejected: "rule rejected the posting", skipped: "rule skipped" }[outcome] || outcome;
     return el("div", { class: `check-card rule ${outcome}`, "data-event": e.id, "data-kind": "rule", "data-outcome": outcome },
-      el("div", { class: "check-head" }, el("strong", {}, rule.name), ` · rule · ${said}`),
-      el("p", {}, rule.text, " ", checkedLine(p.checked, p.value) + ".", p.note ? ` ${capitalized(p.note)}.` : ""),
-      el("p", {}, el("span", { class: "check-k" }, "If a posting fails it: "), rule.fails),
-      showData({ id: e.id, ...p }));
+      el("div", { class: "check-head" }, el("strong", {}, rule.name), ` · ${said}`),
+      el("p", { class: "check-line" }, p.note ? `${capitalized(p.note)}.` : rule.text),
+      checkDetail([
+        ["What it decides", rule.text],
+        ["When it runs", `At ${stepName(e.step_id)}, before the grader is asked.`],
+        ["Where it lives", guardCode(rule.code_at)],
+        ["If a posting fails it", rule.fails],
+        ["Checked", checkedLine(p.checked, p.value)],
+        ["Raw data", el("pre", {}, JSON.stringify({ event: e.id, ...p }, null, 2))],
+      ]));
   }
   const g = e.guard;
-  const row = checkRow(e) || { text: "", caught_as: null };
-  const name = capitalized(g.name);
-  if (g.caught) {
-    const step = state.text[e.step_id] || { title: e.step_id, text: "" };
-    return el("div", { class: "check-card caught", "data-event": e.id, "data-kind": "guard", "data-outcome": "caught" },
-      el("div", { class: "check-head" }, el("strong", {}, name), " · guard · caught"),
-      el("p", {}, el("span", { class: "check-k" }, "Caught: "), g.message || "", " ", checkedLine(g.checked, g.value) + "."),
-      el("p", {}, el("span", { class: "check-k" }, `What Python does (${stepName(e.step_id)}): `), step.text),
-      showData({ id: e.id, guard: g }));
-  }
-  const fails = row.caught_as;
-  const scenario = fails ? demonstratedIn(fails) : null;
+  const row = checkRow(e) || { text: "", passed: "", on_catch: "", caught_as: null, runs_at: [e.step_id] };
+  const eStep = g.caught ? e.step_id : row.caught_as;     // null for a check that only routes
+  const title = eStep && state.text[eStep] ? stepName(eStep) : capitalized(g.name);
+  const kind = eStep ? "guard" : "routing check";
+  const scenario = eStep && !g.caught ? demonstratedIn(eStep) : null;
   let watchIt = null;
   if (scenario) {
-    watchIt = el("button", { type: "button", class: "btn watch watch-small", "data-scenario": scenario }, `Watch it fail (${scenario})`);
+    watchIt = el("button", { type: "button", class: "btn watch watch-small", "data-scenario": scenario }, `Watch it fail (scenario ${scenario})`);
     watchIt.addEventListener("click", () => watch(scenario));
   }
-  return el("div", { class: "check-card", "data-event": e.id, "data-kind": "guard", "data-outcome": "passed" },
-    el("div", { class: "check-head" }, el("strong", {}, name), " · guard · passed"),
-    el("p", {}, row.text, " ", checkedLine(g.checked, g.value) + "."),
-    el("p", {}, el("span", { class: "check-k" }, "Runs at: "), stepName(e.step_id)),
-    fails ? el("p", {}, el("span", { class: "check-k" }, `If it catches something (${stepName(fails)}): `),
-      state.text[fails] ? state.text[fails].text : "", watchIt ? " " : "", watchIt) : null,
-    showData({ id: e.id, guard: g }));
+  const runsAt = g.caught ? row.runs_at[0] : e.step_id;
+  return el("div", { class: "check-card" + (g.caught ? " caught" : ""), "data-event": e.id, "data-kind": eStep ? "guard" : "routing",
+    "data-outcome": g.caught ? "caught" : "passed" },
+    el("div", { class: "check-head" }, el("strong", {}, title), ` · ${kind} ${g.caught ? "caught it" : "passed"}`),
+    el("p", { class: "check-line" }, g.caught ? `Caught: ${g.message || g.value} ${row.on_catch}` : row.passed),
+    checkDetail([
+      ["What it protects against", eStep && state.text[eStep] ? state.text[eStep].text : row.text],
+      ["When it runs", `At ${stepName(runsAt)}, on pass ${e.pass}. ${row.text}`],
+      // The caught-as step's marker; a check that only routes uses the first step it runs at.
+      ["Where it lives", guardCode(row.caught_as || row.runs_at[0])],
+      ["If it catches something", row.on_catch],
+      ["Checked", checkedLine(g.checked, g.value)],
+      ["Watch it fail", watchIt],
+      ["Raw data", el("pre", {}, JSON.stringify({ event: e.id, guard: g }, null, 2))],
+    ]));
 }
 
 function payloadTab(s) {
@@ -694,7 +716,7 @@ function payloadTab(s) {
   for (const e of s.events) {
     const p = payloadView(e);
     const label = e.crossing ? `${WHO[e.crossing.from]} → ${WHO[e.crossing.to]} · ${e.crossing.kind}` : e.step_id;
-    out.push(el("div", { class: "sub" }, `${e.id} · ${label}${e.injected ? " · simulated" : ""}`));
+    out.push(el("div", { class: "sub" }, `event ${e.id} · ${label}${e.injected ? " · simulated" : ""}`));
     if (isRule(e)) out.push(checkCard(e));
     else if (p !== null) out.push(el("pre", {}, JSON.stringify(p, null, 2)));
     const defs = toolDefinitions(e);
@@ -999,6 +1021,7 @@ async function start() {
     state.text = steps.steps;
     state.checks = steps.checks || [];
     state.rules = steps.rules || {};
+    state.code = steps.code || {};
     state.scenarios = scenarios;
   } catch (err) {
     showProblem("COULDN'T LOAD", `Couldn't load the page's data (${err.message}). Serve job-evaluator/ with `

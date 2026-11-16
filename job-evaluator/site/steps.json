@@ -1,6 +1,6 @@
 {
   "source": "docs/STEPS.md",
-  "generated_by": "build_steps.py: edit docs/STEPS.md, then rerun it",
+  "generated_by": "build_steps.py: edit docs/STEPS.md or agent.py, then rerun it",
   "steps": {
     "agent_starts": {
       "number": "1",
@@ -142,7 +142,9 @@
         "send_to_claude"
       ],
       "caught_as": "pass_cap",
-      "text": "Checks this run hasn't hit the 10-pass limit."
+      "text": "Checks this run hasn't hit the 10-pass limit.",
+      "passed": "The run is under its pass limit, so Python calls Claude again.",
+      "on_catch": "Python stops the run and says how many passes it made."
     },
     {
       "check": "api_call_succeeded",
@@ -150,7 +152,9 @@
         "send_to_claude"
       ],
       "caught_as": "api_call_failed",
-      "text": "Checks the call to Claude came back with a reply."
+      "text": "Checks the call to Claude came back with a reply.",
+      "passed": "Python got a reply from Claude, so this guard didn't fire.",
+      "on_catch": "Python stops the run and says which error it was."
     },
     {
       "check": "stop_reason",
@@ -159,7 +163,9 @@
         "claude_done"
       ],
       "caught_as": null,
-      "text": "Reads the label on Claude's reply: run a tool, or done."
+      "text": "Reads the label on Claude's reply: run a tool, or done.",
+      "passed": "Python read the label on Claude's reply and took that path.",
+      "on_catch": "Nothing to catch: this check only routes the loop, to the tools or to the end."
     },
     {
       "check": "max_tokens",
@@ -167,7 +173,9 @@
         "check_reply"
       ],
       "caught_as": "reply_cut_off",
-      "text": "Checks the reply wasn't cut off by the length limit."
+      "text": "Checks the reply wasn't cut off by the length limit.",
+      "passed": "Claude's reply was complete, so Python can act on it.",
+      "on_catch": "Python stops the run and says the reply was cut off."
     },
     {
       "check": "stop_reason_known",
@@ -175,7 +183,9 @@
         "check_reply"
       ],
       "caught_as": "unexpected_stop",
-      "text": "Checks the label is one this agent knows how to handle."
+      "text": "Checks the label is one this agent knows how to handle.",
+      "passed": "The label was one this agent knows how to handle.",
+      "on_catch": "Python stops the run and says which label it was."
     },
     {
       "check": "tool_exists",
@@ -183,7 +193,9 @@
         "run_tools"
       ],
       "caught_as": "unknown_tool",
-      "text": "Checks the tool Claude asked for is a real one."
+      "text": "Checks the tool Claude asked for is a real one.",
+      "passed": "The tool Claude asked for is real, so Python runs it.",
+      "on_catch": "Python sends Claude an error naming the real tools, so it can pick again."
     },
     {
       "check": "tool_succeeded",
@@ -191,7 +203,9 @@
         "run_tools"
       ],
       "caught_as": "tool_failed",
-      "text": "Checks the tool finished without an error."
+      "text": "Checks the tool finished without an error.",
+      "passed": "The tool returned a result, so Python sends it to Claude.",
+      "on_catch": "Python sends the error to Claude as the tool's result, marked as an error."
     },
     {
       "check": "max_tokens",
@@ -199,7 +213,9 @@
         "inner_grader"
       ],
       "caught_as": "grader_cut_off",
-      "text": "Checks the grader's reply wasn't cut off by the length limit."
+      "text": "Checks the grader's reply wasn't cut off by the length limit.",
+      "passed": "The grader's reply was complete, so the tool can read it.",
+      "on_catch": "The tool reports the reply was cut off, and the error goes back to Claude."
     },
     {
       "check": "grade_valid",
@@ -207,7 +223,9 @@
         "inner_grader"
       ],
       "caught_as": "invalid_grade",
-      "text": "Checks the grader answered yes or no, with reasons."
+      "text": "Checks the grader answered yes or no, with reasons.",
+      "passed": "The grader answered yes or no, with reasons.",
+      "on_catch": "The tool reports what was wrong, and the error goes back to Claude."
     },
     {
       "check": "final_text_present",
@@ -215,19 +233,159 @@
         "answer_returned"
       ],
       "caught_as": "no_final_answer",
-      "text": "Checks Claude's last reply has text to hand back."
+      "text": "Checks Claude's last reply has text to hand back.",
+      "passed": "Claude's last reply has text, so Python hands it back.",
+      "on_catch": "Python returns a message saying there was no final answer."
     }
   ],
   "rules": {
     "remote": {
       "name": "Remote",
+      "code_at": "hard_screen",
       "text": "The role must be remote.",
       "fails": "Code rates it IGNORE and the grader is never asked (D28)."
     },
     "comp_floor": {
       "name": "Salary floor",
+      "code_at": "hard_screen",
       "text": "The lowest base salary must be at least $180K.",
       "fails": "Code rates it IGNORE and the grader is never asked (D28)."
+    }
+  },
+  "code": {
+    "api_call_failed": {
+      "file": "agent.py",
+      "marker": "api_call_failed",
+      "line": 533,
+      "lines": [
+        "except anthropic.APIError as e:",
+        "    # getattr(e, \"status_code\", None): the HTTP status if this error",
+        "    # has one (a network error doesn't), otherwise None.",
+        "    status = getattr(e, \"status_code\", None)",
+        "    answer = (f\"Couldn't get a reply from Claude: {type(e).__name__}\"",
+        "              f\"{f' (status {status})' if status else ''}. The run stopped.\")",
+        "    print(f\"\\n[api_call_failed] {answer}\")  # (terminal only)",
+        "    rec.end(\"api_error\", answer, value=type(e).__name__)  # (trace only)",
+        "    return answer"
+      ]
+    },
+    "check_reply": {
+      "file": "agent.py",
+      "marker": "check_reply",
+      "line": 567,
+      "lines": [
+        "if response.stop_reason == \"end_turn\":",
+        "    print(f\"\\n[claude_done] end_turn → done. \"",
+        "          f\"Outer calls: {api_calls}, plus any inner tool calls.\")  # (terminal only)",
+        "    # next(<matches>, None): the first text block's text, or None if",
+        "    # the reply has no text block at all.",
+        "    # STEP: answer_returned",
+        "    answer = next((b.text for b in response.content if b.type == \"text\"), None)",
+        "    # GUARD (E7 no_final_answer): Claude said it's done but wrote no",
+        "    # text (e.g. only a thinking block). Say so, rather than crash at",
+        "    # the very last step.",
+        "    # STEP: no_final_answer",
+        "    if answer is None:",
+        "        answer = \"Claude finished without writing a final answer.\"",
+        "        rec.end(\"no_text\", answer)  # (trace only)",
+        "        return answer",
+        "    rec.end(\"end_turn\", answer)  # (trace only)",
+        "    return answer"
+      ]
+    },
+    "grader_cut_off": {
+      "file": "agent.py",
+      "marker": "grader_cut_off",
+      "line": 353,
+      "lines": [
+        "if eval_response.stop_reason == \"max_tokens\":",
+        "    raise RuntimeError(f\"The grader's reply was cut off (hit the \"",
+        "                       f\"max_tokens limit of {MAX_TOKENS}).\")"
+      ]
+    },
+    "hard_screen": {
+      "file": "agent.py",
+      "marker": "hard_screen",
+      "line": 326,
+      "lines": [
+        "if failed:",
+        "    return {\"rating\": \"IGNORE\", \"reasons\": failed + notes}"
+      ]
+    },
+    "invalid_grade": {
+      "file": "agent.py",
+      "marker": "invalid_grade",
+      "line": 380,
+      "lines": [
+        "if problem:",
+        "    raise ValueError(problem)"
+      ]
+    },
+    "no_final_answer": {
+      "file": "agent.py",
+      "marker": "no_final_answer",
+      "line": 578,
+      "lines": [
+        "if answer is None:",
+        "    answer = \"Claude finished without writing a final answer.\"",
+        "    rec.end(\"no_text\", answer)  # (trace only)",
+        "    return answer"
+      ]
+    },
+    "pass_cap": {
+      "file": "agent.py",
+      "marker": "pass_cap",
+      "line": 697,
+      "lines": [
+        "answer = f\"Stopped after {max_passes} passes without finishing.\""
+      ]
+    },
+    "reply_cut_off": {
+      "file": "agent.py",
+      "marker": "reply_cut_off",
+      "line": 589,
+      "lines": [
+        "if response.stop_reason == \"max_tokens\":",
+        "    print(f\"\\n[reply_cut_off] reply cut off at {max_tokens} tokens.\")  # (terminal only)",
+        "    answer = (f\"Claude's reply was cut off (hit the max_tokens limit \"",
+        "              f\"of {max_tokens}).\")",
+        "    rec.end(\"max_tokens\", answer)  # (trace only)",
+        "    return answer"
+      ]
+    },
+    "tool_failed": {
+      "file": "agent.py",
+      "marker": "tool_failed",
+      "line": 663,
+      "lines": [
+        "except Exception as e:",
+        "    error = f\"{type(e).__name__}: {e}\"",
+        "    print(f\"[tool_failed] {tool_block.name} raised → {error}\")  # (terminal only)",
+        "    outcome = {\"content\": error, \"is_error\": True}"
+      ]
+    },
+    "unexpected_stop": {
+      "file": "agent.py",
+      "marker": "unexpected_stop",
+      "line": 601,
+      "lines": [
+        "if response.stop_reason != \"tool_use\":",
+        "    print(f\"\\n[unexpected_stop] stop_reason = {response.stop_reason!r} → stopping.\")  # (terminal only)",
+        "    answer = (f\"Claude stopped for a reason this agent doesn't handle \"",
+        "              f\"(stop_reason {response.stop_reason!r}). The run stopped.\")",
+        "    rec.end(\"unexpected_stop\", answer, value=response.stop_reason)  # (trace only)",
+        "    return answer"
+      ]
+    },
+    "unknown_tool": {
+      "file": "agent.py",
+      "marker": "unknown_tool",
+      "line": 655,
+      "lines": [
+        "raise ValueError(",
+        "    f\"Unknown tool {tool_block.name!r}. Available tools: \"",
+        "    f\"{', '.join(t['name'] for t in tools)}.\")"
+      ]
     }
   }
 }
