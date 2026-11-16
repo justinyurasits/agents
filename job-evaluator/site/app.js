@@ -607,6 +607,20 @@ function codeTab(s) {
   ];
 }
 
+// A request to Claude names its tools; the recording keeps their full
+// definitions once, at its top level. Claude receives the full definitions
+// on every request, so show them here (#114), collapsed so the rest of the
+// payload stays readable. <details> opens and closes by mouse and keyboard.
+function toolDefinitions(e) {
+  const names = e.crossing && e.crossing.kind === "api_request" && e.payload && e.payload.tools;
+  if (!Array.isArray(names) || !names.length) return null;
+  const all = state.trace.tools || [];
+  const defs = names.map((name) => all.find((t) => t.name === name) || { name, missing: "not in this recording" });
+  return el("details", { class: "tool-defs" },
+    el("summary", {}, `Show tool definitions (${defs.length})`),
+    el("pre", {}, JSON.stringify(defs, null, 2)));
+}
+
 function payloadTab(s) {
   const out = [];
   for (const e of s.events) {
@@ -614,6 +628,8 @@ function payloadTab(s) {
     const label = e.crossing ? `${WHO[e.crossing.from]} → ${WHO[e.crossing.to]} · ${e.crossing.kind}` : e.step_id;
     out.push(el("div", { class: "sub" }, `${e.id} · ${label}${e.injected ? " · simulated" : ""}`));
     if (p !== null) out.push(el("pre", {}, JSON.stringify(p, null, 2)));
+    const defs = toolDefinitions(e);
+    if (defs) out.push(defs);
     if (e.guard) out.push(el("pre", {}, JSON.stringify({ guard: e.guard }, null, 2)));
     if (e.tokens) out.push(el("pre", {}, JSON.stringify({ tokens: e.tokens }, null, 2)));
     if (p === null && !e.guard && !e.tokens) out.push(el("p", { class: "note" }, "Nothing crossed: this step changes the messages list (see State change)."));
@@ -687,7 +703,8 @@ function wireControls() {
     // screen, so Space still scrolls the page everywhere else.
     const box = $("run-view").getBoundingClientRect();
     if (box.bottom < 0 || box.top > window.innerHeight) return;
-    if (ev.target.closest && ev.target.closest("button") && ev.key === " ") return;
+    // A focused button or toggle keeps Space for itself (#114: the tool definitions toggle).
+    if (ev.target.closest && ev.target.closest("button, summary") && ev.key === " ") return;
     if (ev.key === "ArrowRight") { show(state.i + 1); restartTimer(); }
     else if (ev.key === "ArrowLeft") { show(state.i - 1); restartTimer(); }
     else if (ev.key === " ") { ev.preventDefault(); setPlaying(!state.playing); }

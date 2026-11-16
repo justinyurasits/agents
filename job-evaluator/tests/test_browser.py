@@ -14,6 +14,8 @@ local http server these tests start, and check all nine scenarios:
   6. Design principles (#80): every Watch it loads its scenario, and guard
      names come from steps.json.
   7. How it was built (#81): every number shown is the one in numbers.json.
+  8. Tool definitions (#114): every request to Claude can show the full
+     definitions it sent, exactly as in the recording, behind a toggle.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -105,6 +107,7 @@ def given_to_claude(trace):
             for v in value:
                 strings(v)
 
+    strings(trace["tools"])   # the full definitions Python sends on every request (#114)
     for e in trace["events"]:
         p = e["payload"]
         if not isinstance(p, dict):
@@ -260,6 +263,9 @@ class BrowserTest(unittest.TestCase):
                         # so check the right tab is showing before searching it.
                         self.assertEqual(self.errors, [], f"{where}: console errors")
                         self.assertEqual(page.get_attribute(f'#tabs [data-tab="{tab}"]', "aria-selected"), "true", where)
+                        if tab == "payload":
+                            # Search the tool definitions too (#114): open every toggle.
+                            page.eval_on_selector_all("#tab-body details", "ds => ds.forEach(d => { d.open = true; })")
                         text = self.visible_text(page)
                         if tab == "payload":
                             for content in exempt:
@@ -529,6 +535,70 @@ class BrowserTest(unittest.TestCase):
                 for key in slot.split("."):
                     value = value[key]
                 self.assertEqual(text, str(value))
+        self.assertEqual(self.errors, [])
+
+    # --- tool definitions in the Payload tab (#114) -------------------------
+
+    def requests_with_tools(self, page, trace):
+        """(step index, tool names) for every request to Claude that offers tools."""
+        found = []
+        for k, step in enumerate(page.evaluate("window.explorer.state.steps.map(s => s.events.map(e => e.id))")):
+            for e in trace["events"]:
+                if e["id"] in step and (e["crossing"] or {}).get("kind") == "api_request" and e["payload"].get("tools"):
+                    found.append((k, e["payload"]["tools"]))
+        return found
+
+    def test_every_request_can_show_the_tool_definitions_it_sent(self):
+        for sc in SCENARIOS:
+            n = sc["id"]
+            with self.subTest(scenario=n):
+                page = self.open(f"?scenario={n}")
+                self.wait_for_scenario(page, n)
+                trace = recording(n)
+                by_name = {t["name"]: t for t in trace["tools"]}
+                requests = self.requests_with_tools(page, trace)
+                self.assertTrue(requests, f"scenario {n}: no request to Claude found")
+                page.click('#tabs [data-tab="payload"]')
+                for k, names in requests:
+                    where = f"scenario {n}, step {k + 1}"
+                    self.show(page, k, where)
+                    toggle = page.locator("#tab-body details.tool-defs")
+                    self.assertEqual(toggle.count(), 1, f"{where}: no tool definitions toggle")
+                    self.assertEqual(toggle.locator("summary").inner_text(), f"Show tool definitions ({len(names)})", where)
+                    self.assertFalse(toggle.evaluate("d => d.open"), f"{where}: open by default")
+                    self.assertFalse(toggle.locator("pre").is_visible(), f"{where}: definitions showing while collapsed")
+                    # The JSON shown, parsed back, must be the recording's definitions, in the request's order.
+                    shown = json.loads(toggle.locator("pre").text_content())
+                    self.assertEqual(shown, [by_name[name] for name in names], f"{where}: definitions differ from the recording")
+                self.assertEqual(self.errors, [])
+
+    def test_the_tool_definitions_toggle_works_by_mouse_and_keyboard(self):
+        page = self.open("?scenario=1")
+        self.wait_for_scenario(page, 1)
+        k, _ = self.requests_with_tools(page, recording(1))[0]
+        self.show(page, k, "scenario 1")
+        page.click('#tabs [data-tab="payload"]')
+        summary = page.locator("#tab-body details.tool-defs summary")
+        pre = page.locator("#tab-body details.tool-defs pre")
+        summary.click()
+        self.assertTrue(pre.is_visible(), "a click didn't open it")
+        summary.click()
+        self.assertFalse(pre.is_visible(), "a second click didn't close it")
+        summary.focus()
+        page.keyboard.press("Enter")
+        self.assertTrue(pre.is_visible(), "Enter didn't open it")
+        page.keyboard.press("Space")
+        self.assertFalse(pre.is_visible(), "Space didn't close it")
+        self.assertEqual(self.errors, [])
+
+    def test_scenario_2_shows_flag_for_reviews_precedence_sentence(self):
+        page = self.open("?scenario=2")
+        self.wait_for_scenario(page, 2)
+        k, _ = self.requests_with_tools(page, recording(2))[0]
+        self.show(page, k, "scenario 2")
+        page.click('#tabs [data-tab="payload"]')
+        page.click("#tab-body details.tool-defs summary")
+        self.assertIn("If compensation is missing, try research_company first", self.visible_text(page))
         self.assertEqual(self.errors, [])
 
 
