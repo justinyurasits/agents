@@ -71,7 +71,7 @@ const GROUPED = new Set(["hard_screen", "inner_grader"]);
 // Python reading Claude's "I'm done" and ending the loop (PR #60 review).
 const ROUTING = new Set(["claude_done"]);
 
-const state = { scenarios: [], scenario: null, loading: 0, trace: null, text: {}, checks: {}, steps: [], i: 0,
+const state = { scenarios: [], scenario: null, loading: 0, trace: null, text: {}, checks: [], rules: {}, steps: [], i: 0,
   playing: false, speed: 1, timer: null, tab: "state" };
 
 // --- small helpers --------------------------------------------------------------
@@ -477,7 +477,7 @@ function renderMap(s) {
   }
   $("checks").replaceChildren(...s.checks.map((e) => el("div", { class: "check" },
     el("span", { class: "check-name" }, `✓ ${spaced(e.guard.name)}`), " ",
-    state.checks[e.guard.name] || "")));
+    checkRow(e) ? checkRow(e).text : "")));
 }
 
 // The dashed path Tools → Python → Claude, under the boxes. It's drawn from
@@ -621,22 +621,90 @@ function toolDefinitions(e) {
     el("pre", {}, JSON.stringify(defs, null, 2)));
 }
 
+// --- checks as cards (#115) -----------------------------------------------------------
+// Each guard check and each rule gets a card instead of raw JSON. Every word
+// on it comes from steps.json (built from STEPS.md's Checks and Rules tables
+// and its steps) or from the recording; the raw data stays behind "Show data".
+
+// The Checks row an event is worded from: its guard's name, at the step it
+// ran at or was caught as (max_tokens has two rows: the main reply, the grader's).
+function checkRow(e) {
+  return state.checks.find((r) => r.check === e.guard.name
+    && (r.runs_at.includes(e.step_id) || r.caught_as === e.step_id));
+}
+
+const capitalized = (name) => spaced(name).replace(/^./, (c) => c.toUpperCase());
+const stepName = (id) => (state.text[id] ? `${state.text[id].number} · ${state.text[id].title}` : id);
+// "Checked: pass <= MAX_PASSES (10) · value 1", from the recording.
+const checkedLine = (checked, value) => `Checked: ${checked}` + (value === null || value === undefined ? "" : ` · value ${JSON.stringify(value)}`);
+
+// The scenario Design principles links for an E-step, if one demonstrates it.
+function demonstratedIn(eStep) {
+  const li = document.querySelector(`#principles li[data-guard="${eStep}"][data-scenario]`);
+  return li ? Number(li.dataset.scenario) : null;
+}
+
+function showData(data) {
+  return el("details", { class: "show-data" }, el("summary", {}, "Show data"), el("pre", {}, JSON.stringify(data, null, 2)));
+}
+
+function checkCard(e) {
+  if (isRule(e)) {
+    const p = e.payload;
+    const rule = state.rules[p.rule] || { name: spaced(p.rule), text: "", fails: "" };
+    // A rule rejecting a posting is the agent working as intended (D28), so
+    // it's "rejected", never "failed" or "caught".
+    const outcome = { passed: "passed", failed: "rejected", skipped: "skipped" }[p.outcome] || p.outcome;
+    const said = { passed: "passed", rejected: "rejected the posting", skipped: "skipped" }[outcome] || outcome;
+    return el("div", { class: `check-card rule ${outcome}`, "data-event": e.id, "data-kind": "rule", "data-outcome": outcome },
+      el("div", { class: "check-head" }, el("strong", {}, rule.name), ` · rule · ${said}`),
+      el("p", {}, rule.text, " ", checkedLine(p.checked, p.value) + ".", p.note ? ` ${capitalized(p.note)}.` : ""),
+      el("p", {}, el("span", { class: "check-k" }, "If a posting fails it: "), rule.fails),
+      showData({ id: e.id, ...p }));
+  }
+  const g = e.guard;
+  const row = checkRow(e) || { text: "", caught_as: null };
+  const name = capitalized(g.name);
+  if (g.caught) {
+    const step = state.text[e.step_id] || { title: e.step_id, text: "" };
+    return el("div", { class: "check-card caught", "data-event": e.id, "data-kind": "guard", "data-outcome": "caught" },
+      el("div", { class: "check-head" }, el("strong", {}, name), " · guard · caught"),
+      el("p", {}, el("span", { class: "check-k" }, "Caught: "), g.message || "", " ", checkedLine(g.checked, g.value) + "."),
+      el("p", {}, el("span", { class: "check-k" }, `What Python does (${stepName(e.step_id)}): `), step.text),
+      showData({ id: e.id, guard: g }));
+  }
+  const fails = row.caught_as;
+  const scenario = fails ? demonstratedIn(fails) : null;
+  let watchIt = null;
+  if (scenario) {
+    watchIt = el("button", { type: "button", class: "btn watch watch-small", "data-scenario": scenario }, `Watch it fail (${scenario})`);
+    watchIt.addEventListener("click", () => watch(scenario));
+  }
+  return el("div", { class: "check-card", "data-event": e.id, "data-kind": "guard", "data-outcome": "passed" },
+    el("div", { class: "check-head" }, el("strong", {}, name), " · guard · passed"),
+    el("p", {}, row.text, " ", checkedLine(g.checked, g.value) + "."),
+    el("p", {}, el("span", { class: "check-k" }, "Runs at: "), stepName(e.step_id)),
+    fails ? el("p", {}, el("span", { class: "check-k" }, `If it catches something (${stepName(fails)}): `),
+      state.text[fails] ? state.text[fails].text : "", watchIt ? " " : "", watchIt) : null,
+    showData({ id: e.id, guard: g }));
+}
+
 function payloadTab(s) {
   const out = [];
   for (const e of s.events) {
     const p = payloadView(e);
     const label = e.crossing ? `${WHO[e.crossing.from]} → ${WHO[e.crossing.to]} · ${e.crossing.kind}` : e.step_id;
     out.push(el("div", { class: "sub" }, `${e.id} · ${label}${e.injected ? " · simulated" : ""}`));
-    if (p !== null) out.push(el("pre", {}, JSON.stringify(p, null, 2)));
+    if (isRule(e)) out.push(checkCard(e));
+    else if (p !== null) out.push(el("pre", {}, JSON.stringify(p, null, 2)));
     const defs = toolDefinitions(e);
     if (defs) out.push(defs);
-    if (e.guard) out.push(el("pre", {}, JSON.stringify({ guard: e.guard }, null, 2)));
+    if (e.guard) out.push(checkCard(e));
     if (e.tokens) out.push(el("pre", {}, JSON.stringify({ tokens: e.tokens }, null, 2)));
     if (p === null && !e.guard && !e.tokens) out.push(el("p", { class: "note" }, "Nothing crossed: this step changes the messages list (see State change)."));
   }
   if (s.checks.length) {
-    out.push(el("div", { class: "sub" }, "CHECKS THAT PASSED AT THIS STEP"),
-      el("pre", {}, JSON.stringify(s.checks.map((e) => ({ id: e.id, guard: e.guard })), null, 2)));
+    out.push(el("div", { class: "sub" }, "CHECKS THAT PASSED AT THIS STEP"), ...s.checks.map(checkCard));
   }
   return out;
 }
@@ -918,7 +986,7 @@ async function loadScenario(id) {
 
   // One badge per guard this run checks, in the order they first appear.
   const names = [...new Set(trace.events.filter((e) => e.guard).map((e) => e.guard.name))];
-  $("guards").replaceChildren(...names.map((n) => el("span", { class: "guard", "data-guard": n, title: state.checks[n] || n }, spaced(n))));
+  $("guards").replaceChildren(...names.map((n) => el("span", { class: "guard", "data-guard": n, title: (state.checks.find((r) => r.check === n) || { text: n }).text }, spaced(n))));
 
   $("timeline").replaceChildren();   // renderTimeline rebuilds it for these steps
   show(0);
@@ -929,7 +997,8 @@ async function start() {
   try {
     const [steps, scenarios] = await Promise.all([getJSON(STEPS), getJSON(SCENARIOS)]);
     state.text = steps.steps;
-    state.checks = steps.checks || {};
+    state.checks = steps.checks || [];
+    state.rules = steps.rules || {};
     state.scenarios = scenarios;
   } catch (err) {
     showProblem("COULDN'T LOAD", `Couldn't load the page's data (${err.message}). Serve job-evaluator/ with `

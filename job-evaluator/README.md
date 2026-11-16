@@ -66,7 +66,7 @@ The tests use a fake Claude client, so they make no API calls and need no `.env`
 
 ### Browser tests
 
-`tests/test_browser.py` loads the page in a real browser (headless Chromium, through Playwright for Python) and checks all nine scenarios: Claude's words appear only under "Claude's response", searched in the State change, Code and Payload tabs at every step (D31, D38), every request's tool definitions match the recording (#114), every scenario plays to its last step with no console errors and no `undefined` on screen, and `?scenario=` and Back work. The tests start their own local server. One-time setup:
+`tests/test_browser.py` loads the page in a real browser (headless Chromium, through Playwright for Python) and checks all nine scenarios: Claude's words appear only under "Claude's response", searched in the State change, Code and Payload tabs at every step (D31, D38), every request's tool definitions match the recording (#114), every check and rule is a card worded from STEPS.md (#115), every scenario plays to its last step with no console errors and no `undefined` on screen, and `?scenario=` and Back work. The tests start their own local server. One-time setup:
 
 ```bash
 pip install -r requirements-dev.txt     # the agent's requirements, plus Playwright

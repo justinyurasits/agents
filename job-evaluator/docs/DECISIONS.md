@@ -803,3 +803,37 @@ whenever the page's look changes.
 - A clearer moment for the card, e.g. scenario 4's two tools at once. That's
   a change to `SCENARIO` and `FIND_STEP` in the script.
 
+
+## D44 — Check cards: worded from two tables in STEPS.md, keyed by check and step
+
+**Status:** **Proposed** (issue #115)
+**Date:** 2026-11-16
+**Decision:**
+- The Payload tab shows each guard check and each rule as a short card
+  instead of raw JSON. The raw data stays behind a "Show data" toggle,
+  collapsed by default.
+- The wording lives in STEPS.md, not in the page. The old one-line "Checks"
+  list became a table with one row per check **and the step it runs at**,
+  naming the E-step it becomes when it catches something. A row is keyed by
+  both because the same check can run in two places with two outcomes:
+  `max_tokens` on the main reply is E3, on the grader's reply E5. A new
+  "Rules" table words the two hard rules.
+- Everything else on a card is already written somewhere: when it runs is
+  that step's title, what failing does is the E-step's text, and the check
+  and its value come from the recording.
+- "Watch it fail" reuses the guard-to-scenario links in Design principles
+  (D40), so there is one place that says which scenario shows which guard.
+- A rule that rejects a posting reads "rule · rejected the posting", with an
+  amber edge, never "failed" or "caught" in red: it's the agent working as
+  intended (D28).
+
+**Reasoning:** the issue asks that wording come from STEPS.md, and STEPS.md
+already explains every step and E-step. Adding only the two facts it didn't
+have (where each check runs and what it becomes when caught), as a table
+the build script parses, means no sentence on a card is written twice. A test
+reads tracing.py's guard calls and all nine recordings and fails if any check
+has no row.
+**What would change it:**
+- A guard added in tracing.py. Its check needs a row, or the test fails.
+- Cards proving too long when a step has several checks. Then the passing
+  checks could collapse to one line each, with the rest behind the toggle.
