@@ -71,4 +71,5 @@ Newest at the bottom of each section.
 - **Commit before you break things on purpose.** Claude Code nearly reset `site/` with `git checkout` to undo a deliberate breakage, before the real work was committed. A safety check refused the command. Commit first, then break, then reset. _(PR #86)_
 - **Only commit when the tests pass.** A command chain with `;` committed and pushed before the tests finished, and they failed. Use `&&`, or check the result first. _(#106, PR #109)_
 - **Give commands for the folder the person is in.** A path that's right from the repo root fails from inside `job-evaluator/`. _(#104)_
+- **Read why a breakage failed, not just that it did.** Four breakages for #120 all "failed", with the same error: the test command never ran. A breakage proves something only if it fails in the test you meant, with the message you expected. _(#120)_
 - **A suggestion in chat isn't a record.** Build-log lines suggested after each PR were never written, and the log went two days stale. Now every PR writes its own entries. _(#121)_

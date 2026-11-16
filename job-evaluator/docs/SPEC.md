@@ -328,13 +328,19 @@ It prints PASS, or MISMATCH with each difference (e.g. `tools: expected evaluate
 
 ### Terminal output
 
-The `print` lines are still there for following a run live, one line per event. Each starts with the **step id** in brackets, the same id as STEPS.md, the `# STEP:` markers and the trace (#44). In `agent.py` every print is tagged `# (terminal only)`: it shows what's happening and changes nothing.
+The terminal lines are still there for following a run live, one line per event. Each starts with the **step id** and **where that step's code is**, in brackets: `[send_to_claude agent.py:<line>] pass 1: sending 1 message(s)` (#44, #120). The id is the same as STEPS.md, the `# STEP:` markers and the trace. In `agent.py` every line goes through `say(step_id, text)`, tagged `# (terminal only)`: it shows what's happening and changes nothing.
+
+- **The line number** is the first line of the step's code, just below its `# STEP:` marker: the same line the page's Code tab and `code_refs.code_ref` use. `code_refs.terminal_labels` looks every label up from agent.py's source when the agent starts, so no number is ever typed in, and adding a line anywhere moves them all. `claude_done` shares `check_reply`'s code; `claude_decides`, which has no code, points at `send_to_claude`'s call, whose reply its lines describe (D46).
+- **`file:line`** is the form VS Code's terminal turns into a link; Cmd/Ctrl-click it to open agent.py at that line. It's relative, so it resolves when you run from `job-evaluator/`.
+- **Every non-blank line** carries a label, including each line of a multi-line text (Claude's reply, the final answer). Blank lines stay blank to space out the passes. `main`'s own lines (`Fault: …`, `FINAL ANSWER:`, `Trace written to …`) are labelled `agent_starts`.
+
+The table leaves out the `agent.py:<line>` part of each label.
 
 | Line | When |
 |---|---|
 | `[conversation_setup] messages has 1 item` | Start |
 | `[send_to_claude] pass N: sending N message(s)` | Each outer call |
-| `[claude_decides] stop_reason = …`, then one `text:` or `tool_use: id=… name=…` line per text or tool_use block | Each reply (thinking blocks aren't printed) |
+| `[claude_decides] stop_reason = …`, then one indented `text:` or `tool_use: id=… name=…` line per text or tool_use block | Each reply (thinking blocks aren't printed) |
 | `[claude_done] end_turn → done. Outer calls: N …` | Normal finish |
 | `[save_turn] appended assistant turn …` | Before dispatch |
 | `[run_tools] dispatching <tool>(**{…})` | Each tool |
@@ -344,6 +350,7 @@ The `print` lines are still there for following a run live, one line per event. 
 | `  [inner_grader] …` (indented) | Inside `evaluate_job`'s grader call |
 | `[results_back] appended N tool_result(s) (ids: …[ is_error]) …` | After the tools run |
 | `[reply_cut_off] …` / `[pass_cap] …` / `[api_call_failed] …` / `[unexpected_stop] …` | Guarded stops (E3, E4, E6, E9). E7 (no final answer) prints no line of its own. |
+| `[agent_starts] Fault: …`, `[agent_starts] FINAL ANSWER:` and each line of the answer, `[agent_starts] Trace written to …` | `python agent.py` itself, before and after the run |
 
 ---
 

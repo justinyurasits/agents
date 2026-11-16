@@ -40,7 +40,7 @@ python record.py --all              # record every scenario
 
 `record.py` runs a scenario for real (it needs your API key and makes 2–4 API calls per scenario), saves it to `recordings/scenario-<id>.json`, and checks it against the scenario's `expect` in `scenarios/scenarios.json`: the tools called and the outcome, not Claude's wording. It prints PASS, or MISMATCH with what differed; a mismatched run is still saved, marked `"mismatch": true`. It also regenerates `docs/SCENARIOS.md` from the JSON.
 
-The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) (e.g. `[send_to_claude]`), so you can follow a run in the terminal. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
+The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) and where that step's code is (e.g. `[send_to_claude agent.py:<line>]`), so you can follow a run in the terminal and jump to the code that printed each line. In VS Code's terminal, Cmd/Ctrl-click the `agent.py:<line>`. The line numbers are looked up from the `# STEP:` markers each run, so they stay right as the code changes. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
 
 ## See a run on the page
 

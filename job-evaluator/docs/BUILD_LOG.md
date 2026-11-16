@@ -308,6 +308,10 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   number.
 - Brought this log and LEARNINGS up to date (#121), and changed CLAUDE.md
   so every PR writes its own entries instead of suggesting them.
+- Every terminal line now starts with its step id and the file:line of that
+  step's code, e.g. `[send_to_claude agent.py:<line>]` (#120, D46). The
+  numbers are looked up from the `# STEP:` markers each run, so a blank line
+  added at the top moves them all by one and nothing breaks.
 
 **Broke**
 
@@ -327,6 +331,10 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   Redone with a clean breakage.
 - These logs went two days without an entry. Claude Code suggested lines in
   chat after each PR, and none were written down.
+- The first round of deliberate breakages for #120 tested nothing. The test
+  names were in a shell variable, and zsh doesn't split one into words, so
+  every breakage gave the same "no such test" error. The identical results
+  gave it away; rerun with the names written out.
 
 **Learned**
 
@@ -338,3 +346,6 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - A recording only shows the guards that fired. To explain every guard on
   every run, the page needs the code, not just the trace.
 - A suggestion in chat isn't a record. If it matters, it goes in the PR.
+- Reading the terminal output can teach the code, if each line says where
+  it came from. The marker that anchors the page's Code tab can anchor the
+  terminal too, from the same lookup.

@@ -109,7 +109,7 @@ TERMINAL_SHARED = {"claude_decides": "send_to_claude"}
 
 def terminal_labels(source, file=AGENT_FILE):
     """The label each terminal line starts with, by step id, e.g.
-    {"send_to_claude": "[send_to_claude agent.py:521]", ...}.
+    {"send_to_claude": "[send_to_claude agent.py:<line>]", ...}.
 
     The number is the first line of the step's code (code_ref's `line`, just
     below its marker), looked up from `source` each time, so it's never

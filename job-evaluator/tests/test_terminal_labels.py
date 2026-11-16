@@ -1,7 +1,7 @@
 """Tests that every terminal line leads to its code (issue #120).
 
 Each line agent.py prints starts with its step id and the file:line of that
-step's code, e.g. "[send_to_claude agent.py:539] pass 1: ...". The number is
+step's code, e.g. "[send_to_claude agent.py:<line>] pass 1: ...". The number is
 looked up from the `# STEP:` markers when the agent starts, never typed in.
 
 Fake Claude replies (tests/fakes.py): no API calls, no key needed.

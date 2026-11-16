@@ -79,12 +79,15 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   too.
 - agent.py is annotated as a guided tour for Justin; keep it that way in
   every PR that touches it:
-  - tag every `print` `# (terminal only)` and every `rec.` / `tracing.`
-    line `# (trace only)`;
+  - tag every `say(...)` (and the one `print`, inside `say`) `# (terminal
+    only)` and every `rec.` / `tracing.` line `# (trace only)`;
   - put `# GUARD (E<n> <step_id>): <what it protects against>` above each
     guard's marker, matching STEPS.md, and `# RULE (<step_id>): <what it
 decides>` above each rule's marker;
-  - start terminal output with the step id in brackets, e.g. `[run_tools]`;
+  - print terminal output only through `say("<step_id>", text)`, which
+    starts each line with the step id and the file:line of its code, e.g.
+    `[run_tools agent.py:<line>]`. The line is looked up from the step's
+    `# STEP:` marker when the agent starts; never type a line number;
   - update the map in the module docstring and above `run_agent`, and the
     "what this looks like" examples, when the loop or a data shape changes;
   - explain any new Python idiom in one line where it first appears.
