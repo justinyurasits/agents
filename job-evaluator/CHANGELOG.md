@@ -4,6 +4,8 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 
 ## Unreleased
 
+- Check cards: the heading is the guard's real E-number and title, with a Details drop-down (what it protects against, when it runs, its code from its `# STEP:` marker, what happens if it fails, Watch it fail, raw data); event ids are labelled "event" (#118).
+
 - Payload tab: each guard check and rule is a card worded from STEPS.md (when it runs, what it checked, what failing does, Watch it fail), with the raw data behind a toggle; STEPS.md's Checks list becomes a table keyed by check and step, plus a Rules table (#115).
 
 - Payload tab: every request to Claude can show the full tool definitions it sent (name, description, input_schema), behind a collapsed toggle (#114).

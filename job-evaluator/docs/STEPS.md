@@ -225,29 +225,32 @@ Payload tab. A check that catches something is shown as its E-step instead.
 One row per check and the step it runs at. "Runs at" is the step where the
 check passes; "Caught as" is the E-step it becomes when it catches something
 ("none": the check only routes). The same check can run at two places and be
-caught as two different E-steps, like `max_tokens`. The page takes a card's
-wording from here and from those steps (#115).
+caught as two different E-steps, like `max_tokens`. "Passed means" is the
+card's line when the check passes; "If it catches something" is what Python
+does then. The page takes a card's wording from here, from those steps, and
+the code from the caught-as step's `# STEP:` marker (#115, #118).
 
-| Check | Runs at | Caught as | What it checks |
-|---|---|---|---|
-| `pass_count` | `send_to_claude` | `pass_cap` | Checks this run hasn't hit the 10-pass limit. |
-| `api_call_succeeded` | `send_to_claude` | `api_call_failed` | Checks the call to Claude came back with a reply. |
-| `stop_reason` | `check_reply`, `claude_done` | none | Reads the label on Claude's reply: run a tool, or done. |
-| `max_tokens` | `check_reply` | `reply_cut_off` | Checks the reply wasn't cut off by the length limit. |
-| `stop_reason_known` | `check_reply` | `unexpected_stop` | Checks the label is one this agent knows how to handle. |
-| `tool_exists` | `run_tools` | `unknown_tool` | Checks the tool Claude asked for is a real one. |
-| `tool_succeeded` | `run_tools` | `tool_failed` | Checks the tool finished without an error. |
-| `max_tokens` | `inner_grader` | `grader_cut_off` | Checks the grader's reply wasn't cut off by the length limit. |
-| `grade_valid` | `inner_grader` | `invalid_grade` | Checks the grader answered yes or no, with reasons. |
-| `final_text_present` | `answer_returned` | `no_final_answer` | Checks Claude's last reply has text to hand back. |
+| Check | Runs at | Caught as | What it checks | Passed means | If it catches something |
+|---|---|---|---|---|---|
+| `pass_count` | `send_to_claude` | `pass_cap` | Checks this run hasn't hit the 10-pass limit. | The run is under its pass limit, so Python calls Claude again. | Python stops the run and says how many passes it made. |
+| `api_call_succeeded` | `send_to_claude` | `api_call_failed` | Checks the call to Claude came back with a reply. | Python got a reply from Claude, so this guard didn't fire. | Python stops the run and says which error it was. |
+| `stop_reason` | `check_reply`, `claude_done` | none | Reads the label on Claude's reply: run a tool, or done. | Python read the label on Claude's reply and took that path. | Nothing to catch: this check only routes the loop, to the tools or to the end. |
+| `max_tokens` | `check_reply` | `reply_cut_off` | Checks the reply wasn't cut off by the length limit. | Claude's reply was complete, so Python can act on it. | Python stops the run and says the reply was cut off. |
+| `stop_reason_known` | `check_reply` | `unexpected_stop` | Checks the label is one this agent knows how to handle. | The label was one this agent knows how to handle. | Python stops the run and says which label it was. |
+| `tool_exists` | `run_tools` | `unknown_tool` | Checks the tool Claude asked for is a real one. | The tool Claude asked for is real, so Python runs it. | Python sends Claude an error naming the real tools, so it can pick again. |
+| `tool_succeeded` | `run_tools` | `tool_failed` | Checks the tool finished without an error. | The tool returned a result, so Python sends it to Claude. | Python sends the error to Claude as the tool's result, marked as an error. |
+| `max_tokens` | `inner_grader` | `grader_cut_off` | Checks the grader's reply wasn't cut off by the length limit. | The grader's reply was complete, so the tool can read it. | The tool reports the reply was cut off, and the error goes back to Claude. |
+| `grade_valid` | `inner_grader` | `invalid_grade` | Checks the grader answered yes or no, with reasons. | The grader answered yes or no, with reasons. | The tool reports what was wrong, and the error goes back to Claude. |
+| `final_text_present` | `answer_returned` | `no_final_answer` | Checks Claude's last reply has text to hand back. | Claude's last reply has text, so Python hands it back. | Python returns a message saying there was no final answer. |
 
 ## RULES (checked in code at step 7a)
 
 A rule applies one of Justin's decisions. It isn't a guard: a rule that
 rejects a posting is the agent working as intended, not an error. The page
-takes each rule card's wording from here (#115).
+takes each rule card's wording from here (#115), and its code from the
+`# STEP:` marker in "Code at" (#118).
 
-| Rule | Name | What it decides | If a posting fails it |
-|---|---|---|---|
-| `remote` | Remote | The role must be remote. | Code rates it IGNORE and the grader is never asked (D28). |
-| `comp_floor` | Salary floor | The lowest base salary must be at least $180K. | Code rates it IGNORE and the grader is never asked (D28). |
+| Rule | Name | Code at | What it decides | If a posting fails it |
+|---|---|---|---|---|
+| `remote` | Remote | `hard_screen` | The role must be remote. | Code rates it IGNORE and the grader is never asked (D28). |
+| `comp_floor` | Salary floor | `hard_screen` | The lowest base salary must be at least $180K. | Code rates it IGNORE and the grader is never asked (D28). |
