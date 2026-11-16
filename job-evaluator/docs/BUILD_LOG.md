@@ -304,7 +304,7 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
 - The cards carry each guard's real E-number and title, and a Details
   drop-down with what it protects against, when it runs, its code from its
   `# STEP:` marker, and what happens if it catches something (#118, PR #119,
-  in review, D45). Event ids are labelled "event", so none reads as a guard
+  D45). Event ids are labelled "event", so none reads as a guard
   number.
 - Brought this log and LEARNINGS up to date (#121), and changed CLAUDE.md
   so every PR writes its own entries instead of suggesting them.

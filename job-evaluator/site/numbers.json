@@ -1,14 +1,14 @@
 {
-  "tests": 270,
+  "tests": 272,
   "scenarios": {
     "total": 9,
     "normal": 5,
     "break": 4
   },
   "decisions": {
-    "logged": 44,
+    "logged": 45,
     "approved": 25,
-    "proposed": 2,
+    "proposed": 3,
     "other_status": 1,
     "no_status": 16
   },

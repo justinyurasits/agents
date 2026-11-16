@@ -837,3 +837,32 @@ has no row.
 - A guard added in tracing.py. Its check needs a row, or the test fails.
 - Cards proving too long when a step has several checks. Then the passing
   checks could collapse to one line each, with the rest behind the toggle.
+
+## D45 — A check card shows its guard's code from steps.json, built from agent.py's markers
+
+**Status:** **Proposed** (issue #118)
+**Date:** 2026-11-16
+**Decision:**
+- Each check card's "Where it lives" shows the code under the `# STEP:`
+  marker of the E-step the check becomes when caught (a rule's, `hard_screen`;
+  a check that only routes, the step it runs at). `build_steps.py` looks it
+  up with `code_refs.code_ref`, the same function recordings use, and writes
+  it into `steps.json` as `code`.
+- So `steps.json` now depends on agent.py as well as STEPS.md. Editing
+  either means rerunning `python build_steps.py`; the "committed steps.json
+  matches" test fails, saying so, until you do.
+- Event ids (`e1`, `e2`, ...) appear only labelled "event": in Payload's
+  event headers and the cards' raw data. The heading carries the real
+  E-number from STEPS.md instead.
+
+**Reasoning:** most guards never fire in a recording (E5–E9 are tested, not
+demonstrated), so no recording holds their code; the page can't take it from
+the run it's showing. Building it from the markers keeps one source for "where
+is this guard" (`# STEP:` markers, never line numbers), and a test fails if a
+check or rule has no marker. The cost: the code shown is agent.py as of the
+last build, not as of the recording's commit, which the Code tab shows. The
+card labels it with file, line and marker, not a commit.
+**What would change it:**
+- If the two ever confuse a visitor (a card's line numbers differing from
+  the Code tab's for the same run), record each run's guard code with it
+  instead, at the cost of a re-record.

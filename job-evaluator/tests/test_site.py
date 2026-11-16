@@ -59,8 +59,10 @@ def checks_without_a_row(markdown):
 class StepsJsonTest(unittest.TestCase):
 
     def test_committed_steps_json_matches_steps_md(self):
-        # Fails if STEPS.md was edited without rerunning build_steps.py.
-        self.assertEqual(read(build_steps.STEPS_JSON), build_steps.render(read(build_steps.STEPS_MD)))
+        # Fails if STEPS.md, or agent.py (the guards' code, #118), was edited
+        # without rerunning build_steps.py.
+        self.assertEqual(read(build_steps.STEPS_JSON), build_steps.render(read(build_steps.STEPS_MD)),
+                         "site/steps.json is stale: run python build_steps.py")
 
     def test_editing_a_step_in_steps_md_changes_its_text(self):
         md = read(build_steps.STEPS_MD)
@@ -101,12 +103,31 @@ class StepsJsonTest(unittest.TestCase):
         checks, steps = build_steps.parse_checks(md), build_steps.parse_steps(md)
         for r in checks:
             with self.subTest(r["check"]):
-                self.assertTrue(r["text"])
+                self.assertTrue(r["text"] and r["passed"] and r["on_catch"])
                 self.assertTrue(r["runs_at"] and all(step in steps for step in r["runs_at"]), r["runs_at"])
                 if r["caught_as"]:
                     self.assertTrue(steps[r["caught_as"]]["error"], f"{r['caught_as']} isn't an E-step")
-        self.assertEqual(checks[0], {"check": "pass_count", "runs_at": ["send_to_claude"], "caught_as": "pass_cap",
-                                     "text": "Checks this run hasn't hit the 10-pass limit."})
+        self.assertEqual(checks[0]["text"], "Checks this run hasn't hit the 10-pass limit.")
+        self.assertEqual((checks[0]["check"], checks[0]["runs_at"], checks[0]["caught_as"]), ("pass_count", ["send_to_claude"], "pass_cap"))
+
+    def test_every_check_and_rule_has_a_code_marker(self):
+        # #118: each card shows its guard's (or rule's) code, from the caught-as
+        # step's # STEP: marker in agent.py. A missing marker fails here, naming it.
+        md, source = read(build_steps.STEPS_MD), code_refs.load_source()
+        checks, rules = build_steps.parse_checks(md), build_steps.parse_rules(md)
+        code = build_steps.guard_code(checks, rules, source)   # raises MarkerError if one is missing
+        self.assertEqual(set(code), {build_steps.guard_code_step(r) for r in checks} | {"hard_screen"})
+        self.assertGreaterEqual(len(code), 10)
+        for step, ref in code.items():
+            self.assertEqual(ref, code_refs.code_ref(step, source), step)
+        self.assertEqual(code["api_call_failed"]["lines"][0], "except anthropic.APIError as e:")
+
+    def test_a_check_with_no_code_marker_fails_the_test(self):
+        md, source = read(build_steps.STEPS_MD), code_refs.load_source()
+        broken = source.replace("# STEP: api_call_failed\n", "\n")
+        self.assertNotEqual(broken, source)
+        with self.assertRaisesRegex(code_refs.MarkerError, "api_call_failed"):
+            build_steps.guard_code(build_steps.parse_checks(md), build_steps.parse_rules(md), broken)
 
     def test_a_check_with_no_row_fails_the_test(self):
         # The same check, on a Checks table missing tool_exists's row.
@@ -121,7 +142,7 @@ class StepsJsonTest(unittest.TestCase):
         self.assertEqual(recorded, {"remote", "comp_floor"})
         self.assertEqual(recorded - set(rules), set(), "rules with no row in STEPS.md's Rules table")
         for rule in rules.values():
-            self.assertTrue(rule["name"] and rule["text"] and rule["fails"])
+            self.assertTrue(rule["name"] and rule["text"] and rule["fails"] and rule["code_at"])
 
     def test_the_checks_section_is_not_read_as_a_step(self):
         steps = build_steps.parse_steps(read(build_steps.STEPS_MD))

@@ -16,8 +16,9 @@ local http server these tests start, and check all nine scenarios:
   7. How it was built (#81): every number shown is the one in numbers.json.
   8. Tool definitions (#114): every request to Claude can show the full
      definitions it sent, exactly as in the recording, behind a toggle.
-  9. Checks as cards (#115): every guard check and rule at every step is a
-     card worded from steps.json, with its raw data behind a toggle.
+  9. Checks as cards (#115, #118): every guard check and rule at every step
+     is a card with its real E-number, worded from steps.json, with a
+     drop-down holding its code and raw data; event ids only appear labelled.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -604,7 +605,7 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("If compensation is missing, try research_company first", self.visible_text(page))
         self.assertEqual(self.errors, [])
 
-    # --- checks as cards (#115) ---------------------------------------------
+    # --- checks as cards (#115, #118) ---------------------------------------
 
     def row_for(self, e):
         """The Checks row a guard event is worded from: its name, at the step it
@@ -617,21 +618,37 @@ class BrowserTest(unittest.TestCase):
         return page.evaluate("s => { const li = document.querySelector(`#principles li[data-guard='${s}'][data-scenario]`);"
                              " return li ? Number(li.dataset.scenario) : null; }", e_step)
 
-    def expected_text(self, page, e):
-        """What a card for event e must say, from steps.json and the recording."""
+    @staticmethod
+    def step_name(step_id):
+        step = STEPS["steps"][step_id]
+        return f"{step['number']} · {step['title']}"
+
+    def expected(self, e):
+        """(the card's visible text, what its drop-down must hold) for event e,
+        from steps.json and the recording."""
         if e["guard"]:
             row, g = self.row_for(e), e["guard"]
+            e_step = e["step_id"] if g["caught"] else row["caught_as"]
+            code_step = row["caught_as"] or row["runs_at"][0]
             if g["caught"]:
-                step = STEPS["steps"][e["step_id"]]
-                return [f"{g['name'].replace('_', ' ').capitalize()} · guard · caught", g["message"], step["title"], step["text"]]
-            want = [f"{g['name'].replace('_', ' ').capitalize()} · guard · passed", row["text"], g["checked"],
-                    STEPS["steps"][e["step_id"]]["title"]]
-            if row["caught_as"]:
-                want += [STEPS["steps"][row["caught_as"]]["title"], STEPS["steps"][row["caught_as"]]["text"]]
-            return want
-        rule, p = STEPS["rules"][e["payload"]["rule"]], e["payload"]
-        outcome = {"passed": "passed", "failed": "rejected the posting", "skipped": "skipped"}[p["outcome"]]
-        return [f"{rule['name']} · rule · {outcome}", rule["text"], rule["fails"], p["checked"]]
+                shown = [f"{self.step_name(e_step)} · guard caught it", g["message"], row["on_catch"]]
+            elif e_step:
+                shown = [f"{self.step_name(e_step)} · guard passed", row["passed"]]
+            else:   # a check that only routes: no E-step
+                shown = [f"{g['name'].replace('_', ' ').capitalize()} · routing check passed", row["passed"]]
+            detail = [STEPS["steps"][e_step]["text"] if e_step else row["text"], row["on_catch"], g["checked"],
+                      STEPS["steps"][row["runs_at"][0] if g["caught"] else e["step_id"]]["title"]]
+            raw = {"event": e["id"], "guard": g}
+        else:
+            rule, p = STEPS["rules"][e["payload"]["rule"]], e["payload"]
+            said = {"passed": "rule passed", "failed": "rule rejected the posting", "skipped": "rule skipped"}[p["outcome"]]
+            shown = [f"{rule['name']} · {said}", p["note"][:1].upper() + p["note"][1:]]
+            code_step = rule["code_at"]
+            detail = [rule["text"], rule["fails"], p["checked"], STEPS["steps"][e["step_id"]]["title"]]
+            raw = {"event": e["id"], **p}
+        code = STEPS["code"][code_step]
+        detail += [f"{code['file']}:{code['line']} · marker # STEP: {code['marker']}"] + [l.strip() for l in code["lines"] if l.strip()]
+        return shown, detail, raw
 
     def test_every_check_is_a_card_worded_from_steps_json(self):
         for sc in SCENARIOS:
@@ -654,17 +671,24 @@ class BrowserTest(unittest.TestCase):
                     carded += cards
                     for i in cards:
                         card = page.locator(f'#tab-body .check-card[data-event="{i}"]')
+                        shown, detail, raw = self.expected(events[i])
+                        details = card.locator("details.check-detail")
+                        self.assertFalse(details.evaluate("d => d.open"), f"{where}, {i}: details open by default")
                         text = " ".join(card.inner_text().split())
-                        for want in self.expected_text(page, events[i]):
+                        for want in shown:
                             self.assertIn(" ".join(want.split()), text, f"{where}, {i}")
-                        self.assertNotIn("{", text, f"{where}, {i}: raw JSON showing outside the toggle")
-                        # Raw data, collapsed, behind its toggle: the event's guard, or the rule's payload.
-                        data = card.locator("details.show-data")
-                        self.assertEqual(data.locator("summary").inner_text(), "Show data", f"{where}, {i}")
-                        self.assertFalse(data.evaluate("d => d.open"), f"{where}, {i}: data open by default")
-                        e = events[i]
-                        self.assertEqual(json.loads(data.locator("pre").text_content()),
-                                         {"id": i, "guard": e["guard"]} if e["guard"] else {"id": i, **e["payload"]}, f"{where}, {i}")
+                        self.assertNotIn("{", text, f"{where}, {i}: raw JSON showing outside the drop-down")
+                        self.assertIsNone(re.search(r"\be\d+\b", text), f"{where}, {i}: an event id on the card")
+                        details.evaluate("d => { d.open = true; }")
+                        text = " ".join(card.inner_text().split())
+                        for want in detail:
+                            self.assertIn(" ".join(want.split()), text, f"{where}, {i}")
+                        self.assertEqual(json.loads(details.locator("dd > pre").last.text_content()), raw, f"{where}, {i}: raw data")
+                    # #118: with everything open, an event id only ever appears labelled "event".
+                    page.eval_on_selector_all("#tab-body details", "ds => ds.forEach(d => { d.open = true; })")
+                    body = page.inner_text("#tab-body")
+                    for m in re.finditer(r"\be\d+\b", body):
+                        self.assertIn("event", body[max(0, m.start() - 12):m.start()], f"{where}: {body[max(0, m.start() - 30):m.end()]!r}")
                 self.assertEqual(sorted(carded), sorted(checks), f"scenario {n}: every check in the recording, once")
                 self.assertEqual(self.errors, [])
 
@@ -691,6 +715,7 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual(set(linked), {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap"})
         k, i, want = linked["pass_cap"]
         self.show(page, k, "scenario 1")
+        page.click(f'#tab-body .check-card[data-event="{i}"] details.check-detail summary')
         page.click(f'#tab-body .check-card[data-event="{i}"] button.watch')
         self.wait_for_scenario(page, want, "Watch it fail on the pass count")
         self.assertEqual(self.errors, [])
@@ -706,28 +731,30 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual(card.get_attribute("data-kind"), "rule")
         self.assertEqual(card.get_attribute("data-outcome"), "rejected")
         self.assertNotIn("caught", card.get_attribute("class"))
+        self.assertIn("rule rejected the posting", card.inner_text())
+        # The card's own words (heading and line), not its code (`if failed:`) or raw data.
         text = card.inner_text().lower()
         for word in ("fail", "caught", "error"):
-            self.assertNotIn(word, text.replace("if a posting fails it", ""), f"{word!r} in the rejecting rule's card")
+            self.assertNotIn(word, text, f"{word!r} in the rejecting rule's card")
         self.assertEqual(self.errors, [])
 
-    def test_the_show_data_toggle_works_by_mouse_and_keyboard(self):
+    def test_the_details_drop_down_works_by_mouse_and_keyboard(self):
         page = self.open("?scenario=1")
         self.wait_for_scenario(page, 1)
         page.click('#tabs [data-tab="payload"]')
         k = page.evaluate("window.explorer.state.steps.findIndex(s => s.checks.length)")
         self.show(page, k, "scenario 1")
-        summary = page.locator("#tab-body .check-card details.show-data summary").first
-        pre = page.locator("#tab-body .check-card details.show-data pre").first
+        summary = page.locator("#tab-body .check-card details.check-detail summary").first
+        body = page.locator("#tab-body .check-card details.check-detail dl").first
+        self.assertEqual(summary.inner_text(), "Details")
         summary.click()
-        self.assertTrue(pre.is_visible(), "a click didn't open it")
+        self.assertTrue(body.is_visible(), "a click didn't open it")
         summary.focus()
         page.keyboard.press("Space")
-        self.assertFalse(pre.is_visible(), "Space didn't close it")
+        self.assertFalse(body.is_visible(), "Space didn't close it")
         page.keyboard.press("Enter")
-        self.assertTrue(pre.is_visible(), "Enter didn't open it")
+        self.assertTrue(body.is_visible(), "Enter didn't open it")
         self.assertEqual(self.errors, [])
-
 
 if __name__ == "__main__":
     unittest.main()
