@@ -26,13 +26,19 @@ What it writes:
 
 "error" is true for the steps under "When something goes wrong" (E1, E2, ...).
 
-It also reads the one-line explanation of each guard's check, from the
-"Checks" section at the end of STEPS.md:
+It also reads two tables at the end of STEPS.md (#115). "Checks": one row
+per guard check and the step it runs at,
 
-    - `pass_count`: Checks this run hasn't hit the 10-pass limit.
+    | `pass_count` | `send_to_claude` | `pass_cap` | Checks this run hasn't ... |
 
-and writes them as "checks": {"pass_count": "Checks this run ..."}. The page
-shows that line when a check passes (a passing check isn't a step).
+written as "checks": [{"check": "pass_count", "runs_at": ["send_to_claude"],
+"caught_as": "pass_cap", "text": "Checks this run ..."}, ...] ("none" in
+"Caught as" becomes null). And "Rules": one row per hard rule,
+
+    | `comp_floor` | Salary floor | The lowest base ... | Code rates it IGNORE ... |
+
+written as "rules": {"comp_floor": {"name": "Salary floor", "text": ...,
+"fails": ...}}. The page builds each check's card from these and the steps.
 """
 
 import json
@@ -47,8 +53,9 @@ STEPS_JSON = os.path.join(HERE, "site", "steps.json")
 HEADING = re.compile(r"^#{3,4} ([0-9A-Za-z]+)\. (.+?)\s*$")
 STEP_ID = re.compile(r"^Step id: `([a-z][a-z0-9_]*)`\s*$")
 SECTION = re.compile(r"^## (.+?)\s*$")
-# "- `pass_count`: Checks this run hasn't hit the 10-pass limit."
-CHECK = re.compile(r"^- `([a-z][a-z0-9_]*)`: (.+?)\s*$")
+# A table row: "| a | b | c |" -> ["a", "b", "c"]. A row of dashes is the header's underline.
+ROW = re.compile(r"^\|(.+)\|\s*$")
+CODE = re.compile(r"`([a-z][a-z0-9_]*)`")
 
 
 def parse_steps(markdown):
@@ -94,19 +101,48 @@ def parse_steps(markdown):
     return steps
 
 
-def parse_checks(markdown):
-    """Each guard's one-line explanation, from the "Checks" section:
-    {guard_name: line}."""
-    checks = {}
-    in_checks = False
+def table_rows(markdown, section):
+    """The body rows of the table in the "## <section>" part of STEPS.md, as
+    lists of cell texts (the header row and its underline are skipped)."""
+    rows, inside, seen_header = [], False, False
     for line in markdown.splitlines():
         if (m := SECTION.match(line)):
-            in_checks = m.group(1).upper().startswith("CHECKS")
-        elif in_checks and (m := CHECK.match(line)):
-            if m.group(1) in checks:
-                raise ValueError(f"check {m.group(1)!r} appears twice in STEPS.md")
-            checks[m.group(1)] = m.group(2)
+            inside, seen_header = m.group(1).upper().startswith(section), False
+        elif inside and (m := ROW.match(line)):
+            cells = [c.strip() for c in m.group(1).split("|")]
+            if set("".join(cells)) <= set("-: "):
+                continue                    # the |---|---| underline
+            if not seen_header:
+                seen_header = True          # the first row names the columns
+                continue
+            rows.append(cells)
+    return rows
+
+
+def parse_checks(markdown):
+    """Each guard check, from the "Checks" table: a list of
+    {check, runs_at, caught_as, text}, one per check and place it runs."""
+    checks = []
+    for check, runs_at, caught_as, text in table_rows(markdown, "CHECKS"):
+        row = {"check": CODE.fullmatch(check).group(1), "runs_at": CODE.findall(runs_at),
+               "caught_as": None if caught_as == "none" else CODE.fullmatch(caught_as).group(1),
+               "text": text}
+        for other in checks:
+            if other["check"] == row["check"] and set(other["runs_at"]) & set(row["runs_at"]):
+                raise ValueError(f"check {row['check']!r} at {row['runs_at']} appears twice in STEPS.md")
+        checks.append(row)
     return checks
+
+
+def parse_rules(markdown):
+    """Each hard rule, from the "Rules" table: {rule: {name, text, fails}}."""
+    rules = {}
+    for rule, name, text, fails in table_rows(markdown, "RULES"):
+        rule = CODE.fullmatch(rule).group(1)
+        if rule in rules:
+            raise ValueError(f"rule {rule!r} appears twice in STEPS.md")
+        rules[rule] = {"name": name, "text": text, "fails": fails}
+    return rules
 
 
 def build(markdown):
@@ -114,7 +150,8 @@ def build(markdown):
     return {"source": "docs/STEPS.md",
             "generated_by": "build_steps.py: edit docs/STEPS.md, then rerun it",
             "steps": parse_steps(markdown),
-            "checks": parse_checks(markdown)}
+            "checks": parse_checks(markdown),
+            "rules": parse_rules(markdown)}
 
 
 def render(markdown):
@@ -129,7 +166,7 @@ def main(src=STEPS_MD, dest=STEPS_JSON):
         f.write(text)
     data = json.loads(text)
     print(f"Wrote {os.path.relpath(dest, HERE)}: {len(data['steps'])} steps and "
-          f"{len(data['checks'])} checks from {os.path.relpath(src, HERE)}")
+          f"{len(data['checks'])} checks and {len(data['rules'])} rules from {os.path.relpath(src, HERE)}")
 
 
 if __name__ == "__main__":

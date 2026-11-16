@@ -16,6 +16,8 @@ local http server these tests start, and check all nine scenarios:
   7. How it was built (#81): every number shown is the one in numbers.json.
   8. Tool definitions (#114): every request to Claude can show the full
      definitions it sent, exactly as in the recording, behind a toggle.
+  9. Checks as cards (#115): every guard check and rule at every step is a
+     card worded from steps.json, with its raw data behind a toggle.
 
 Needs Playwright and Chromium (see README, "Browser tests"). Without them the
 whole suite is skipped with the reason, and the other tests still run.
@@ -37,6 +39,7 @@ except ImportError:  # Playwright isn't installed: skip, don't fail
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCENARIOS = json.load(open(os.path.join(HERE, "scenarios", "scenarios.json"), encoding="utf-8"))
+STEPS = json.load(open(os.path.join(HERE, "site", "steps.json"), encoding="utf-8"))   # the page's wording (#115)
 PIECE = 30    # characters per piece of Claude's words (the #83 check)
 STRIDE = 15   # pieces overlap by half, so a quote that starts mid-piece still matches
 # A JavaScript value that leaked into visible text. \b = word boundary.
@@ -599,6 +602,130 @@ class BrowserTest(unittest.TestCase):
         page.click('#tabs [data-tab="payload"]')
         page.click("#tab-body details.tool-defs summary")
         self.assertIn("If compensation is missing, try research_company first", self.visible_text(page))
+        self.assertEqual(self.errors, [])
+
+    # --- checks as cards (#115) ---------------------------------------------
+
+    def row_for(self, e):
+        """The Checks row a guard event is worded from: its name, at the step it
+        ran at or was caught as."""
+        return next(r for r in STEPS["checks"] if r["check"] == e["guard"]["name"]
+                    and (e["step_id"] in r["runs_at"] or e["step_id"] == r["caught_as"]))
+
+    def principles_scenario(self, page, e_step):
+        """The scenario Design principles links for this E-step, or None."""
+        return page.evaluate("s => { const li = document.querySelector(`#principles li[data-guard='${s}'][data-scenario]`);"
+                             " return li ? Number(li.dataset.scenario) : null; }", e_step)
+
+    def expected_text(self, page, e):
+        """What a card for event e must say, from steps.json and the recording."""
+        if e["guard"]:
+            row, g = self.row_for(e), e["guard"]
+            if g["caught"]:
+                step = STEPS["steps"][e["step_id"]]
+                return [f"{g['name'].replace('_', ' ').capitalize()} · guard · caught", g["message"], step["title"], step["text"]]
+            want = [f"{g['name'].replace('_', ' ').capitalize()} · guard · passed", row["text"], g["checked"],
+                    STEPS["steps"][e["step_id"]]["title"]]
+            if row["caught_as"]:
+                want += [STEPS["steps"][row["caught_as"]]["title"], STEPS["steps"][row["caught_as"]]["text"]]
+            return want
+        rule, p = STEPS["rules"][e["payload"]["rule"]], e["payload"]
+        outcome = {"passed": "passed", "failed": "rejected the posting", "skipped": "skipped"}[p["outcome"]]
+        return [f"{rule['name']} · rule · {outcome}", rule["text"], rule["fails"], p["checked"]]
+
+    def test_every_check_is_a_card_worded_from_steps_json(self):
+        for sc in SCENARIOS:
+            n = sc["id"]
+            with self.subTest(scenario=n):
+                page = self.open(f"?scenario={n}")
+                self.wait_for_scenario(page, n)
+                events = {e["id"]: e for e in recording(n)["events"]}
+                checks = {i for i, e in events.items()
+                          if e["guard"] or (isinstance(e["payload"], dict) and "rule" in e["payload"])}
+                page.click('#tabs [data-tab="payload"]')
+                carded = []
+                for k in range(self.steps(page)):
+                    where = f"scenario {n}, step {k + 1}"
+                    self.show(page, k, where)
+                    on_step = page.evaluate("k => { const s = window.explorer.state.steps[k];"
+                                            " return [...s.events, ...s.checks].map(e => e.id); }", k)
+                    cards = page.eval_on_selector_all("#tab-body .check-card", "cs => cs.map(c => c.dataset.event)")
+                    self.assertEqual(sorted(cards), sorted(i for i in on_step if i in checks), f"{where}: cards")
+                    carded += cards
+                    for i in cards:
+                        card = page.locator(f'#tab-body .check-card[data-event="{i}"]')
+                        text = " ".join(card.inner_text().split())
+                        for want in self.expected_text(page, events[i]):
+                            self.assertIn(" ".join(want.split()), text, f"{where}, {i}")
+                        self.assertNotIn("{", text, f"{where}, {i}: raw JSON showing outside the toggle")
+                        # Raw data, collapsed, behind its toggle: the event's guard, or the rule's payload.
+                        data = card.locator("details.show-data")
+                        self.assertEqual(data.locator("summary").inner_text(), "Show data", f"{where}, {i}")
+                        self.assertFalse(data.evaluate("d => d.open"), f"{where}, {i}: data open by default")
+                        e = events[i]
+                        self.assertEqual(json.loads(data.locator("pre").text_content()),
+                                         {"id": i, "guard": e["guard"]} if e["guard"] else {"id": i, **e["payload"]}, f"{where}, {i}")
+                self.assertEqual(sorted(carded), sorted(checks), f"scenario {n}: every check in the recording, once")
+                self.assertEqual(self.errors, [])
+
+    def test_watch_it_fail_links_to_the_scenario_that_catches_it(self):
+        page = self.open("?scenario=1")
+        self.wait_for_scenario(page, 1)
+        page.click('#tabs [data-tab="payload"]')
+        linked = {}
+        for k in range(self.steps(page)):
+            self.show(page, k, f"scenario 1, step {k + 1}")
+            for i, watch in page.eval_on_selector_all(
+                    "#tab-body .check-card", "cs => cs.map(c => [c.dataset.event, c.querySelector('button.watch')?.dataset.scenario || null])"):
+                e = next(x for x in recording(1)["events"] if x["id"] == i)
+                if not e["guard"]:
+                    self.assertIsNone(watch, f"rule {i} has a Watch it fail link")
+                    continue
+                caught_as = self.row_for(e)["caught_as"]
+                want = self.principles_scenario(page, caught_as) if caught_as else None
+                self.assertEqual(int(watch) if watch else None, want, f"{i} ({e['guard']['name']})")
+                if want:
+                    linked[caught_as] = (k, i, want)
+                    self.assertTrue(any(x["step_id"] == caught_as and x["guard"] and x["guard"]["caught"]
+                                        for x in recording(want)["events"]), f"scenario {want} doesn't catch {caught_as}")
+        self.assertEqual(set(linked), {"tool_failed", "unknown_tool", "reply_cut_off", "pass_cap"})
+        k, i, want = linked["pass_cap"]
+        self.show(page, k, "scenario 1")
+        page.click(f'#tab-body .check-card[data-event="{i}"] button.watch')
+        self.wait_for_scenario(page, want, "Watch it fail on the pass count")
+        self.assertEqual(self.errors, [])
+
+    def test_a_rule_rejecting_a_posting_does_not_read_as_a_failure(self):
+        page = self.open("?scenario=5")
+        self.wait_for_scenario(page, 5)
+        floor = next(e for e in recording(5)["events"] if isinstance(e["payload"], dict) and e["payload"].get("rule") == "comp_floor")
+        k = page.evaluate("id => window.explorer.state.steps.findIndex(s => s.events.some(e => e.id === id))", floor["id"])
+        self.show(page, k, "scenario 5")
+        page.click('#tabs [data-tab="payload"]')
+        card = page.locator(f'#tab-body .check-card[data-event="{floor["id"]}"]')
+        self.assertEqual(card.get_attribute("data-kind"), "rule")
+        self.assertEqual(card.get_attribute("data-outcome"), "rejected")
+        self.assertNotIn("caught", card.get_attribute("class"))
+        text = card.inner_text().lower()
+        for word in ("fail", "caught", "error"):
+            self.assertNotIn(word, text.replace("if a posting fails it", ""), f"{word!r} in the rejecting rule's card")
+        self.assertEqual(self.errors, [])
+
+    def test_the_show_data_toggle_works_by_mouse_and_keyboard(self):
+        page = self.open("?scenario=1")
+        self.wait_for_scenario(page, 1)
+        page.click('#tabs [data-tab="payload"]')
+        k = page.evaluate("window.explorer.state.steps.findIndex(s => s.checks.length)")
+        self.show(page, k, "scenario 1")
+        summary = page.locator("#tab-body .check-card details.show-data summary").first
+        pre = page.locator("#tab-body .check-card details.show-data pre").first
+        summary.click()
+        self.assertTrue(pre.is_visible(), "a click didn't open it")
+        summary.focus()
+        page.keyboard.press("Space")
+        self.assertFalse(pre.is_visible(), "Space didn't close it")
+        page.keyboard.press("Enter")
+        self.assertTrue(pre.is_visible(), "Enter didn't open it")
         self.assertEqual(self.errors, [])
 
 

@@ -219,15 +219,35 @@ Code: `# STEP: unexpected_stop` in agent.py (`if response.stop_reason != "tool_u
 
 Each guard above runs its check every time, not only when something goes
 wrong. A check that passes isn't a step on the page: it lights its badge in
-the Python box for a moment, with the line below. A check that catches
-something is shown as its E-step instead.
+the Python box for a moment, with its line below, and gets a card in the
+Payload tab. A check that catches something is shown as its E-step instead.
 
-- `pass_count`: Checks this run hasn't hit the 10-pass limit.
-- `api_call_succeeded`: Checks the call to Claude came back with a reply.
-- `stop_reason`: Reads the label on Claude's reply: run a tool, or done.
-- `max_tokens`: Checks the reply wasn't cut off by the length limit.
-- `stop_reason_known`: Checks the label is one this agent knows how to handle.
-- `tool_exists`: Checks the tool Claude asked for is a real one.
-- `tool_succeeded`: Checks the tool finished without an error.
-- `grade_valid`: Checks the grader answered yes or no, with reasons.
-- `final_text_present`: Checks Claude's last reply has text to hand back.
+One row per check and the step it runs at. "Runs at" is the step where the
+check passes; "Caught as" is the E-step it becomes when it catches something
+("none": the check only routes). The same check can run at two places and be
+caught as two different E-steps, like `max_tokens`. The page takes a card's
+wording from here and from those steps (#115).
+
+| Check | Runs at | Caught as | What it checks |
+|---|---|---|---|
+| `pass_count` | `send_to_claude` | `pass_cap` | Checks this run hasn't hit the 10-pass limit. |
+| `api_call_succeeded` | `send_to_claude` | `api_call_failed` | Checks the call to Claude came back with a reply. |
+| `stop_reason` | `check_reply`, `claude_done` | none | Reads the label on Claude's reply: run a tool, or done. |
+| `max_tokens` | `check_reply` | `reply_cut_off` | Checks the reply wasn't cut off by the length limit. |
+| `stop_reason_known` | `check_reply` | `unexpected_stop` | Checks the label is one this agent knows how to handle. |
+| `tool_exists` | `run_tools` | `unknown_tool` | Checks the tool Claude asked for is a real one. |
+| `tool_succeeded` | `run_tools` | `tool_failed` | Checks the tool finished without an error. |
+| `max_tokens` | `inner_grader` | `grader_cut_off` | Checks the grader's reply wasn't cut off by the length limit. |
+| `grade_valid` | `inner_grader` | `invalid_grade` | Checks the grader answered yes or no, with reasons. |
+| `final_text_present` | `answer_returned` | `no_final_answer` | Checks Claude's last reply has text to hand back. |
+
+## RULES (checked in code at step 7a)
+
+A rule applies one of Justin's decisions. It isn't a guard: a rule that
+rejects a posting is the agent working as intended, not an error. The page
+takes each rule card's wording from here (#115).
+
+| Rule | Name | What it decides | If a posting fails it |
+|---|---|---|---|
+| `remote` | Remote | The role must be remote. | Code rates it IGNORE and the grader is never asked (D28). |
+| `comp_floor` | Salary floor | The lowest base salary must be at least $180K. | Code rates it IGNORE and the grader is never asked (D28). |
