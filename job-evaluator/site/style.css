@@ -298,6 +298,19 @@ h2 { margin: 0; font-size: 22px; font-weight: 600; }
 /* Code, Payload, Claude's response */
 .where { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 pre { margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--well); border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; line-height: 1.55; color: var(--body); overflow: auto; max-height: 420px; white-space: pre; }
+/* Check cards in the Payload tab (#115): one per guard check or rule. A
+   caught guard is red; a rule that rejects a posting is amber, not red. */
+.check-card { margin: 8px 0; padding: 10px 14px; border: 1px solid var(--line); border-left: 3px solid var(--green); border-radius: 8px; background: var(--well); font-size: 13px; line-height: 1.55; color: var(--body); }
+.check-card.caught { border-left-color: var(--red); }
+.check-card.rule.rejected { border-left-color: var(--amber); }
+.check-card.rule.skipped { border-left-color: var(--faint); }
+.check-card p { margin: 4px 0 0; }
+.check-head { color: var(--text); }
+.check-k { color: var(--faint); }
+.show-data { margin-top: 6px; }
+.show-data summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); }
+.show-data summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+.show-data pre { margin-top: 6px; }
 /* The tool definitions under a request's payload (#114), collapsed by default. */
 .tool-defs { margin-top: 8px; }
 .tool-defs summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); padding: 4px 0; }

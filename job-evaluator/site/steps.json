@@ -135,15 +135,99 @@
       "error": true
     }
   },
-  "checks": {
-    "pass_count": "Checks this run hasn't hit the 10-pass limit.",
-    "api_call_succeeded": "Checks the call to Claude came back with a reply.",
-    "stop_reason": "Reads the label on Claude's reply: run a tool, or done.",
-    "max_tokens": "Checks the reply wasn't cut off by the length limit.",
-    "stop_reason_known": "Checks the label is one this agent knows how to handle.",
-    "tool_exists": "Checks the tool Claude asked for is a real one.",
-    "tool_succeeded": "Checks the tool finished without an error.",
-    "grade_valid": "Checks the grader answered yes or no, with reasons.",
-    "final_text_present": "Checks Claude's last reply has text to hand back."
+  "checks": [
+    {
+      "check": "pass_count",
+      "runs_at": [
+        "send_to_claude"
+      ],
+      "caught_as": "pass_cap",
+      "text": "Checks this run hasn't hit the 10-pass limit."
+    },
+    {
+      "check": "api_call_succeeded",
+      "runs_at": [
+        "send_to_claude"
+      ],
+      "caught_as": "api_call_failed",
+      "text": "Checks the call to Claude came back with a reply."
+    },
+    {
+      "check": "stop_reason",
+      "runs_at": [
+        "check_reply",
+        "claude_done"
+      ],
+      "caught_as": null,
+      "text": "Reads the label on Claude's reply: run a tool, or done."
+    },
+    {
+      "check": "max_tokens",
+      "runs_at": [
+        "check_reply"
+      ],
+      "caught_as": "reply_cut_off",
+      "text": "Checks the reply wasn't cut off by the length limit."
+    },
+    {
+      "check": "stop_reason_known",
+      "runs_at": [
+        "check_reply"
+      ],
+      "caught_as": "unexpected_stop",
+      "text": "Checks the label is one this agent knows how to handle."
+    },
+    {
+      "check": "tool_exists",
+      "runs_at": [
+        "run_tools"
+      ],
+      "caught_as": "unknown_tool",
+      "text": "Checks the tool Claude asked for is a real one."
+    },
+    {
+      "check": "tool_succeeded",
+      "runs_at": [
+        "run_tools"
+      ],
+      "caught_as": "tool_failed",
+      "text": "Checks the tool finished without an error."
+    },
+    {
+      "check": "max_tokens",
+      "runs_at": [
+        "inner_grader"
+      ],
+      "caught_as": "grader_cut_off",
+      "text": "Checks the grader's reply wasn't cut off by the length limit."
+    },
+    {
+      "check": "grade_valid",
+      "runs_at": [
+        "inner_grader"
+      ],
+      "caught_as": "invalid_grade",
+      "text": "Checks the grader answered yes or no, with reasons."
+    },
+    {
+      "check": "final_text_present",
+      "runs_at": [
+        "answer_returned"
+      ],
+      "caught_as": "no_final_answer",
+      "text": "Checks Claude's last reply has text to hand back."
+    }
+  ],
+  "rules": {
+    "remote": {
+      "name": "Remote",
+      "text": "The role must be remote.",
+      "fails": "Code rates it IGNORE and the grader is never asked (D28)."
+    },
+    "comp_floor": {
+      "name": "Salary floor",
+      "text": "The lowest base salary must be at least $180K.",
+      "fails": "Code rates it IGNORE and the grader is never asked (D28)."
+    }
   }
 }

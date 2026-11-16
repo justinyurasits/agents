@@ -32,6 +32,30 @@ def read(path):
         return f.read()
 
 
+
+def recorded_events():
+    for path in sorted(glob.glob(os.path.join(HERE, "recordings", "*.json"))):
+        yield from json.loads(read(path))["events"]
+
+
+def guard_places():
+    """Every (step_id, guard name) a guard can be recorded at: from tracing.py's
+    self.guard("step", "name", ...) and self.guard("a" if x else "b", "name", ...)
+    calls, and from the recordings."""
+    source = read(os.path.join(HERE, "tracing.py"))
+    # \s* = any spaces or newlines: a call can put the guard's name on the next line.
+    places = set(re.findall(r'self\.guard\("([a-z_]+)",\s*"([a-z_]+)"', source))
+    for both, name in re.findall(r'self\.guard\(("[a-z_]+" if [\w ]+ else "[a-z_]+"),\s*"([a-z_]+)"', source):
+        places |= {(step, name) for step in re.findall(r'"([a-z_]+)"', both)}
+    return places | {(e["step_id"], e["guard"]["name"]) for e in recorded_events() if e["guard"]}
+
+
+def checks_without_a_row(markdown):
+    """The guard places with no row in this STEPS.md text's Checks table."""
+    checks = build_steps.parse_checks(markdown)
+    return [(step, name) for step, name in sorted(guard_places())
+            if not any(r["check"] == name and (step in r["runs_at"] or step == r["caught_as"]) for r in checks)]
+
 class StepsJsonTest(unittest.TestCase):
 
     def test_committed_steps_json_matches_steps_md(self):
@@ -67,15 +91,37 @@ class StepsJsonTest(unittest.TestCase):
             needed |= {e["step_id"] for e in json.loads(read(path))["events"]}
         self.assertEqual(needed - set(steps), set())
 
-    def test_every_guard_has_a_one_line_check(self):
-        # A passing check isn't a step: the page shows this line instead (#57 review).
-        checks = build_steps.parse_checks(read(build_steps.STEPS_MD))
-        names = set(re.findall(r'self\.guard\("[a-z_]+", "([a-z_]+)"', read(os.path.join(HERE, "tracing.py"))))
-        for path in glob.glob(os.path.join(HERE, "recordings", "*.json")):
-            names |= {e["guard"]["name"] for e in json.loads(read(path))["events"] if e["guard"]}
-        self.assertGreaterEqual(len(names), 9)
-        self.assertEqual(names - set(checks), set())
-        self.assertEqual(checks["pass_count"], "Checks this run hasn't hit the 10-pass limit.")
+    def test_every_check_has_a_row_to_take_its_wording_from(self):
+        # #115: each check's card is worded from STEPS.md's Checks table, found
+        # by the check's name and the step it ran at (or was caught as). Every
+        # guard tracing.py can record, and every one in a recording, needs a row.
+        md = read(build_steps.STEPS_MD)
+        self.assertGreaterEqual(len(guard_places()), 20)
+        self.assertEqual(checks_without_a_row(md), [], "checks with no row in STEPS.md's Checks table")
+        checks, steps = build_steps.parse_checks(md), build_steps.parse_steps(md)
+        for r in checks:
+            with self.subTest(r["check"]):
+                self.assertTrue(r["text"])
+                self.assertTrue(r["runs_at"] and all(step in steps for step in r["runs_at"]), r["runs_at"])
+                if r["caught_as"]:
+                    self.assertTrue(steps[r["caught_as"]]["error"], f"{r['caught_as']} isn't an E-step")
+        self.assertEqual(checks[0], {"check": "pass_count", "runs_at": ["send_to_claude"], "caught_as": "pass_cap",
+                                     "text": "Checks this run hasn't hit the 10-pass limit."})
+
+    def test_a_check_with_no_row_fails_the_test(self):
+        # The same check, on a Checks table missing tool_exists's row.
+        md = read(build_steps.STEPS_MD)
+        broken = "\n".join(line for line in md.splitlines() if not line.startswith("| `tool_exists`"))
+        self.assertEqual(sorted(checks_without_a_row(broken)), [("run_tools", "tool_exists"), ("unknown_tool", "tool_exists")])
+
+    def test_every_rule_has_a_row_to_take_its_wording_from(self):
+        rules = build_steps.parse_rules(read(build_steps.STEPS_MD))
+        recorded = {e["payload"]["rule"] for e in recorded_events()
+                    if isinstance(e["payload"], dict) and "rule" in e["payload"]}
+        self.assertEqual(recorded, {"remote", "comp_floor"})
+        self.assertEqual(recorded - set(rules), set(), "rules with no row in STEPS.md's Rules table")
+        for rule in rules.values():
+            self.assertTrue(rule["name"] and rule["text"] and rule["fails"])
 
     def test_the_checks_section_is_not_read_as_a_step(self):
         steps = build_steps.parse_steps(read(build_steps.STEPS_MD))
@@ -182,7 +228,7 @@ class PageStructureTest(unittest.TestCase):
         # demonstrated"). A renamed or invented tool fails here.
         known = set(self.agent_tools())
         md = read(build_steps.STEPS_MD)
-        known |= set(build_steps.parse_steps(md)) | set(build_steps.parse_checks(md))
+        known |= set(build_steps.parse_steps(md)) | {r["check"] for r in build_steps.parse_checks(md)}
         known |= set(re.findall(r"\b[a-z]+(?:_[a-z]+)+\b", read(os.path.join(HERE, "agent.py"))))
         known |= {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(HERE, "*.py"))}   # build_numbers
         for path in glob.glob(os.path.join(HERE, "tests", "test_*.py")):
