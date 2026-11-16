@@ -1,5 +1,5 @@
 {
-  "tests": 261,
+  "tests": 264,
   "scenarios": {
     "total": 9,
     "normal": 5,
@@ -16,5 +16,5 @@
     "total": 9,
     "demonstrated": 4
   },
-  "merged_prs": 58
+  "merged_prs": 59
 }

@@ -298,6 +298,11 @@ h2 { margin: 0; font-size: 22px; font-weight: 600; }
 /* Code, Payload, Claude's response */
 .where { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 pre { margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--well); border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; line-height: 1.55; color: var(--body); overflow: auto; max-height: 420px; white-space: pre; }
+/* The tool definitions under a request's payload (#114), collapsed by default. */
+.tool-defs { margin-top: 8px; }
+.tool-defs summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--amber); padding: 4px 0; }
+.tool-defs summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+.tool-defs pre { margin-top: 6px; }
 pre .ln { color: var(--faint); user-select: none; display: inline-block; min-width: 3.5em; }
 .sub { font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 14px 0 6px; letter-spacing: 0.06em; }
 .sub:first-child { margin-top: 0; }
