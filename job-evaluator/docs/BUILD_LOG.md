@@ -243,3 +243,98 @@ Dated working log. What I did, what broke, what I learned. Write it the same day
   step on the way.
 - Writing a principle on the page exposed that the agent didn't follow it.
   Explaining the system is a way of testing it.
+
+## 2026-11-15
+
+**Did**
+
+- Recordings no longer say "uncommitted code" just because `record.py` had
+  written them (#99, PR #103). The dirty check now ignores `recordings/` and
+  `docs/SCENARIOS.md`, the files a recording run writes itself.
+- Re-recorded all nine scenarios from committed code (#104, PR #107). Eight
+  of nine had been marked as made from uncommitted code. All PASS; the
+  recordings in the PR are the ones I ran myself.
+- Removed the committed `.DS_Store` files and ignored them everywhere (#106,
+  PR #109).
+- Link previews (#105, PR #110, D43 Proposed): a meta description, Open
+  Graph tags, and a preview image made by `make_preview.py`: scenario 6 at
+  the moment the tool's error goes back to Python.
+- Fixed the merged-PR count on "How it was built" (#108, PR #111). On a new
+  branch with no commits yet, it left out one merged PR.
+- Rewrote the root README for launch (#102, PR #112): what the repo is, the
+  live page, how to run it, and how it was built. Checked by following it
+  word for word in a fresh clone. A new test fails if any file in the repo
+  holds something shaped like an Anthropic key.
+- Released 1.0.0 (PR #113), with `.nojekyll` so GitHub Pages serves the
+  site as is.
+
+**Broke**
+
+- A command chained with `;` committed and pushed #106 before its tests had
+  passed. The tests then failed on the merged-PR count, which is how #108
+  was found. Commits now only happen if the tests pass.
+- Claude Code gave me `git checkout -- job-evaluator/recordings` while I was
+  already inside `job-evaluator/`, so the path didn't exist. `git restore
+  recordings` worked.
+- The new key test failed on day one: two test files hold made-up keys on
+  purpose. Checked (printing only true/false) that neither is the real key,
+  then exempted those two files by name.
+
+**Learned**
+
+- A check that marks its own output as a change will always cry wolf. The
+  recordings looked untrustworthy because writing them made the tree dirty.
+- A count that depends on where it runs (main, a branch, a branch with no
+  commits) needs a test for each place.
+- Following your own README in an empty folder is the only way to know it
+  works for someone else.
+
+## 2026-11-16
+
+**Did**
+
+- The Payload tab shows the full tool definitions Claude receives on every
+  request: name, description and input schema, behind a collapsed toggle
+  (#114, PR #116). Before, it showed only the names, though the
+  descriptions are what Claude reads to choose a tool.
+- Each guard check and rule in the Payload tab is now a short card instead
+  of raw JSON (#115, PR #117, D44). The wording comes from STEPS.md, whose
+  Checks list became a table keyed by check and the step it runs at, plus a
+  new Rules table.
+- The cards carry each guard's real E-number and title, and a Details
+  drop-down with what it protects against, when it runs, its code from its
+  `# STEP:` marker, and what happens if it catches something (#118, PR #119,
+  in review, D45). Event ids are labelled "event", so none reads as a guard
+  number.
+- Brought this log and LEARNINGS up to date (#121), and changed CLAUDE.md
+  so every PR writes its own entries instead of suggesting them.
+
+**Broke**
+
+- The page's Space shortcut (play/pause) took the key from the new toggle,
+  so Space played the run instead of closing it. Fixed in #114: a focused
+  toggle keeps Space, as buttons already did.
+- The first check cards showed as `[object HTMLDivElement]`: the tab
+  flattens only one level of lists. A new browser test caught it.
+- The old "every guard has a line" test read `tracing.py` with a pattern
+  that missed a call split over two lines, so `no_final_answer` was only
+  covered through the recordings. Fixed in #115's new test.
+- `stop_reason` also runs at step 9, whose code is shared with step 5. The
+  first #118 card looked for code under step 9 and would have shown "No code
+  found". A browser test caught it.
+- One deliberate breakage in #114 was itself broken: the edit left a syntax
+  error, so the page didn't load and the test failed for the wrong reason.
+  Redone with a clean breakage.
+- These logs went two days without an entry. Claude Code suggested lines in
+  chat after each PR, and none were written down.
+
+**Learned**
+
+- What the page shows is what a visitor thinks the model saw. Shortening
+  the tools to names hid the part that decides which tool Claude picks.
+- The same check means different things in different places: `max_tokens`
+  on Claude's reply is E3, on the grader's reply E5. The docs needed a row
+  per place, not per check.
+- A recording only shows the guards that fired. To explain every guard on
+  every run, the page needs the code, not just the trace.
+- A suggestion in chat isn't a record. If it matters, it goes in the PR.

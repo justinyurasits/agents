@@ -21,6 +21,7 @@ Newest at the bottom of each section.
 - **Guards catch failures; defensive handling prevents them.** Fence stripping, finding text by type and answering every tool request never "catch" anything: they handle every input correctly so nothing fails. Keeping them out of the guard list keeps "guard" meaning one thing. *(#63)*
 - **Choosing a tool is intent classification.** Each tool description is a definition Claude matches the input against. Adding `research_company`, whose description overlapped `flag_for_review` on "no pay listed," moved scenarios 2 and 4 to a new path with no code change. Where two tools overlap, the model picks the order unless the descriptions state precedence. _(#65, PR #66)_
 - **Adding a tool can change behavior you didn't touch.** A new description competes with every existing one. _(PR #66)_
+- **A check means what it's checking for, where it runs.** The same `max_tokens` check is "Claude's reply was cut off" in the loop and "the grader's reply was cut off" inside a tool, with different outcomes. Describe checks per place they run, not per name. _(#115, D44)_
 
 ## Showing how an agent works
 
@@ -37,6 +38,8 @@ Newest at the bottom of each section.
 - **A page built on one example only covers that example.** Page v0 was built and checked on scenario 6. Playing the other eight turned up four kinds of step it had no words for: "Has · nothing new", "rating: undefined". _(#71, PR #72)_
 - **Set up the run without giving away the ending.** A first-time visitor needs to know what's different about this input and what to watch for, and the scenario's `behavior` line told them how it ends. So the page has an intro before the run (setup, watch for) and a summary card after it. _(#75, PR #77)_
 - **A summary says what the recording shows, not why Claude did it.** "Claude asked for research_company first" is in the data. "Claude realised it needed pay" is a guess presented as fact. _(#75)_
+- **Show what the model actually received.** The trace kept tool names per request; the page showed only those, while Claude got the full descriptions it chooses by. Showing less than was sent misleads. _(#114, PR #116)_
+- **A run shows only the guards that fired.** Only four of the nine guards are ever caught in a recording. To explain all of them on any run, the page reads each guard's code from its marker, not from the trace. _(#118, D45)_
 
 ## Testing an agent
 
@@ -52,6 +55,9 @@ Newest at the bottom of each section.
 - **Check every view, not just the default.** The leak check first searched only the tab the inspector opens on; the raw payloads, where a leak is likeliest, were a click away and unchecked. _(PR #85)_
 - **A test only sees the shape it was built to read.** The principles test read only four-column rows, so six leftover rows of the old table sat in SPEC unnoticed. _(#94)_
 - **Same PASS, different run.** Re-recorded, scenario 9 still passed, but Claude was cut off at a different point. A PASS checks the outcome, not the path inside it. _(PR #98)_
+- **A check that flags its own output is noise.** Recordings were marked "uncommitted code" because writing them dirtied the tree. Exclude what the tool itself writes, or every result looks suspect. _(#99)_
+- **Test a count everywhere it runs.** The merged-PR count was right on main and wrong on a fresh branch. _(#108)_
+- **Follow the README from an empty folder.** Only a fresh clone shows what a newcomer meets. _(#102, PR #112)_
 
 ## Building with an AI coding agent
 
@@ -63,3 +69,6 @@ Newest at the bottom of each section.
 - **A pushed key is a leaked key.** Revoke it; deleting it from the file doesn't remove it from history. And a stale key in the shell can silently override `.env`. _(day one)_
 - **Define the product before writing issues.** Issues written ahead of the brief kept raising "what is this for?" Once the brief existed, every issue could be checked against it. _(BRIEF)_
 - **Commit before you break things on purpose.** Claude Code nearly reset `site/` with `git checkout` to undo a deliberate breakage, before the real work was committed. A safety check refused the command. Commit first, then break, then reset. _(PR #86)_
+- **Only commit when the tests pass.** A command chain with `;` committed and pushed before the tests finished, and they failed. Use `&&`, or check the result first. _(#106, PR #109)_
+- **Give commands for the folder the person is in.** A path that's right from the repo root fails from inside `job-evaluator/`. _(#104)_
+- **A suggestion in chat isn't a record.** Build-log lines suggested after each PR were never written, and the log went two days stale. Now every PR writes its own entries. _(#121)_

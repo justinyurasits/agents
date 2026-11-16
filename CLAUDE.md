@@ -37,7 +37,12 @@ Each agent folder has: agent code, README.md, CHANGELOG.md, and docs/
   job-evaluator/ last, after your other changes. It counts tests,
   decisions and merged PRs, so almost every PR changes it, and
   `test_committed_numbers_json_matches_the_repo` fails until it's rerun.
-- You can suggest writing for BUILD_LOG.md and LEARNINGS.md which is in the Agents folder. Do this after each PR.
+- The agent's docs/BUILD_LOG.md: add this PR to today's dated section
+  (Did / Broke / Learned), creating the section if needed. Write it in the
+  PR, don't just suggest it; Justin edits it in review.
+- LEARNINGS.md (repo root): add an entry, with its source, when the PR
+  taught something general about agents, testing or building with a coding
+  agent.
 
 ## Ask before
 
