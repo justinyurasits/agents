@@ -15,7 +15,8 @@ Three kinds of line are mixed together. Only the first kind decides what the
 agent does; the other two are tagged so you can skip them:
 
     the agent itself        API calls, tool dispatch, messages.append(...)
-    # (terminal only)       print(...) lines: what you see while it runs
+    # (terminal only)       say(...) / print(...) lines: what you see while it
+                            runs, each starting [step_id agent.py:line]
     # (trace only)          rec.… / tracing.… lines: record the run to a
                             trace file for the page; they never change what
                             the agent does
@@ -58,6 +59,7 @@ import re
 import anthropic
 from dotenv import load_dotenv
 
+import code_refs
 import faults
 import tracing
 
@@ -69,6 +71,22 @@ MODEL = "claude-sonnet-5-5"
 SYSTEM_PROMPT = "You help Justin triage job postings. Use the tools provided."
 MAX_PASSES = 10    # outer API calls per run; stops a runaway loop (and its cost)
 MAX_TOKENS = 2000  # longest reply Claude may write, for both API calls
+
+# Every terminal line starts with its step id and where that step's code is,
+# e.g. "[send_to_claude agent.py:<line>]" (#120). The numbers are looked up from
+# the `# STEP:` markers each time the agent starts (code_refs.py), never typed
+# in, so editing this file can't make them wrong. In VS Code's terminal,
+# Cmd/Ctrl-click the file:line to jump to the code.
+TERMINAL_LABELS = code_refs.terminal_labels(code_refs.load_source())
+
+
+def say(step_id, text, indent=""):
+    """Print `text` to the terminal, each line starting with the step's label.
+    Blank lines stay blank: a leading "\n" spaces out the passes. `indent`
+    nests the lines a tool prints under the run_tools line that called it."""
+    for line in text.split("\n"):
+        # `a if line else ""`: the labelled line, or an empty one.
+        print(f"{indent}{TERMINAL_LABELS[step_id]} {line}" if line else "")  # (terminal only)
 
 # ---------------------------------------------------------------------------
 # TOOL DEFINITIONS — the only thing Claude ever sees about your tools.
@@ -309,14 +327,14 @@ def evaluate_job(company, role_title, job_description,
                  and lowest_base(compensation) in (None, lowest_base(researched)))
     if estimated:
         compensation = researched
-        print(f"  [hard_screen] pay {researched!r}: {ESTIMATED_NOTE}")  # (terminal only)
+        say("hard_screen", f"pay {researched!r}: {ESTIMATED_NOTE}", indent="  ")  # (terminal only)
     notes = [ESTIMATED_NOTE] if estimated else []
 
     # Hard screens first, in code. A posting that fails one is IGNORE, and
     # the rating call is never made.
     screens = hard_screens(remote, compensation)
     for screen in screens:
-        print(f"  [hard_screen] {screen['name']}: {screen['note']}")  # (terminal only)
+        say("hard_screen", f"{screen['name']}: {screen['note']}", indent="  ")  # (terminal only)
         rec.rule_checked(screen)  # (trace only)
     failed = [s["note"] for s in screens if s["outcome"] == "failed"]
     # RULE (hard_screen): the posting breaks one of Justin's fixed rules (not
@@ -334,7 +352,7 @@ def evaluate_job(company, role_title, job_description,
     # The outer `messages` list is not touched: the grader gets its own
     # one-message conversation, which is thrown away when this returns.
     grader_messages = [{"role": "user", "content": job_summary}]
-    print("  [inner_grader] evaluate_job → the grader's own Claude call")  # (terminal only)
+    say("inner_grader", "evaluate_job → the grader's own Claude call", indent="  ")  # (terminal only)
     rec.inner_api_request(RUBRIC, grader_messages)  # (trace only)
     # STEP: inner_grader
     eval_response = client.messages.create(
@@ -365,7 +383,7 @@ def evaluate_job(company, role_title, job_description,
     if swapped != raw:
         rec.fault_injected("inner_grader", {"grader_reply": {"real": raw, "injected": swapped}})  # (trace only)
         raw = swapped
-    print(f"  [inner_grader] raw string back: {raw[:80]}...")  # (terminal only)
+    say("inner_grader", f"raw string back: {raw[:80]}...", indent="  ")  # (terminal only)
 
     # Claude sometimes wraps the JSON in ```json fences; json.loads can't
     # read those, so strip them first.
@@ -434,8 +452,8 @@ def research_company(company, role_level):
                   "note": facts.get("note"), "source": RESEARCH_SOURCE}
         if level is None:
             result["levels_on_file"] = list(levels)
-    print(f"  [research_company] {company!r}, {role_level!r}: "
-          f"{'found' if result['found'] else 'not on file'}")  # (terminal only)
+    say("research_company", f"{company!r}, {role_level!r}: "
+        f"{'found' if result['found'] else 'not on file'}", indent="  ")  # (terminal only)
     rec.company_looked_up(company, role_level, result)  # (trace only)
     return result
 
@@ -499,7 +517,7 @@ def run_agent(job_text, recorder=None, fault=None):
     # STEP: conversation_setup
     messages = [{"role": "user", "content": f"Evaluate this job posting:\n\n{job_text}"}]
     rec.messages_changed("conversation_setup", [], messages)  # (trace only)
-    print(f"[conversation_setup] messages has {len(messages)} item")  # (terminal only)
+    say("conversation_setup", f"messages has {len(messages)} item")  # (terminal only)
 
     # Pay research_company found in this run, by company name in lowercase,
     # so evaluate_job can tell when the pay it's given came from research.
@@ -513,8 +531,8 @@ def run_agent(job_text, recorder=None, fault=None):
     for api_calls in range(1, max_passes + 1):
         rec.pass_started(api_calls)        # records the pass-count check (trace only)
         # Send system + tools + the WHOLE messages list.
-        print(f"\n[send_to_claude] pass {api_calls}: "
-              f"sending {len(messages)} message(s)")  # (terminal only)
+        say("send_to_claude", f"\npass {api_calls}: "
+            f"sending {len(messages)} message(s)")  # (terminal only)
         rec.api_request(messages)  # (trace only)
         try:
             # STEP: send_to_claude
@@ -536,7 +554,7 @@ def run_agent(job_text, recorder=None, fault=None):
             status = getattr(e, "status_code", None)
             answer = (f"Couldn't get a reply from Claude: {type(e).__name__}"
                       f"{f' (status {status})' if status else ''}. The run stopped.")
-            print(f"\n[api_call_failed] {answer}")  # (terminal only)
+            say("api_call_failed", f"\n{answer}")  # (terminal only)
             rec.end("api_error", answer, value=type(e).__name__)  # (trace only)
             return answer
 
@@ -553,20 +571,20 @@ def run_agent(job_text, recorder=None, fault=None):
         #                     input={"company": "Northwind Labs", ...})]
         rec.api_response(response)  # (trace only)
 
-        print(f"[claude_decides] stop_reason = {response.stop_reason}")  # (terminal only)
+        say("claude_decides", f"stop_reason = {response.stop_reason}")  # (terminal only)
         for block in response.content:
             if block.type == "text":
-                print(f"           text: {block.text[:80]}")  # (terminal only)
+                say("claude_decides", f"  text: {block.text[:80]}")  # (terminal only)
             elif block.type == "tool_use":
-                print(f"           tool_use: id={block.id} name={block.name}")  # (terminal only)
+                say("claude_decides", f"  tool_use: id={block.id} name={block.name}")  # (terminal only)
 
         # Read why Claude stopped. end_turn: Claude chose to stop, so exit the
         # loop. (On that last pass this check is also step claude_done.)
         rec.reply_checked(response.stop_reason)  # (trace only)
         # STEP: check_reply
         if response.stop_reason == "end_turn":
-            print(f"\n[claude_done] end_turn → done. "
-                  f"Outer calls: {api_calls}, plus any inner tool calls.")  # (terminal only)
+            say("claude_done", f"\nend_turn → done. "
+                f"Outer calls: {api_calls}, plus any inner tool calls.")  # (terminal only)
             # next(<matches>, None): the first text block's text, or None if
             # the reply has no text block at all.
             # STEP: answer_returned
@@ -587,7 +605,7 @@ def run_agent(job_text, recorder=None, fault=None):
         # so stop rather than act on it.
         # STEP: reply_cut_off
         if response.stop_reason == "max_tokens":
-            print(f"\n[reply_cut_off] reply cut off at {max_tokens} tokens.")  # (terminal only)
+            say("reply_cut_off", f"\nreply cut off at {max_tokens} tokens.")  # (terminal only)
             answer = (f"Claude's reply was cut off (hit the max_tokens limit "
                       f"of {max_tokens}).")
             rec.end("max_tokens", answer)  # (trace only)
@@ -599,7 +617,7 @@ def run_agent(job_text, recorder=None, fault=None):
         # empty tool-results message the API rejects. Stop and name the reason.
         # STEP: unexpected_stop
         if response.stop_reason != "tool_use":
-            print(f"\n[unexpected_stop] stop_reason = {response.stop_reason!r} → stopping.")  # (terminal only)
+            say("unexpected_stop", f"\nstop_reason = {response.stop_reason!r} → stopping.")  # (terminal only)
             answer = (f"Claude stopped for a reason this agent doesn't handle "
                       f"(stop_reason {response.stop_reason!r}). The run stopped.")
             rec.end("unexpected_stop", answer, value=response.stop_reason)  # (trace only)
@@ -620,7 +638,7 @@ def run_agent(job_text, recorder=None, fault=None):
         # STEP: save_turn
         messages.append({"role": "assistant", "content": response.content})
         rec.messages_changed("save_turn", before, messages)  # (trace only)
-        print(f"[save_turn] appended assistant turn → messages has {len(messages)}")  # (terminal only)
+        say("save_turn", f"appended assistant turn → messages has {len(messages)}")  # (terminal only)
 
         # Dispatch: match the name string to a real function.
         # Claude can ask for several tools in one turn. Every tool_use block
@@ -630,7 +648,7 @@ def run_agent(job_text, recorder=None, fault=None):
         # (b for b in ... if ...) yields just the tool_use blocks, in order.
         # STEP: run_tools
         for tool_block in (b for b in response.content if b.type == "tool_use"):
-            print(f"[run_tools] dispatching {tool_block.name}(**{tool_block.input})")  # (terminal only)
+            say("run_tools", f"dispatching {tool_block.name}(**{tool_block.input})")  # (terminal only)
             rec.tool_checked(tool_block)       # does it exist? then the call (trace only)
 
             # If the tool raises, don't crash: send the error back to Claude
@@ -662,7 +680,7 @@ def run_agent(job_text, recorder=None, fault=None):
             # STEP: tool_failed
             except Exception as e:
                 error = f"{type(e).__name__}: {e}"
-                print(f"[tool_failed] {tool_block.name} raised → {error}")  # (terminal only)
+                say("tool_failed", f"{tool_block.name} raised → {error}")  # (terminal only)
                 outcome = {"content": error, "is_error": True}
             rec.tool_finished(tool_block, outcome)   # did it succeed? then the result (trace only)
 
@@ -685,14 +703,14 @@ def run_agent(job_text, recorder=None, fault=None):
         ids = ", ".join(
             r["tool_use_id"] + (" is_error" if r.get("is_error") else "")
             for r in tool_results)
-        print(f"[results_back] appended {len(tool_results)} tool_result(s) "
-              f"(ids: {ids}) → messages has {len(messages)}")  # (terminal only)
+        say("results_back", f"appended {len(tool_results)} tool_result(s) "
+            f"(ids: {ids}) → messages has {len(messages)}")  # (terminal only)
         # ...back to the top of the loop for the next pass.
 
     # GUARD (E4 pass_cap): used up every pass without end_turn (e.g. Claude
     # keeps retrying a tool that keeps failing). Stop instead of looping,
     # and spending, forever.
-    print(f"\n[pass_cap] {max_passes} outer calls without end_turn → stopping.")  # (terminal only)
+    say("pass_cap", f"\n{max_passes} outer calls without end_turn → stopping.")  # (terminal only)
     # STEP: pass_cap
     answer = f"Stopped after {max_passes} passes without finishing."
     rec.end("pass_cap", answer)  # (trace only)
@@ -757,12 +775,12 @@ def choose_run(argv=None, scenarios_file=SCENARIOS_FILE):
 if __name__ == "__main__":
     job, name, fault_name = choose_run()
     if fault_name:
-        print(f"Fault: injecting {fault_name!r} on purpose (labelled injected in the trace)")  # (terminal only)
+        say("agent_starts", f"Fault: injecting {fault_name!r} on purpose (labelled injected in the trace)")  # (terminal only)
 
     # Record this run as a trace.
     recorder = tracing.Recorder(scenario=name)  # (trace only)
     # STEP: agent_starts
     final = run_agent(job, recorder=recorder, fault=faults.Fault(fault_name))
-    print("\nFINAL ANSWER:\n" + final)  # (terminal only)
+    say("agent_starts", "\nFINAL ANSWER:\n" + final)  # (terminal only)
     path = recorder.write()   # save the trace file to traces/ (trace only)
-    print(f"\nTrace written to {path}")  # (terminal only)
+    say("agent_starts", f"\nTrace written to {path}")  # (terminal only)

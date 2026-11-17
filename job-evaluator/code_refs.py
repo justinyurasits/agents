@@ -99,3 +99,25 @@ def code_ref(step_id, source, file=AGENT_FILE):
     raw = source.splitlines()[node.lineno - 1:node.end_lineno]
     lines = textwrap.dedent("\n".join(raw)).split("\n")
     return {"file": file, "marker": marker, "line": node.lineno, "lines": lines}
+
+
+# The terminal (#120): claude_decides has no code of its own, but its lines
+# describe the reply that send_to_claude's call just returned, so they point
+# at that call.
+TERMINAL_SHARED = {"claude_decides": "send_to_claude"}
+
+
+def terminal_labels(source, file=AGENT_FILE):
+    """The label each terminal line starts with, by step id, e.g.
+    {"send_to_claude": "[send_to_claude agent.py:<line>]", ...}.
+
+    The number is the first line of the step's code (code_ref's `line`, just
+    below its marker), looked up from `source` each time, so it's never
+    typed anywhere. `file:line` is the form VS Code's terminal makes
+    clickable.
+    """
+    labels = {}
+    for step_id in [*find_markers(source), *SHARED, *TERMINAL_SHARED]:
+        ref = code_ref(TERMINAL_SHARED.get(step_id, step_id), source, file)
+        labels[step_id] = f"[{step_id} {ref['file']}:{ref['line']}]"
+    return labels

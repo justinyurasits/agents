@@ -866,3 +866,35 @@ card labels it with file, line and marker, not a commit.
 - If the two ever confuse a visitor (a card's line numbers differing from
   the Code tab's for the same run), record each run's guard code with it
   instead, at the cost of a re-record.
+
+## D46 — Terminal labels: the code's first line, from the markers; claude_decides points at the call
+
+**Status:** **Proposed** (issue #120)
+**Date:** 2026-11-16
+**Decision:**
+- Every terminal line starts `[<step_id> agent.py:<line>]`. `<line>` is the
+  first line of the step's code, just below its `# STEP:` marker, the same
+  line `code_refs.code_ref` gives the page. `code_refs.terminal_labels`
+  looks them all up when the agent starts. agent.py prints only through
+  `say(step_id, text)`, and a test fails if `.py:<digit>` appears anywhere
+  in agent.py.
+- `claude_decides` has no code (Claude decides on Anthropic's servers), so
+  its lines (`stop_reason`, and each text or tool_use block) point at
+  `send_to_claude`'s call: the reply they describe is what that call
+  returned. `claude_done` uses `check_reply`'s line, as on the page.
+- `main`'s lines (the fault notice, the final answer, the trace path) are
+  labelled `agent_starts`, the step whose marker sits on `run_agent(...)`
+  in `main`.
+- Every non-blank line is labelled, each line of a multi-line text
+  included. Blank lines between passes stay blank.
+
+**Reasoning:** the issue asks for every line to lead to its code. Pointing
+`claude_decides` at nothing would leave the one gap in the run, and a
+`# STEP: claude_decides` marker would change what the page shows for that
+step, which #120 rules out. The call is where the reply appears in the
+code. Labelling each line of a multi-line answer keeps "every line" true
+and keeps a pasted run readable line by line.
+**What would change it:**
+- If showing `send_to_claude`'s line on a `claude_decides` line confuses,
+  label it `[claude_decides (no code) ...]` instead, or give
+  `claude_decides` a marker of its own, together with the page.

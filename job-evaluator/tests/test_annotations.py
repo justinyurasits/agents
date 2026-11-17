@@ -3,8 +3,9 @@
 agent.py tags every print as (terminal only) and every recording call as
 (trace only), labels each guard with its error step from STEPS.md and each
 rule with its normal step (#26: guards catch failures, rules apply
-decisions), and its terminal output uses step ids. These tests keep that true as the code
-changes. They read source text only: no API calls, agent.py isn't imported.
+decisions), and its terminal output goes through say(), which starts each
+line with the step id and its file:line (#120). These tests keep that true as
+the code changes. They read source text only: no API calls, agent.py isn't imported.
 Run from job-evaluator/:  python -m unittest discover -s tests -v
 """
 
@@ -42,6 +43,10 @@ def is_print(call):
     return isinstance(call.func, ast.Name) and call.func.id == "print"
 
 
+def is_say(call):
+    return isinstance(call.func, ast.Name) and call.func.id == "say"
+
+
 def is_recording(call):
     # rec.…(), tracing.…(), recorder.…()
     f = call.func
@@ -51,8 +56,8 @@ def is_recording(call):
 
 class TagsTest(unittest.TestCase):
 
-    def test_every_print_is_tagged_terminal_only(self):
-        prints = [c for c in calls() if is_print(c)]
+    def test_every_print_and_say_is_tagged_terminal_only(self):
+        prints = [c for c in calls() if is_print(c) or is_say(c)]
         self.assertGreater(len(prints), 10)
         for c in prints:
             with self.subTest(line=c.lineno):
@@ -114,24 +119,36 @@ class RuleLabelsTest(unittest.TestCase):
 
 
 class TerminalOutputTest(unittest.TestCase):
+    """Terminal lines go through say(step_id, text), which adds the label
+    "[step_id agent.py:line]" (#120). tests/test_terminal_labels.py checks
+    the labels themselves."""
 
-    def print_texts(self):
-        texts = []
+    def says(self):
+        return [c for c in calls() if is_say(c)]
+
+    def test_print_is_only_called_inside_say(self):
+        say = next(n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name == "say")
+        inside = {id(c) for c in ast.walk(say) if isinstance(c, ast.Call)}
         for c in calls():
-            if is_print(c) and c.args:
-                for node in ast.walk(c.args[0]):
-                    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                        texts.append(node.value)
-        return texts
+            if is_print(c):
+                with self.subTest(line=c.lineno):
+                    self.assertIn(id(c), inside, f"a bare print: {LINES[c.lineno - 1].strip()}")
 
-    def test_no_old_step_numbers(self):
-        for text in self.print_texts():
-            self.assertNotRegex(text, r"\[step \d|\[stop\]|\[cap\]")
+    def test_every_say_names_a_real_step_id(self):
+        self.assertGreater(len(self.says()), 10)
+        for c in self.says():
+            with self.subTest(line=c.lineno):
+                first = c.args[0]
+                self.assertIsInstance(first, ast.Constant, "the step id must be written out")
+                self.assertIn(first.value, STEP_IDS)
 
-    def test_bracketed_labels_are_real_step_ids(self):
-        labels = {m for t in self.print_texts() for m in re.findall(r"\[([a-z_]+)\]", t)}
-        self.assertTrue(labels)
-        self.assertLessEqual(labels, STEP_IDS)
+    def test_no_label_typed_into_the_text(self):
+        # say() adds the label; text that starts with one would show it twice.
+        for c in self.says():
+            for node in ast.walk(c.args[1]):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    with self.subTest(line=c.lineno):
+                        self.assertNotRegex(node.value, r"\[[a-z_]+\]|\[step \d")
 
 
 if __name__ == "__main__":

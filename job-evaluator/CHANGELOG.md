@@ -4,6 +4,8 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 
 ## Unreleased
 
+- Terminal: every line starts with its step id and the file:line of that step's code, e.g. `[send_to_claude agent.py:<line>]`, looked up from the `# STEP:` markers each run (#120).
+
 - BUILD_LOG and LEARNINGS brought up to date for Nov 15–16; CLAUDE.md now has every PR write its own entries (#121).
 
 - Check cards: the heading is the guard's real E-number and title, with a Details drop-down (what it protects against, when it runs, its code from its `# STEP:` marker, what happens if it fails, Watch it fail, raw data); event ids are labelled "event" (#118).
