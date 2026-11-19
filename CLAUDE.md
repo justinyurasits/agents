@@ -1,6 +1,6 @@
 # agents
 
-<!-- standard: design/_template/repo/CLAUDE.md v1
+<!-- standard: design/_template/repo/CLAUDE.md v1.3
      Sections 1–6 are the standard: copy them unchanged, filling in only the <angle brackets>.
      Section 7 is this repository's own. To change a standard rule here, say so under
      "Overrides" in section 7, with the reason. -->
@@ -14,7 +14,8 @@ Status: active.
 ## 2. Design
 
 The design docs for this repository are in the `design` repository, cloned next to this
-one, at `../design/agents/job-evaluator/`. Pull it before planning.
+one, at `../design/agents/job-evaluator/`. Pull it before planning. In a git worktree,
+`../design` means next to the main checkout, not next to the worktree.
 
 Before proposing work, read in this order (skip any the project doesn't have yet):
 
@@ -22,7 +23,8 @@ Before proposing work, read in this order (skip any the project doesn't have yet
 2. `../design/agents/product-spec.md`: what the product must do, by capability ID
 3. `../design/agents/architecture.md` and `principles.md`: how the parts fit, and
    the rules every design decision follows
-4. `../design/agents/job-evaluator/spec.md`: what this component must do
+4. `../design/agents/job-evaluator/brief.md` and `spec.md`: who this component is for,
+   and what it must do
 5. `../design/agents/job-evaluator/design.md`: how it works, and the decision log
 6. `../design/agents/job-evaluator/<slice>-design.md`: the build design for the slice
    the issue belongs to
@@ -74,6 +76,11 @@ issue or milestone is done, and about every ten turns of work since you last ask
   the line `Roll-up: <repo> #<first>–#<last>`. For files synced from Claude Docs, add
   them as suggestions in the Claude Doc if you have the Docs connector; otherwise give
   Justin the text to paste. For repo-authored files, open a pull request in `design`.
+- Every roll-up also checks for drift. For each synced file in the component and its
+  project, compare the `rev` in its `sync-manifest.yaml` with the Claude Doc's current
+  revision, and offer a sync pull request in `design` for any doc that has moved ahead.
+  Without the Docs connector, list those docs and their links from `../design/DOCS.md`
+  and ask Justin to check them.
 - On no: don't ask again for another ten turns.
 - Nothing enters the design record until Justin approves it.
 
