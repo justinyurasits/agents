@@ -4,6 +4,8 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 
 ## Unreleased
 
+- Design docs moved to the design repo: tests and build_numbers.py read `design.md` and `brief.md` there through `design_path()`; the old BRIEF, SPEC, DECISIONS, BUILD_LOG and LEARNINGS copies are deleted; links point at the design repo; CLAUDE.md is the standard v1 template plus this repo's section 7, with a PR template; `.vscode/` untracked (#125, #124).
+
 - Terminal: every line starts with its step id and the file:line of that step's code, e.g. `[send_to_claude agent.py:<line>]`, looked up from the `# STEP:` markers each run (#120).
 
 - BUILD_LOG and LEARNINGS brought up to date for Nov 15–16; CLAUDE.md now has every PR write its own entries (#121).

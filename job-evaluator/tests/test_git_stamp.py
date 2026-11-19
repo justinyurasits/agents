@@ -35,7 +35,7 @@ class GitStampTest(unittest.TestCase):
         for path, text in {"agent.py": "print('agent')\n",
                            "recordings/scenario-01.json": "{}\n",
                            "docs/SCENARIOS.md": "# Scenarios\n",
-                           "docs/SPEC.md": "# Spec\n"}.items():
+                           "docs/STEPS.md": "# Steps\n"}.items():
             self.write(path, text)
         git(root, "init", "-q")
         git(root, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "add", "-A")
@@ -82,7 +82,7 @@ class GitStampTest(unittest.TestCase):
 
     def test_another_doc_is_still_dirty(self):
         # Only SCENARIOS.md is excused in docs/: record.py doesn't write the rest.
-        self.write("docs/SPEC.md", "# Spec, edited\n")
+        self.write("docs/STEPS.md", "# Steps, edited\n")
         self.assertIs(self.dirty(), True)
 
     def test_a_recording_plus_a_code_change_is_dirty(self):

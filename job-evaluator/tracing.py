@@ -1,7 +1,8 @@
 """Record what happens in a run, one event per step, as a trace file.
 
 The page (D15) replays traces; it shows only what was recorded here.
-Event format: docs/SPEC.md, "Trace format". Decision: D24.
+Event format: design.md, "7. Trace format", in the design repo
+(https://github.com/justinyurasits/design/blob/main/agents/job-evaluator/design.md). Decision: D24.
 
     rec = Recorder(scenario="clean")
     final = run_agent(job, recorder=rec)

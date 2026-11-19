@@ -21,7 +21,7 @@ Tools:
 - `flag_for_review` — plain Python, no model call; returns what's missing
 - `research_company` — plain Python, no model call; looks up stored demo facts about a company (`data/companies.json`), including typical base pay for a role level, for postings with no pay listed
 
-See [docs/SPEC.md](docs/SPEC.md) for the full spec.
+See [design.md](https://github.com/justinyurasits/design/blob/main/agents/job-evaluator/design.md) in the design repo for how it works and why, and its decision log.
 
 ## Run it
 
@@ -40,7 +40,7 @@ python record.py --all              # record every scenario
 
 `record.py` runs a scenario for real (it needs your API key and makes 2–4 API calls per scenario), saves it to `recordings/scenario-<id>.json`, and checks it against the scenario's `expect` in `scenarios/scenarios.json`: the tools called and the outcome, not Claude's wording. It prints PASS, or MISMATCH with what differed; a mismatched run is still saved, marked `"mismatch": true`. It also regenerates `docs/SCENARIOS.md` from the JSON.
 
-The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) and where that step's code is (e.g. `[send_to_claude agent.py:<line>]`), so you can follow a run in the terminal and jump to the code that printed each line. In VS Code's terminal, Cmd/Ctrl-click the `agent.py:<line>`. The line numbers are looked up from the `# STEP:` markers each run, so they stay right as the code changes. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [docs/SPEC.md](docs/SPEC.md), section 7).
+The script prints a line at each point in the loop, labelled with its step id from [docs/STEPS.md](docs/STEPS.md) and where that step's code is (e.g. `[send_to_claude agent.py:<line>]`), so you can follow a run in the terminal and jump to the code that printed each line. In VS Code's terminal, Cmd/Ctrl-click the `agent.py:<line>`. The line numbers are looked up from the `# STEP:` markers each run, so they stay right as the code changes. To follow the code itself, start at the top of `agent.py`: it explains how to read the file and maps the whole loop, and writes a trace of the run to `traces/<scenario>-<timestamp>.json` (format: [design.md](https://github.com/justinyurasits/design/blob/main/agents/job-evaluator/design.md#7-trace-format), section 7).
 
 ## See a run on the page
 
@@ -52,7 +52,7 @@ python make_preview.py              # remake site/preview.png, the link-preview 
 python -m http.server 8000          # then open localhost:8000/site/
 ```
 
-The page (`site/`) explains what an agent is and how this one works, then replays any of the nine recorded scenarios step by step (pick one from the list, or open `/site/?scenario=3`): who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [docs/SPEC.md](docs/SPEC.md), section 8.
+The page (`site/`) explains what an agent is and how this one works, then replays any of the nine recorded scenarios step by step (pick one from the list, or open `/site/?scenario=3`): who's executing, what crossed between Claude, Python and the tools, and what changed in the conversation. It makes no API calls. See [design.md](https://github.com/justinyurasits/design/blob/main/agents/job-evaluator/design.md#8-the-page-site), section 8.
 
 ## Test it
 
@@ -62,7 +62,7 @@ source .venv/bin/activate
 python -m unittest discover -s tests -v
 ```
 
-The tests use a fake Claude client, so they make no API calls and need no `.env` or API key. Run them before every PR.
+The tests use a fake Claude client, so they make no API calls and need no `.env` or API key. Run them before every PR. Some of them check the design docs (`design.md`, `brief.md`), which live in the [design](https://github.com/justinyurasits/design) repo: clone it next to `agents` (the tests look beside the main checkout, so worktrees find it too) or set `DESIGN_DIR`. Without it those tests fail with "clone justinyurasits/design next to agents". `design_repo.py` does the lookup.
 
 ### Browser tests
 
@@ -77,4 +77,4 @@ Without Playwright or Chromium, these four tests are skipped with the reason and
 
 ## Status
 
-Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: all nine are recorded (`recordings/`), and page v0 replays any of them. Next is the full page (D33). Known gaps are in [docs/SPEC.md](docs/SPEC.md#9-known-limits) and open issues on the board.
+Version 0.1.0 was tagged in the changelog; everything since is under Unreleased. The agent runs every scenario in `scenarios/scenarios.json`. Its guards, hard rules and fault injection are built, and every step is traced. `record.py` records and checks scenarios: all nine are recorded (`recordings/`), and page v0 replays any of them. Next is the full page (D33). Known gaps are in [design.md](https://github.com/justinyurasits/design/blob/main/agents/job-evaluator/design.md#9-known-limits) and open issues on the board.
