@@ -6,8 +6,8 @@
     "break": 4
   },
   "decisions": {
-    "logged": 46,
-    "approved": 25,
+    "logged": 48,
+    "approved": 27,
     "proposed": 4,
     "other_status": 1,
     "no_status": 16
@@ -16,5 +16,5 @@
     "total": 9,
     "demonstrated": 4
   },
-  "merged_prs": 64
+  "merged_prs": 65
 }
