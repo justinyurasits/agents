@@ -10,6 +10,7 @@ import re
 import unittest
 
 import record
+from design_repo import COMPONENT, design_doc, read_design
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,15 +21,16 @@ def read(*parts):
 
 
 AGENT = read("agent.py")
-SPEC = read("docs", "SPEC.md")
-BRIEF = read("docs", "BRIEF.md")
-DECISIONS = read("docs", "DECISIONS.md")
+# The design docs are in the design repo (#125): design.md holds the spec
+# part and the decision log, split at "# Decision log"; then the brief.
+SPEC, DECISIONS = design_doc()
+BRIEF = read_design(*COMPONENT, "brief.md")
 
 
 class GuardTableTest(unittest.TestCase):
 
     def test_spec_guard_table_matches_every_guard_marker(self):
-        # "# GUARD (E1 tool_failed): ..." in agent.py  <->  "| E1 `tool_failed` |" in SPEC.md
+        # "# GUARD (E1 tool_failed): ..." in agent.py  <->  "| E1 `tool_failed` |" in design.md
         in_code = set(re.findall(r"# GUARD \((E\d+) ([a-z_]+)\)", AGENT))
         section = SPEC[SPEC.index("## 5. Guards"):SPEC.index("## 6.")]
         in_spec = set(re.findall(r"\| (E\d+) `([a-z_]+)` \|", section))
@@ -91,7 +93,7 @@ class BriefTest(unittest.TestCase):
         # The same seven principles, in order, with the same Watch it scenarios.
         brief = [(name, [int(n) for n in re.findall(r"\d+", watch)])
                  for name, watch in re.findall(r"^   \d+\. (.+) \((scenarios? [^)]*)\)$", self.page_section(), re.M)]
-        table = read("docs", "SPEC.md").split("## Design principles", 1)[1].split("\n---\n", 1)[0]
+        table = SPEC.split("## Design principles", 1)[1].split("\n---\n", 1)[0]
         # Four-column rows only: principle | in this agent | guards | Watch it.
         # (The section also holds leftover three-column rows of the old table: #94.)
         rows = re.findall(r"^\| \*\*(.+?)\*\* \| [^|]+ \| [^|]+ \| ([^|]+) \|$", table, re.M)

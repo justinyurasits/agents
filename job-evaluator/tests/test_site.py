@@ -13,6 +13,7 @@ import unittest
 
 import build_steps
 import code_refs
+from design_repo import design_doc, design_path
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(HERE, "site")
@@ -21,6 +22,9 @@ REPO_ROOT = os.path.dirname(HERE)
 # this repo on GitHub. Links aren't requests; the page still loads nothing else.
 REPO_URL = "https://github.com/justinyurasits/agents"
 REPO_LINK = re.compile(r'<a href="' + re.escape(REPO_URL) + r'(/blob/main/[\w./-]+)?">')
+# And the design repo (#125), where the design docs moved: links to its files.
+DESIGN_URL = "https://github.com/justinyurasits/design"
+DESIGN_LINK = re.compile(r'<a href="' + re.escape(DESIGN_URL) + r'/blob/main/([\w./-]+?)(#[\w-]+)?">')
 # And the page's own published address, in two link-preview meta tags only
 # (#105): crawlers need og:url and og:image as absolute URLs.
 PAGES_URL = "https://justinyurasits.github.io/agents/job-evaluator/site/"
@@ -163,23 +167,35 @@ class SiteFilesTest(unittest.TestCase):
         # source, apart from <a href> links to this repo on GitHub (#81).
         for name in self.FILES:
             with self.subTest(name):
-                text = PAGES_META.sub("<meta>", REPO_LINK.sub("<a>", read(os.path.join(SITE, name))))
+                text = read(os.path.join(SITE, name))
+                text = PAGES_META.sub("<meta>", DESIGN_LINK.sub("<a>", REPO_LINK.sub("<a>", text)))
                 self.assertIsNone(re.search(r"https?://|//[a-z0-9.-]+\.[a-z]{2,}/", text))
 
     def test_every_github_link_points_at_a_file_in_this_repo(self):
         links = REPO_LINK.findall(read(os.path.join(SITE, "index.html")))
-        self.assertGreaterEqual(len(links), 5)
+        self.assertGreaterEqual(len(links), 3)   # was 5: two now point at the design repo, checked below (#125)
         for path in links:
             with self.subTest(path or "the repo"):
                 if path:
                     self.assertTrue(os.path.isfile(os.path.join(REPO_ROOT, path[len("/blob/main/"):])), path)
+
+    def test_every_design_link_points_at_a_file_in_the_design_repo(self):
+        # The decision log and the principles moved to the design repo (#125).
+        links = DESIGN_LINK.findall(read(os.path.join(SITE, "index.html")))
+        self.assertGreaterEqual(len(links), 2)
+        for path, anchor in links:
+            with self.subTest(path + anchor):
+                self.assertTrue(os.path.isfile(design_path(path)), path)
+                if anchor:   # GitHub's anchor for "# Decision log" is #decision-log
+                    headings = re.findall(r"^#+ (.+)$", read(design_path(path)), re.M)
+                    self.assertIn(anchor[1:], [re.sub(r"[^\w -]", "", h).strip().lower().replace(" ", "-") for h in headings])
 
     def test_every_file_the_page_loads_exists(self):
         html = read(os.path.join(SITE, "index.html"))
         for ref in re.findall(r'(?:src|href)="([^"]+)"', html):
             if ref.startswith("data:"):
                 continue
-            if ref.startswith(REPO_URL):   # a link to this repo: checked in the test above (#81)
+            if ref.startswith((REPO_URL, DESIGN_URL)):   # links to GitHub: checked in the tests above (#81, #125)
                 continue
             if ref.startswith("#"):   # a link within the page: the id must exist (#78)
                 with self.subTest(ref):
@@ -353,8 +369,13 @@ class PrinciplesTest(unittest.TestCase):
     is under a principle, and every claim it makes is checked."""
 
     HTML = read(os.path.join(SITE, "index.html"))
-    SPEC = read(os.path.join(HERE, "docs", "SPEC.md"))
     STEPS = build_steps.parse_steps(read(build_steps.STEPS_MD))
+
+    @classmethod
+    def setUpClass(cls):
+        # design.md, above its decision log (#125). Read here, not at import, so
+        # without the design repo only the tests that need it fail.
+        cls.SPEC = design_doc()[0]
 
     def page_rows(self):
         """[(principle, [guard step ids], [Watch it scenarios]), ...] from the page."""
@@ -434,7 +455,7 @@ class PrinciplesTest(unittest.TestCase):
 
     def test_every_decision_cited_exists(self):
         section = re.search(r'<section[^>]* id="principles".*?</section>', self.HTML, re.S).group()
-        decisions = set(re.findall(r"^## (D\d+[a-z]?) ", read(os.path.join(HERE, "docs", "DECISIONS.md")), re.M))
+        decisions = set(re.findall(r"^## (D\d+[a-z]?) ", design_doc()[1], re.M))
         cited = set(re.findall(r"\bD\d+\b", section))
         self.assertTrue(cited)
         self.assertEqual(cited - decisions, set())
