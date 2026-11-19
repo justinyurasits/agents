@@ -4,6 +4,8 @@ Each merged PR adds a line under Unreleased. Cut a version when a set of changes
 
 ## Unreleased
 
+- CLAUDE.md updated to the standard template v1.3: worktree note, the component brief in the reading order, and the roll-up drift check (#130).
+
 - numbers.json rebuilt after the design roll-up of #126: 48 decisions logged, 27 approved (#127).
 
 - Design docs moved to the design repo: tests and build_numbers.py read `design.md` and `brief.md` there through `design_path()`; the old BRIEF, SPEC, DECISIONS, BUILD_LOG and LEARNINGS copies are deleted; links point at the design repo; CLAUDE.md is the standard v1 template plus this repo's section 7, with a PR template; `.vscode/` untracked (#125, #124).
